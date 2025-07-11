@@ -1,0 +1,81 @@
+name: User service CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'go.work'
+      - 'common/**'
+      - 'user-service/**'
+      - '.github/workflows/user-service-ci.yml'
+  pull_request:
+    paths:
+      - 'go.work'
+      - 'common/**'
+      - 'user-service/**'
+      - '.github/workflows/user-service-ci.yml'
+
+jobs:
+  test:
+    name: CI
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: compendium
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ""
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Redis CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y redis-tools
+
+      - name: Wait for services (optional, healthchecks usually sufficient)
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h localhost -p 5432 -U user; do
+            echo "PostgreSQL not ready, waiting..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
+
+          echo "Waiting for Redis to be ready..."
+          until redis-cli -h localhost -p 6379 ping; do
+            echo "Redis not ready, waiting..."
+            sleep 2
+          done
+          echo "Redis is ready!"
+
+      - name: Run Integration Tests
+        run: cd user-service; go test ./...
