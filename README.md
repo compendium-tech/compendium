@@ -211,7 +211,7 @@ This part of the document outlines a typical authentication flow, covering user 
 The sign-up process involves two primary steps: initial user registration and subsequent multi-factor authentication (MFA) verification.
 
 #### 1.1 Initial User Registration
-When a new user wishes to create an account, they send a POST request to the /api/v1/users endpoint. This request typically includes their chosen name, email address, and a password.
+When a new user wishes to create an account, they send a POST request to the `/api/v1/users` endpoint. This request typically includes their chosen name, email address, and a password.
 
 ```http
 POST /api/v1/users
@@ -276,7 +276,7 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 ```
 
 #### 2.2 Sign-In from a New Device (MFA Required)
-If a user tries to sign in from a new or unrecognized device, the system typically enforces MFA for added security. The initial POST request to /api/v1/sessions with `flow` set to `password` will still be made with the email and password.
+If a user tries to sign in from a new or unrecognized device, the system typically enforces MFA for added security. The initial POST request to `/api/v1/sessions` with `flow` set to `password` will still be made with the email and password.
 
 ```http
 POST /api/v1/sessions?flow=password
