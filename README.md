@@ -20,7 +20,7 @@
             -   [1.1 Initial User Registration](#11-initial-user-registration)
             -   [1.2 Multi-Factor Authentication (MFA) Verification for Sign-Up](#12-multi-factor-authentication-mfa-verification-for-sign-up)
         -   [2. Sign-In](#2-sign-in)
-            -   [2.1 Sign-In from a Known Device (Direct Authentication)](#21-sign-in-from-a-known-device-direct-authentication)
+            -   [2.1 Sign-In from a Known Device (Password Authentication)](#21-sign-in-from-a-known-device-password-authentication)
             -   [2.2 Sign-In from a New Device (MFA Required)](#22-sign-in-from-a-new-device-mfa-required)
         -   [3. Token Management and Security Note](#3-token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
@@ -139,9 +139,9 @@ git push origin feat/add-user-profile # If working directly in the main repo
 git push origin feat/add-user-profile # If working from a fork
 ```
 
-To open a Pull Request, go to the GitHub repository page (either the original or your fork). GitHub will usually detect your newly pushed branch and prompt you to "Compare & pull request." Click this button, or alternatively, navigate to the "Pull requests" tab and click "New pull request." 
+To open a Pull Request, go to the GitHub repository page (either the original or your fork). GitHub will usually detect your newly pushed branch and prompt you to "Compare & pull request." Click this button, or alternatively, navigate to the "Pull requests" tab and click "New pull request."
 
-When filling out the PR description, use a concise, descriptive title. In the description, provide a detailed explanation of your changes, including what problem the PR solves, how it solves it, any relevant context, design decisions, or trade-offs, screenshots or GIFs if applicable, and references to any related issues (e.g., Closes #123). 
+When filling out the PR description, use a concise, descriptive title. In the description, provide a detailed explanation of your changes, including what problem the PR solves, how it solves it, any relevant context, design decisions, or trade-offs, screenshots or GIFs if applicable, and references to any related issues (e.g., Closes #123).
 
 Request reviews from appropriate team members and add relevant labels or assign to a milestone if necessary. Be prepared to receive feedback and make further changes based on code reviews; pushing new commits to your branch will automatically update the PR. Once the PR has been approved by the required reviewers and all checks pass, it can be merged into the main branch.
 
@@ -249,11 +249,11 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 ### 2. Sign-In
 The sign-in process can vary depending on whether the user is logging in from the same device or a different device, particularly concerning MFA requirements.
 
-#### 2.1 Sign-In from a Known Device (Direct Authentication)
-When a user attempts to sign in from a device they have previously used, the system might allow a direct authentication flow without immediate MFA if the device is recognized or trusted. The user sends a POST request to `/api/v1/sessions` with `flow` set to `direct`, providing their email and password.
+#### 2.1 Sign-In from a Known Device (Password Authentication)
+When a user attempts to sign in from a device they have previously used, the system might allow a password authentication flow without immediate MFA if the device is recognized or trusted. The user sends a POST request to `/api/v1/sessions` with `flow` set to `password`, providing their email and password.
 
 ```http
-POST /api/v1/sessions?flow=direct
+POST /api/v1/sessions?flow=password
 
 {
   "email": "adisalimgereev@gmail.com",
@@ -274,10 +274,10 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 ```
 
 #### 2.2 Sign-In from a New Device (MFA Required)
-If a user tries to sign in from a new or unrecognized device, the system typically enforces MFA for added security. The initial POST request to /api/v1/sessions with `flow` set to `direct` will still be made with the email and password.
+If a user tries to sign in from a new or unrecognized device, the system typically enforces MFA for added security. The initial POST request to /api/v1/sessions with `flow` set to `password` will still be made with the email and password.
 
 ```http
-POST /api/v1/sessions?flow=direct
+POST /api/v1/sessions?flow=password
 
 {
   "email": "adisalimgereev@gmail.com",
