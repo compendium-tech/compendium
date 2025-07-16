@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/seacite-tech/compendium/common/pkg/extract"
+	"github.com/seacite-tech/compendium/common/pkg/httphelp"
 	"github.com/seacite-tech/compendium/common/pkg/log"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +22,7 @@ func (l LoggerMiddleware) Handle() gin.HandlerFunc {
 		start := time.Now()
 
 		entry := logrus.WithFields(logrus.Fields{
-			"clientIp":  extract.GetClientIP(c),
+			"clientIp":  httphelp.GetClientIP(c),
 			"userId":    GetUserID(c),
 			"method":    c.Request.Method,
 			"path":      c.Request.RequestURI,

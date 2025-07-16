@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/seacite-tech/compendium/common/pkg/extract"
+	"github.com/seacite-tech/compendium/common/pkg/httphelp"
 	"github.com/seacite-tech/compendium/user-service/internal/domain"
 	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/service"
@@ -68,8 +68,8 @@ func (a *AuthController) createSession(c *gin.Context) error {
 		request := domain.SubmitMfaOtpRequest{
 			Email:     body.Email,
 			Otp:       body.Otp,
-			IpAddress: extract.GetClientIP(c),
-			UserAgent: extract.GetUserAgent(c),
+			IpAddress: httphelp.GetClientIP(c),
+			UserAgent: httphelp.GetUserAgent(c),
 		}
 
 		response, err := a.authService.SubmitMfaOtp(c.Request.Context(), request)
@@ -94,8 +94,8 @@ func (a *AuthController) createSession(c *gin.Context) error {
 		request := domain.SignInRequest{
 			Email:     body.Email,
 			Password:  body.Password,
-			IpAddress: extract.GetClientIP(c),
-			UserAgent: extract.GetUserAgent(c),
+			IpAddress: httphelp.GetClientIP(c),
+			UserAgent: httphelp.GetUserAgent(c),
 		}
 
 		response, err := a.authService.SignIn(c.Request.Context(), request)
