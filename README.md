@@ -1,7 +1,9 @@
 <p align="center">
-<img width="50%" alt="download" src="https://github.com/user-attachments/assets/9e9dea7b-d67d-4c72-afd0-fa615f8e9063" /> <br />
-<span>All-in-one AI based platform for university research, shortlisting and application preparation.</span>
+<img width="35%" alt="download" src="https://github.com/user-attachments/assets/9e9dea7b-d67d-4c72-afd0-fa615f8e9063" /> <br />
+<h4>Compendium provides comprehensive insights into university life, research opportunities, alumni networks, admission criteria and help you shortlist universities, plan admissions, assess essays and offers interactive courses for preparing to successfully pass international exams.</h4>
 </p>
+<img width="3168" height="792" alt="1584 (5)" src="https://github.com/user-attachments/assets/ea84f885-aaba-48bc-8c31-1edb22493b65" />
+
 
 # Table of Contents
 
