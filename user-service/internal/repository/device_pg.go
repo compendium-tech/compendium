@@ -10,6 +10,8 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
+const maxDevicesPerUser = 10
+
 type PostgresDeviceRepository struct {
 	db *sql.DB
 }
@@ -32,8 +34,8 @@ func (r *PostgresDeviceRepository) CreateDevice(ctx context.Context, device mode
 		return tracerr.Errorf("failed to query device count: %w", err)
 	}
 
-	// If amount of devices exceeds 10, oldest one is removed from database.
-	if deviceCount >= 10 {
+	// If amount of devices exceeds a limit, oldest one is removed from database.
+	if deviceCount >= maxDevicesPerUser {
 		_, err := tx.Exec(
 			`DELETE FROM devices WHERE id = (
 				SELECT id FROM devices WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1

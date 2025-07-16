@@ -8,7 +8,6 @@ import (
 )
 
 type DeviceRepository interface {
-	// If amount of devices exceeds 10, oldest one is removed from database.
 	CreateDevice(ctx context.Context, device model.Device) error
 	DeviceExists(userId uuid.UUID, userAgent string, ipAddress string) (bool, error)
 }
