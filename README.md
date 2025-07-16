@@ -349,7 +349,7 @@ PUT /api/v1/password?flow=finish
 {
   "email": "adisalimgereev@gmail.com",
   "otp": "67890",
-  "newPassword": "NewStrongPassword!1"
+  "password": "NewStrongPassword!1"
 }
 ```
 
