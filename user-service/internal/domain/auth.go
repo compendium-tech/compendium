@@ -84,6 +84,7 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
+	CsrfToken          string `json:"csrfToken"`
 	AccessToken        string `json:"accessToken"`
 	RefreshToken       string `json:"refreshToken"`
 	AccessTokenExpiry  int64  `json:"accessTokenExpiry"`
