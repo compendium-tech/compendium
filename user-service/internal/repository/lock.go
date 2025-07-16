@@ -3,11 +3,11 @@ package repository
 import "context"
 
 // Prevents race conditions in authentication endpoints.
-type EmailLockRepository interface {
-	ObtainEmailLock(ctx context.Context, actionKey string, email string) (EmailLock, error)
+type AuthEmailLockRepository interface {
+	ObtainLock(ctx context.Context, email string) (AuthEmailLock, error)
 }
 
-type EmailLock interface {
+type AuthEmailLock interface {
 	Release(ctx context.Context) error
 	ReleaseAndHandleErr(ctx context.Context, err *error)
 }

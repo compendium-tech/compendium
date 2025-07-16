@@ -13,17 +13,17 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-const emailLockTtl = 60 * time.Second
+const authEmailLockTtl = 60 * time.Second
 
-type emailLock struct {
+type authEmailLock struct {
 	lock *redislock.Lock
 }
 
-func (e *emailLock) Release(ctx context.Context) error {
+func (e *authEmailLock) Release(ctx context.Context) error {
 	return tracerr.Wrap(e.lock.Release(ctx))
 }
 
-func (e *emailLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
+func (e *authEmailLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
 	// If an error already exists, don't overwrite it with a potential lock release error.
 	// The original error is usually more important.
 	if *err != nil {
@@ -43,18 +43,18 @@ func (e *emailLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
 	}
 }
 
-type RedisEmailLockRepository struct {
+type RedisAuthEmailLockRepository struct {
 	client *redislock.Client
 }
 
-func NewRedisEmailLockRepository(rdb *redis.Client) *RedisEmailLockRepository {
-	return &RedisEmailLockRepository{
+func NewRedisAuthEmailLockRepository(rdb *redis.Client) *RedisAuthEmailLockRepository {
+	return &RedisAuthEmailLockRepository{
 		client: redislock.New(rdb),
 	}
 }
 
-func (r *RedisEmailLockRepository) ObtainEmailLock(ctx context.Context, actionKey string, email string) (EmailLock, error) {
-	lock, err := r.client.Obtain(ctx, fmt.Sprintf("%s:%s", actionKey, email), emailLockTtl, nil)
+func (r *RedisAuthEmailLockRepository) ObtainLock(ctx context.Context, email string) (AuthEmailLock, error) {
+	lock, err := r.client.Obtain(ctx, fmt.Sprintf("auth_locks:%s", email), authEmailLockTtl, nil)
 	if err != nil {
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain email lock")
@@ -64,5 +64,5 @@ func (r *RedisEmailLockRepository) ObtainEmailLock(ctx context.Context, actionKe
 		return nil, tracerr.Wrap(err)
 	}
 
-	return &emailLock{lock: lock}, nil
+	return &authEmailLock{lock: lock}, nil
 }

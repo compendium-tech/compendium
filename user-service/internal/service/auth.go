@@ -26,18 +26,18 @@ type AuthService interface {
 }
 
 type authServiceImpl struct {
-	emailLockRepository    repository.EmailLockRepository
-	deviceRepository       repository.DeviceRepository
-	userRepository         repository.UserRepository
-	mfaRepository          repository.MfaRepository
-	refreshTokenRepository repository.RefreshTokenRepository
-	emailSender            email.EmailSender
-	tokenManager           auth.TokenManager
-	passwordHasher         hash.PasswordHasher
+	authEmailLockRepository repository.AuthEmailLockRepository
+	deviceRepository        repository.DeviceRepository
+	userRepository          repository.UserRepository
+	mfaRepository           repository.MfaRepository
+	refreshTokenRepository  repository.RefreshTokenRepository
+	emailSender             email.EmailSender
+	tokenManager            auth.TokenManager
+	passwordHasher          hash.PasswordHasher
 }
 
 func NewAuthService(
-	emailLockRepository repository.EmailLockRepository,
+	authEmailLockRepository repository.AuthEmailLockRepository,
 	deviceRepository repository.DeviceRepository,
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
@@ -46,19 +46,19 @@ func NewAuthService(
 	tokenManager auth.TokenManager,
 	passwordHasher hash.PasswordHasher) *authServiceImpl {
 	return &authServiceImpl{
-		emailLockRepository:    emailLockRepository,
-		deviceRepository:       deviceRepository,
-		userRepository:         userRepository,
-		mfaRepository:          mfaRepository,
-		refreshTokenRepository: refreshTokenRepository,
-		emailSender:            emailSender,
-		tokenManager:           tokenManager,
-		passwordHasher:         passwordHasher,
+		authEmailLockRepository: authEmailLockRepository,
+		deviceRepository:        deviceRepository,
+		userRepository:          userRepository,
+		mfaRepository:           mfaRepository,
+		refreshTokenRepository:  refreshTokenRepository,
+		emailSender:             emailSender,
+		tokenManager:            tokenManager,
+		passwordHasher:          passwordHasher,
 	}
 }
 
 func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signUp", request.Email)
+	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 }
 
 func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "submitMfaOtp", request.Email)
+	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signIn", request.Email)
+	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 }
 
 func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "initPasswordReset", request.Email)
+	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 }
 
 func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "finishPasswordReset", request.Email)
+	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
