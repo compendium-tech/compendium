@@ -353,7 +353,7 @@ PUT /api/v1/password?flow=finish
 }
 ```
 
-If the OTP is valid and the new password meets the system's security requirements, the server updates the user's password. For convenience and immediate access, the server will then typically issue new session tokens.
+If the OTP is valid and the new password meets the system's security requirements, the server updates the user's password.
 
 ### Token Management and Security Note
 It's important to note the roles of the tokens and cookies in this flow:
