@@ -1,5 +1,9 @@
 filename: mocks.go
 packages:
+    github.com/seacite-tech/compendium/user-service/internal/service:
+        interfaces:
+            AuthService:
+            UserService:
     github.com/seacite-tech/compendium/user-service/internal/email:
         interfaces:
             EmailSender:
