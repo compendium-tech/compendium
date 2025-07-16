@@ -17,7 +17,15 @@ import (
 	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
-type AuthService struct {
+type AuthService interface {
+	SignUp(ctx context.Context, request domain.SignUpRequest) error
+	SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)
+	SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error)
+	InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) error
+	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
+}
+
+type authServiceImpl struct {
 	emailLockRepository    repository.EmailLockRepository
 	deviceRepository       repository.DeviceRepository
 	userRepository         repository.UserRepository
@@ -36,8 +44,8 @@ func NewAuthService(
 	refreshTokenRepository repository.RefreshTokenRepository,
 	emailSender email.EmailSender,
 	tokenManager auth.TokenManager,
-	passwordHasher hash.PasswordHasher) AuthService {
-	return AuthService{
+	passwordHasher hash.PasswordHasher) *authServiceImpl {
+	return &authServiceImpl{
 		emailLockRepository:    emailLockRepository,
 		deviceRepository:       deviceRepository,
 		userRepository:         userRepository,
@@ -49,7 +57,7 @@ func NewAuthService(
 	}
 }
 
-func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
+func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signUp", request.Email)
 	if err != nil {
 		return err
@@ -114,7 +122,7 @@ func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (
 	return s.emailSender.SendSignUpMfaEmail(request.Email, otp)
 }
 
-func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
+func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "submitMfaOtp", request.Email)
 	if err != nil {
 		return nil, err
@@ -167,7 +175,7 @@ func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaO
 	return session, nil
 }
 
-func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
+func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signIn", request.Email)
 	if err != nil {
 		return nil, err
@@ -228,7 +236,7 @@ func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (
 	}
 }
 
-func (s AuthService) InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) (finalErr error) {
+func (s *authServiceImpl) InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) (finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "initiatePasswordReset", request.Email)
 	if err != nil {
 		return err
@@ -256,7 +264,7 @@ func (s AuthService) InitiatePasswordReset(ctx context.Context, request domain.I
 	return s.emailSender.SendSignInMfaEmail(request.Email, otp)
 }
 
-func (s AuthService) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
+func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "finishPasswordReset", request.Email)
 	if err != nil {
 		return err
@@ -301,7 +309,7 @@ func (s AuthService) FinishPasswordReset(ctx context.Context, request domain.Fin
 	return s.userRepository.UpdatePasswordHash(ctx, user.Id, passwordHash)
 }
 
-func (s AuthService) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
+func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
 	csrfToken, err := s.tokenManager.NewCsrfToken()
 	if err != nil {
 		return nil, err
