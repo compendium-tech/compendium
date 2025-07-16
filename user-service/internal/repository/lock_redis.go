@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -32,8 +33,8 @@ func NewRedisEmailLockRepository(rdb *redis.Client) *RedisEmailLockRepository {
 	}
 }
 
-func (r *RedisEmailLockRepository) ObtainEmailLock(ctx context.Context, email string) (EmailLock, error) {
-	lock, err := r.client.Obtain(ctx, email, emailLockTtl, nil)
+func (r *RedisEmailLockRepository) ObtainEmailLock(ctx context.Context, actionKey string, email string) (EmailLock, error) {
+	lock, err := r.client.Obtain(ctx, fmt.Sprintf("%s:%s", actionKey, email), emailLockTtl, nil)
 	if err != nil {
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain email lock")

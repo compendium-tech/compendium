@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"strings"
-
 	"github.com/gin-gonic/gin"
+	"github.com/seacite-tech/compendium/common/pkg/extract"
 	"github.com/seacite-tech/compendium/common/pkg/log"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +22,7 @@ func (l LoggerMiddleware) Handle() gin.HandlerFunc {
 		start := time.Now()
 
 		entry := logrus.WithFields(logrus.Fields{
-			"clientIp":  GetClientIP(c),
+			"clientIp":  extract.GetClientIP(c),
 			"userId":    GetUserID(c),
 			"method":    c.Request.Method,
 			"path":      c.Request.RequestURI,
@@ -55,26 +54,6 @@ func (l LoggerMiddleware) Handle() gin.HandlerFunc {
 			}
 		}
 	}
-}
-
-func GetClientIP(c *gin.Context) string {
-	requester := c.Request.Header.Get("X-Forwarded-For")
-
-	if len(requester) == 0 {
-		requester = c.Request.Header.Get("X-Real-IP")
-	}
-
-	if len(requester) == 0 {
-		requester = c.Request.RemoteAddr
-	}
-
-	// if requester is a comma delimited list, take the first one
-	// (this happens when proxied via elastic load balancer then again through nginx)
-	if strings.Contains(requester, ",") {
-		requester = strings.Split(requester, ",")[0]
-	}
-
-	return requester
 }
 
 func GetUserID(c *gin.Context) string {

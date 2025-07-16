@@ -19,6 +19,7 @@ import (
 
 type AuthService struct {
 	emailLockRepository    repository.EmailLockRepository
+	deviceRepository       repository.DeviceRepository
 	userRepository         repository.UserRepository
 	mfaRepository          repository.MfaRepository
 	refreshTokenRepository repository.RefreshTokenRepository
@@ -29,6 +30,7 @@ type AuthService struct {
 
 func NewAuthService(
 	emailLockRepository repository.EmailLockRepository,
+	deviceRepository repository.DeviceRepository,
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
 	refreshTokenRepository repository.RefreshTokenRepository,
@@ -37,6 +39,7 @@ func NewAuthService(
 	passwordHasher hash.PasswordHasher) AuthService {
 	return AuthService{
 		emailLockRepository:    emailLockRepository,
+		deviceRepository:       deviceRepository,
 		userRepository:         userRepository,
 		mfaRepository:          mfaRepository,
 		refreshTokenRepository: refreshTokenRepository,
@@ -47,7 +50,7 @@ func NewAuthService(
 }
 
 func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (err error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, request.Email)
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signUp", request.Email)
 	if err != nil {
 		return err
 	}
@@ -113,7 +116,7 @@ func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (
 }
 
 func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, request.Email)
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "submitMfaOtp", request.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +161,16 @@ func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaO
 		return nil, err
 	}
 
+	err = s.deviceRepository.CreateDevice(ctx, model.Device{
+		Id:        uuid.New(),
+		UserId:    user.Id,
+		IpAddress: request.IpAddress,
+		UserAgent: request.UserAgent,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	accessTokenExpiry := time.Now().Add(15 * time.Minute)
 	accessToken, err := s.tokenManager.NewAccessToken(user.Id, csrfToken, accessTokenExpiry)
 	if err != nil {
@@ -191,6 +204,88 @@ func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaO
 		RefreshToken:       refreshToken,
 		RefreshTokenExpiry: refreshTokenExpiry,
 	}, nil
+}
+
+func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error) {
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signIn", request.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, apperr.Errorf(apperr.InvalidCredentialsError, "Invalid credentials")
+	}
+
+	isPasswordValid, err := s.passwordHasher.IsPasswordHashValid(user.PasswordHash, request.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isPasswordValid {
+		return nil, apperr.Errorf(apperr.InvalidCredentialsError, "Invalid credentials")
+	}
+
+	deviceIsKnown, err := s.deviceRepository.DeviceExists(user.Id, request.UserAgent, request.IpAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	var session domain.SessionResponse
+
+	if !deviceIsKnown {
+		otp := newSixDigitOtp()
+		err = s.mfaRepository.SetMfaOtpByEmail(ctx, request.Email, otp)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.emailSender.SendSignInMfaEmail(request.Email, otp)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		session.CsrfToken, err = s.tokenManager.NewCsrfToken()
+		if err != nil {
+			return nil, err
+		}
+
+		session.AccessTokenExpiry = time.Now().Add(15 * time.Minute)
+		session.AccessToken, err = s.tokenManager.NewAccessToken(user.Id, session.CsrfToken, session.AccessTokenExpiry)
+		if err != nil {
+			return nil, err
+		}
+
+		session.RefreshTokenExpiry = time.Now().Add(20 * 24 * time.Hour)
+		session.RefreshToken, err = s.tokenManager.NewRefreshToken()
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
+			UserId: user.Id,
+			Token:  session.RefreshToken,
+			Expiry: session.RefreshTokenExpiry,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = lock.Release(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !deviceIsKnown {
+		return &domain.SignInResponse{IsMfaRequired: true, Session: nil}, nil
+	} else {
+		return &domain.SignInResponse{IsMfaRequired: false, Session: &session}, nil
+	}
 }
 
 func newSixDigitOtp() string {
