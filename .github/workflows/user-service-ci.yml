@@ -78,4 +78,4 @@ jobs:
           echo "Redis is ready!"
 
       - name: Run Integration Tests
-        run: cd user-service; go test ./...
+        run: cd user-service; go test ./... -v
