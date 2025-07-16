@@ -107,7 +107,11 @@ func (a *AuthController) createSession(c *gin.Context) error {
 			setAuthCookies(c, response.Session.CsrfToken, response.Session.AccessToken, response.Session.RefreshToken)
 		}
 
-		c.JSON(http.StatusCreated, response.IntoBody())
+		if !response.IsMfaRequired {
+			c.JSON(http.StatusCreated, response.IntoBody())
+		} else {
+			c.JSON(http.StatusAccepted, response.IntoBody())
+		}
 	}
 
 	return nil
