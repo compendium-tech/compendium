@@ -21,7 +21,7 @@ type AuthService interface {
 	SignUp(ctx context.Context, request domain.SignUpRequest) error
 	SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)
 	SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error)
-	InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) error
+	InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
 }
 
@@ -236,8 +236,8 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 }
 
-func (s *authServiceImpl) InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) (finalErr error) {
-	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "initiatePasswordReset", request.Email)
+func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "initPasswordReset", request.Email)
 	if err != nil {
 		return err
 	}

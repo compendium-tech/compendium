@@ -95,16 +95,16 @@ func (_c *MockAuthService_FinishPasswordReset_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
-// InitiatePasswordReset provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) error {
+// InitPasswordReset provides a mock function for the type MockAuthService
+func (_mock *MockAuthService) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
-		panic("no return value specified for InitiatePasswordReset")
+		panic("no return value specified for InitPasswordReset")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.InitiatePasswordResetRequest) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.InitPasswordResetRequest) error); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
 		r0 = ret.Error(0)
@@ -112,27 +112,27 @@ func (_mock *MockAuthService) InitiatePasswordReset(ctx context.Context, request
 	return r0
 }
 
-// MockAuthService_InitiatePasswordReset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InitiatePasswordReset'
-type MockAuthService_InitiatePasswordReset_Call struct {
+// MockAuthService_InitPasswordReset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InitPasswordReset'
+type MockAuthService_InitPasswordReset_Call struct {
 	*mock.Call
 }
 
-// InitiatePasswordReset is a helper method to define mock.On call
+// InitPasswordReset is a helper method to define mock.On call
 //   - ctx context.Context
-//   - request domain.InitiatePasswordResetRequest
-func (_e *MockAuthService_Expecter) InitiatePasswordReset(ctx interface{}, request interface{}) *MockAuthService_InitiatePasswordReset_Call {
-	return &MockAuthService_InitiatePasswordReset_Call{Call: _e.mock.On("InitiatePasswordReset", ctx, request)}
+//   - request domain.InitPasswordResetRequest
+func (_e *MockAuthService_Expecter) InitPasswordReset(ctx interface{}, request interface{}) *MockAuthService_InitPasswordReset_Call {
+	return &MockAuthService_InitPasswordReset_Call{Call: _e.mock.On("InitPasswordReset", ctx, request)}
 }
 
-func (_c *MockAuthService_InitiatePasswordReset_Call) Run(run func(ctx context.Context, request domain.InitiatePasswordResetRequest)) *MockAuthService_InitiatePasswordReset_Call {
+func (_c *MockAuthService_InitPasswordReset_Call) Run(run func(ctx context.Context, request domain.InitPasswordResetRequest)) *MockAuthService_InitPasswordReset_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 domain.InitiatePasswordResetRequest
+		var arg1 domain.InitPasswordResetRequest
 		if args[1] != nil {
-			arg1 = args[1].(domain.InitiatePasswordResetRequest)
+			arg1 = args[1].(domain.InitPasswordResetRequest)
 		}
 		run(
 			arg0,
@@ -142,12 +142,12 @@ func (_c *MockAuthService_InitiatePasswordReset_Call) Run(run func(ctx context.C
 	return _c
 }
 
-func (_c *MockAuthService_InitiatePasswordReset_Call) Return(err error) *MockAuthService_InitiatePasswordReset_Call {
+func (_c *MockAuthService_InitPasswordReset_Call) Return(err error) *MockAuthService_InitPasswordReset_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockAuthService_InitiatePasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.InitiatePasswordResetRequest) error) *MockAuthService_InitiatePasswordReset_Call {
+func (_c *MockAuthService_InitPasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.InitPasswordResetRequest) error) *MockAuthService_InitPasswordReset_Call {
 	_c.Call.Return(run)
 	return _c
 }

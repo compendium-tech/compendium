@@ -91,7 +91,7 @@ type RefreshTokenResponse struct {
 	RefreshTokenExpiry int64  `json:"refreshTokenExpiry"`
 }
 
-type InitiatePasswordResetRequest struct {
+type InitPasswordResetRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }
 

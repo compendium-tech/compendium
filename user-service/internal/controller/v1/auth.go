@@ -125,7 +125,7 @@ func (a *AuthController) resetPassword(c *gin.Context) error {
 	}
 
 	if flow == "init" {
-		var request domain.InitiatePasswordResetRequest
+		var request domain.InitPasswordResetRequest
 
 		if err := c.BindJSON(&request); err != nil {
 			return err
@@ -135,7 +135,7 @@ func (a *AuthController) resetPassword(c *gin.Context) error {
 			return err
 		}
 
-		err := a.authService.InitiatePasswordReset(c.Request.Context(), request)
+		err := a.authService.InitPasswordReset(c.Request.Context(), request)
 		if err != nil {
 			return err
 		}

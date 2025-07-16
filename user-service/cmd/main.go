@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	validate.InitializeValidator()
+	validate.InitValidator()
 
 	ctx := context.Background()
 	err := godotenv.Load(".env")

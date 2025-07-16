@@ -12,7 +12,7 @@ import (
 
 var Validate *validator.Validate
 
-func InitializeValidator() {
+func InitValidator() {
 	Validate = validator.New()
 
 	Validate.RegisterValidation("password", ValidatePassword)

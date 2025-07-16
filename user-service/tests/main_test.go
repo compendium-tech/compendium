@@ -43,7 +43,7 @@ func TestAPISuite(t *testing.T) {
 }
 
 func (s *APITestSuite) SetupTest() {
-	s.initializeDeps()
+	s.initDeps()
 
 	if err := pg.RunUpPgMigrations(s.ctx, s.PgDb, s.getPgMigrationsDir()); err != nil {
 		s.FailNow("Failed to run up postgres migrations", err)
@@ -75,8 +75,8 @@ func (s *APITestSuite) TearDownTest() {
 	}
 }
 
-func (s *APITestSuite) initializeDeps() {
-	validate.InitializeValidator()
+func (s *APITestSuite) initDeps() {
+	validate.InitValidator()
 
 	ctx := context.Background()
 	err := godotenv.Load(".env")
