@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/seacite-tech/compendium/user-service/internal/model"
 )
 
 type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error
-	UpdatePasswordHashAndCreatedAtByEmail(ctx context.Context, email string, passwordHash []byte, createdAt time.Time) error
+	UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error
+	UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error
 	CreateUser(ctx context.Context, user model.User) error
 }

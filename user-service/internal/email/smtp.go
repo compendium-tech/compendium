@@ -103,3 +103,18 @@ func (s *SmtpEmailSender) SendSignInMfaEmail(to, otp string) error {
 
 	return s.sendEmail(to, "Verification code", body)
 }
+
+type passwordResetEmailData struct {
+	VerificationCode string
+}
+
+func (s *SmtpEmailSender) SendPasswordResetMfaEmail(to string, otp string) error {
+	data := passwordResetEmailData{VerificationCode: otp}
+	body, err := s.executeTemplate("password_reset.html", data)
+
+	if err != nil {
+		return err
+	}
+
+	return s.sendEmail(to, "Verification code", body)
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/model"
@@ -73,13 +74,13 @@ func (r *PgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	return nil
 }
 
-func (r *PgUserRepository) UpdatePasswordHashAndCreatedAtByEmail(ctx context.Context, email string, passwordHash []byte, createdAt time.Time) error {
+func (r *PgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error {
 	query := `
 		UPDATE users
-		SET password_hash = $1, created_at = $2
-		WHERE email = $3
+		SET password_hash = $1
+		WHERE email = $2
 	`
-	res, err := r.db.ExecContext(ctx, query, passwordHash, createdAt, email)
+	res, err := r.db.ExecContext(ctx, query, passwordHash, id)
 	if err != nil {
 		return tracerr.Wrap(err)
 	}
@@ -90,7 +91,30 @@ func (r *PgUserRepository) UpdatePasswordHashAndCreatedAtByEmail(ctx context.Con
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no user found with email %s to update PasswordHash and CreatedAt", email)
+		return tracerr.Errorf("no user %s found to update PasswordHash and CreatedAt", id)
+	}
+
+	return nil
+}
+
+func (r *PgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error {
+	query := `
+		UPDATE users
+		SET password_hash = $1, created_at = $2
+		WHERE id = $3
+	`
+	res, err := r.db.ExecContext(ctx, query, passwordHash, createdAt, id)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if rowsAffected == 0 {
+		return tracerr.Errorf("no user %s found to update PasswordHash and CreatedAt", id)
 	}
 
 	return nil

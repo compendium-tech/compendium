@@ -35,6 +35,63 @@ func (_m *MockEmailSender) EXPECT() *MockEmailSender_Expecter {
 	return &MockEmailSender_Expecter{mock: &_m.Mock}
 }
 
+// SendPasswordResetMfaEmail provides a mock function for the type MockEmailSender
+func (_mock *MockEmailSender) SendPasswordResetMfaEmail(to string, otp string) error {
+	ret := _mock.Called(to, otp)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendPasswordResetMfaEmail")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = returnFunc(to, otp)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockEmailSender_SendPasswordResetMfaEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendPasswordResetMfaEmail'
+type MockEmailSender_SendPasswordResetMfaEmail_Call struct {
+	*mock.Call
+}
+
+// SendPasswordResetMfaEmail is a helper method to define mock.On call
+//   - to string
+//   - otp string
+func (_e *MockEmailSender_Expecter) SendPasswordResetMfaEmail(to interface{}, otp interface{}) *MockEmailSender_SendPasswordResetMfaEmail_Call {
+	return &MockEmailSender_SendPasswordResetMfaEmail_Call{Call: _e.mock.On("SendPasswordResetMfaEmail", to, otp)}
+}
+
+func (_c *MockEmailSender_SendPasswordResetMfaEmail_Call) Run(run func(to string, otp string)) *MockEmailSender_SendPasswordResetMfaEmail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockEmailSender_SendPasswordResetMfaEmail_Call) Return(err error) *MockEmailSender_SendPasswordResetMfaEmail_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockEmailSender_SendPasswordResetMfaEmail_Call) RunAndReturn(run func(to string, otp string) error) *MockEmailSender_SendPasswordResetMfaEmail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SendSignInMfaEmail provides a mock function for the type MockEmailSender
 func (_mock *MockEmailSender) SendSignInMfaEmail(to string, otp string) error {
 	ret := _mock.Called(to, otp)

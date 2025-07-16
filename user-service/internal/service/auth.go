@@ -84,7 +84,7 @@ func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (
 	}
 
 	if user != nil && !user.IsEmailVerified {
-		err := s.userRepository.UpdatePasswordHashAndCreatedAtByEmail(ctx, request.Email, passwordHash, time.Now().UTC())
+		err := s.userRepository.UpdatePasswordHashAndCreatedAt(ctx, user.Id, passwordHash, time.Now().UTC())
 
 		if err != nil {
 			return err
@@ -226,6 +226,79 @@ func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (
 	} else {
 		return &domain.SignInResponse{IsMfaRequired: false, Session: session}, nil
 	}
+}
+
+func (s AuthService) InitiatePasswordReset(ctx context.Context, request domain.InitiatePasswordResetRequest) (finalErr error) {
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "initiatePasswordReset", request.Email)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		lock.ReleaseAndHandleErr(ctx, &finalErr)
+	}()
+
+	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	if err != nil {
+		return err
+	}
+
+	if user == nil || !user.IsEmailVerified {
+		return apperr.Errorf(apperr.UserNotFoundError, "User with given email address doesn't exist")
+	}
+
+	otp := newSixDigitOtp()
+	err = s.mfaRepository.SetMfaOtpByEmail(ctx, request.Email, otp)
+	if err != nil {
+		return err
+	}
+
+	return s.emailSender.SendSignInMfaEmail(request.Email, otp)
+}
+
+func (s AuthService) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
+	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "finishPasswordReset", request.Email)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		lock.ReleaseAndHandleErr(ctx, &finalErr)
+	}()
+
+	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	if err != nil {
+		return err
+	}
+
+	if user == nil || !user.IsEmailVerified {
+		return apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+	}
+
+	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
+	if err != nil {
+		return err
+	}
+
+	if otp == nil {
+		return apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+	}
+
+	if *otp != request.Otp {
+		return apperr.Errorf(apperr.InvalidMfaOtpError, "Invalid 2FA otp")
+	}
+
+	err = s.mfaRepository.RemoveMfaOtpByEmail(ctx, request.Email)
+	if err != nil {
+		return err
+	}
+
+	passwordHash, err := s.passwordHasher.HashPassword(request.Password)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepository.UpdatePasswordHash(ctx, user.Id, passwordHash)
 }
 
 func (s AuthService) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {

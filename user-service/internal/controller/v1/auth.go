@@ -24,6 +24,7 @@ func NewAuthController(authService service.AuthService) AuthController {
 func (a AuthController) MakeRoutes(e *gin.Engine) {
 	e.POST("/api/v1/users", apperr.HandleAppErr(a.signUp))
 	e.POST("/api/v1/sessions", apperr.HandleAppErr(a.createSession))
+	e.PUT("/api/v1/password", apperr.HandleAppErr(a.resetPassword))
 }
 
 func (a *AuthController) signUp(c *gin.Context) error {
@@ -112,6 +113,51 @@ func (a *AuthController) createSession(c *gin.Context) error {
 		} else {
 			c.JSON(http.StatusAccepted, response.IntoBody())
 		}
+	}
+
+	return nil
+}
+
+func (a *AuthController) resetPassword(c *gin.Context) error {
+	flow := c.Query("flow")
+	if flow != "init" && flow != "finish" {
+		return apperr.Errorf(apperr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
+	}
+
+	if flow == "init" {
+		var request domain.InitiatePasswordResetRequest
+
+		if err := c.BindJSON(&request); err != nil {
+			return err
+		}
+
+		if err := validate.Validate.Struct(request); err != nil {
+			return err
+		}
+
+		err := a.authService.InitiatePasswordReset(c.Request.Context(), request)
+		if err != nil {
+			return err
+		}
+
+		c.Status(http.StatusAccepted)
+	} else {
+		var request domain.FinishPasswordResetRequest
+
+		if err := c.BindJSON(&request); err != nil {
+			return err
+		}
+
+		if err := validate.Validate.Struct(request); err != nil {
+			return err
+		}
+
+		err := a.authService.FinishPasswordReset(c.Request.Context(), request)
+		if err != nil {
+			return err
+		}
+
+		c.Status(http.StatusOK)
 	}
 
 	return nil

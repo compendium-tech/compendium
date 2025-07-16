@@ -89,3 +89,13 @@ type RefreshTokenResponse struct {
 	AccessTokenExpiry  int64  `json:"accessTokenExpiry"`
 	RefreshTokenExpiry int64  `json:"refreshTokenExpiry"`
 }
+
+type InitiatePasswordResetRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type FinishPasswordResetRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Otp      string `json:"otp" validate:"required,len=6,number"`
+	Password string `json:"password" validate:"required,password,min=6,max=100"`
+}
