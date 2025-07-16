@@ -18,13 +18,16 @@
         -   [Error Tracing](#error-tracing)
         -   [Error Handling](#error-handling)
     -   [Authentication Flow Overview](#authentication-flow-overview)
-        -   [1. Sign-Up](#1-sign-up)
-            -   [1.1 Initial User Registration](#11-initial-user-registration)
-            -   [1.2 Multi-Factor Authentication (MFA) Verification for Sign-Up](#12-multi-factor-authentication-mfa-verification-for-sign-up)
-        -   [2. Sign-In](#2-sign-in)
-            -   [2.1 Sign-In from a Known Device (Password Authentication)](#21-sign-in-from-a-known-device-password-authentication)
-            -   [2.2 Sign-In from a New Device (MFA Required)](#22-sign-in-from-a-new-device-mfa-required)
-        -   [3. Token Management and Security Note](#3-token-management-and-security-note)
+        -   [Sign-Up](#sign-up)
+            -   [Initiating Sign-Up](#initiating-sign-up)
+            -   [Multi-Factor Authentication (MFA) for Sign-Up](#multi-factor-authentication-mfa-for-sign-up)
+        -   [Sign-In](#sign-in)
+            -   [Sign-In from a Known Device (Password Authentication)](#sign-in-from-a-known-device-password-authentication)
+            -   [Sign-In from a New Device (MFA Required)](#sign-in-from-a-new-device-mfa-required)
+        -   [Password Resets](#password-resets)
+            -   [Initiating Password Resets](#initiating-password-resets)
+            -   [MFA for Password Resets](#mfa-for-password-resets)
+        -   [Token Management and Security Note](#token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
 
 -----
@@ -207,10 +210,10 @@ Conversely, business logic-related errors (such as "not found" scenarios) should
 ## Authentication Flow Overview
 This part of the document outlines a typical authentication flow, covering user registration (sign-up) and user login (sign-in) scenarios, including considerations for multi-factor authentication (MFA) and token management.
 
-### 1. Sign-Up
+### Sign-Up
 The sign-up process involves two primary steps: initial user registration and subsequent multi-factor authentication (MFA) verification.
 
-#### 1.1 Initial User Registration
+#### Initiating Sign-Up
 When a new user wishes to create an account, they send a POST request to the `/api/v1/users` endpoint. This request typically includes their chosen name, email address, and a password.
 
 ```http
@@ -225,7 +228,7 @@ POST /api/v1/users
 
 Upon successful receipt of this information, the server creates the user's account. At this stage, it's common for the server to initiate an MFA process, such as sending a One-Time Password (OTP) to the provided email address or phone number.
 
-#### 1.2 Multi-Factor Authentication (MFA) Verification for Sign-Up
+#### Multi-Factor Authentication (MFA) for Sign-Up
 After the initial registration, the user needs to verify their identity using the OTP they received. This is done by sending a POST request to the `/api/v1/sessions` endpoint with the `flow` parameter set to `mfa`. The request body includes their email and the otp received.
 
 ```http
@@ -248,10 +251,10 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 }
 ```
 
-### 2. Sign-In
+### Sign-In
 The sign-in process can vary depending on whether the user is logging in from the same device or a different device, particularly concerning MFA requirements.
 
-#### 2.1 Sign-In from a Known Device (Password Authentication)
+#### Sign-In from a Known Device (Password Authentication)
 When a user attempts to sign in from a device they have previously used, the system might allow a password authentication flow without immediate MFA if the device is recognized or trusted. The user sends a POST request to `/api/v1/sessions` with `flow` set to `password`, providing their email and password.
 
 ```http
@@ -275,7 +278,7 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 }
 ```
 
-#### 2.2 Sign-In from a New Device (MFA Required)
+#### Sign-In from a New Device (MFA Required)
 If a user tries to sign in from a new or unrecognized device, the system typically enforces MFA for added security. The initial POST request to `/api/v1/sessions` with `flow` set to `password` will still be made with the email and password.
 
 ```http
@@ -317,7 +320,42 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 }
 ```
 
-### 3. Token Management and Security Note
+### Password Resets
+The password reset process typically involves two main steps: initiating the reset request and then confirming the new password using a verification mechanism like an OTP.
+
+#### Initiating Password Resets
+When a user forgets their password, they can initiate a password reset by sending a PUT request to the `/api/v1/password` endpoint with `flow` set to `init`. The request body usually contains the user's email address. This informs the server to begin the reset process and, for security, send an OTP to the user's registered email or phone number.
+
+```http
+PUT /api/v1/password?flow=init
+
+{
+  "email": "adisalimgereev@gmail.com"
+}
+```
+
+Upon successful receipt of this request, the server confirms that a password reset has been initiated and that an OTP has been sent. No tokens are issued at this stage.
+
+```http
+202 Accepted
+```
+
+#### MFA for Password Resets
+After receiving the OTP, the user can then set a new password. This is done by sending a PUT request to the `/api/v1/password` endpoint with `flow` set to `finish`. The request body must include their email, the received OTP, and their new chosen password.
+
+```http
+PUT /api/v1/password?flow=finish
+
+{
+  "email": "adisalimgereev@gmail.com",
+  "otp": "67890",
+  "newPassword": "NewStrongPassword!1"
+}
+```
+
+If the OTP is valid and the new password meets the system's security requirements, the server updates the user's password. For convenience and immediate access, the server will then typically issue new session tokens.
+
+### Token Management and Security Note
 It's important to note the roles of the tokens and cookies in this flow:
 
 - `accessToken` and `refreshToken`: These are critical for authentication and session management. They are stored as HTTP-only cookies, which means they cannot be accessed by client-side JavaScript. This significantly reduces the risk of Cross-Site Scripting (XSS) attacks stealing these tokens.
