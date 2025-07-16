@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -53,8 +52,7 @@ func (r *PostgresDeviceRepository) CreateDevice(ctx context.Context, device mode
 		device.Id, device.UserId, device.UserAgent, device.IpAddress, device.CreatedAt,
 	)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // 23505 is unique_violation
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
 			// Device already exists, fine!
 			return nil
 		}

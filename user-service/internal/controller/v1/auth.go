@@ -50,7 +50,7 @@ func (a *AuthController) signUp(c *gin.Context) error {
 
 func (a *AuthController) createSession(c *gin.Context) error {
 	flow := c.Query("flow")
-	if flow != "direct" && flow != "mfa" {
+	if flow != "password" && flow != "mfa" {
 		return apperr.Errorf(apperr.RequestValidationError, "Flow parameter must be equal to `mfa` or `password`.")
 	}
 

@@ -15,15 +15,15 @@ import (
 	"github.com/seacite-tech/compendium/user-service/internal/service"
 	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Dependencies struct {
-	Config       *config.AppConfig
-	PgDb         *sql.DB
-	RedisClient  *redis.Client
-	TokenManager auth.TokenManager
-	EmailSender  email.EmailSender
+	Config         *config.AppConfig
+	PgDb           *sql.DB
+	RedisClient    *redis.Client
+	TokenManager   auth.TokenManager
+	EmailSender    email.EmailSender
+	PasswordHasher hash.PasswordHasher
 }
 
 func NewApp(deps Dependencies) *gin.Engine {
@@ -38,12 +38,11 @@ func NewApp(deps Dependencies) *gin.Engine {
 	userRepository := repository.NewPgUserRepository(deps.PgDb)
 	mfaRepository := repository.NewRedisMfaRepository(deps.RedisClient)
 	refreshTokenRepository := repository.NewRedisRefreshTokenRepository(deps.RedisClient)
-	passwordHasher := hash.NewBcryptPasswordHasher(bcrypt.DefaultCost)
 
 	authService := service.NewAuthService(
 		emailLockRepository, deviceRepository,
 		userRepository, mfaRepository, refreshTokenRepository,
-		deps.EmailSender, deps.TokenManager, passwordHasher)
+		deps.EmailSender, deps.TokenManager, deps.PasswordHasher)
 
 	r := gin.Default()
 	r.Use(middleware.RequestIdMiddleware{AllowToSet: false}.Handle())

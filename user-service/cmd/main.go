@@ -10,8 +10,10 @@ import (
 	"github.com/seacite-tech/compendium/user-service/internal/app"
 	"github.com/seacite-tech/compendium/user-service/internal/config"
 	"github.com/seacite-tech/compendium/user-service/internal/email"
+	"github.com/seacite-tech/compendium/user-service/internal/hash"
 	"github.com/seacite-tech/compendium/user-service/internal/validate"
 	"github.com/seacite-tech/compendium/user-service/pkg/auth"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -49,10 +51,11 @@ func main() {
 	}
 
 	app.NewApp(app.Dependencies{
-		PgDb:         pgDB,
-		RedisClient:  redisClient,
-		Config:       cfg,
-		TokenManager: tokenManager,
-		EmailSender:  smtpEmailSender,
+		PgDb:           pgDB,
+		RedisClient:    redisClient,
+		Config:         cfg,
+		TokenManager:   tokenManager,
+		EmailSender:    smtpEmailSender,
+		PasswordHasher: hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}).Run()
 }

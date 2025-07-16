@@ -14,9 +14,11 @@ import (
 	"github.com/seacite-tech/compendium/user-service/internal/app"
 	"github.com/seacite-tech/compendium/user-service/internal/config"
 	"github.com/seacite-tech/compendium/user-service/internal/email"
+	"github.com/seacite-tech/compendium/user-service/internal/hash"
 	"github.com/seacite-tech/compendium/user-service/internal/validate"
 	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type APITestSuite struct {
@@ -105,11 +107,12 @@ func (s *APITestSuite) initializeDeps() {
 	s.ctx = ctx
 	s.mockEmailSender = new(email.MockEmailSender)
 	s.Dependencies = app.Dependencies{
-		PgDb:         pgDB,
-		RedisClient:  redisClient,
-		Config:       cfg,
-		TokenManager: tokenManager,
-		EmailSender:  s.mockEmailSender,
+		PgDb:           pgDB,
+		RedisClient:    redisClient,
+		Config:         cfg,
+		TokenManager:   tokenManager,
+		EmailSender:    s.mockEmailSender,
+		PasswordHasher: hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 	s.app = app.NewApp(s.Dependencies)
 }

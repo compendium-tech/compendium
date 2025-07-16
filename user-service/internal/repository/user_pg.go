@@ -98,20 +98,20 @@ func (r *PgUserRepository) UpdatePasswordHashAndCreatedAtByEmail(ctx context.Con
 
 func (r *PgUserRepository) CreateUser(ctx context.Context, user model.User) error {
 	query := `
-		INSERT INTO users (name, email, is_email_verified, is_admin, password_hash, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id
+		INSERT INTO users (id, name, email, is_email_verified, is_admin, password_hash, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
-	err := r.db.QueryRowContext(
+	_, err := r.db.ExecContext(
 		ctx,
 		query,
+		user.Id,
 		user.Name,
 		user.Email,
 		user.IsEmailVerified,
 		user.IsAdmin,
 		user.PasswordHash,
 		user.CreatedAt,
-	).Scan(&user.Id)
+	)
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
