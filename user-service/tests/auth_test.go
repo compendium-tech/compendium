@@ -267,3 +267,62 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.Nil(code)
 }
+
+func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSession() {
+	var capturedMfaCode string
+
+	r := s.Require()
+
+	userId, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
+	ipAddress, userAgent := "1.0.0.0", "Test"
+
+	passwordHash, err := s.Dependencies.PasswordHasher.HashPassword(password)
+	r.NoError(err, "Failed to obtain password hash")
+
+	err = repository.NewPgUserRepository(s.PgDb).CreateUser(s.ctx, model.User{
+		Id:              userId,
+		Name:            "John",
+		Email:           email,
+		IsEmailVerified: true,
+		IsAdmin:         false,
+		PasswordHash:    passwordHash,
+		CreatedAt:       time.Now().UTC(),
+	})
+	r.NoError(err, "Failed to create new user")
+
+	s.mockEmailSender.On("SendSignInMfaEmail", email, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		capturedMfaCode = args.Get(1).(string)
+	})
+
+	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
+
+	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
+	req.Header.Set("Content-type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("X-Real-Ip", ipAddress)
+
+	resp := httptest.NewRecorder()
+	s.app.ServeHTTP(resp, req)
+
+	respBody := resp.Result()
+	var responseBody map[string]interface{}
+	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
+	r.NoError(err, "Failed to decode response body")
+
+	isMfaRequired, ok := responseBody["isMfaRequired"]
+	r.True(ok, "Response body should contain 'isMfaRequired'")
+	r.Equal(isMfaRequired, true)
+
+	_, ok = responseBody["accessTokenExpiry"]
+	r.False(ok, "Response body should not contain 'accessTokenExpiry'")
+
+	_, ok = responseBody["refreshTokenExpiry"]
+	r.False(ok, "Response body should not contain 'refreshTokenExpiry'")
+
+	r.Equal(http.StatusAccepted, resp.Result().StatusCode)
+
+	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	r.NoError(err, "Failed to fetch MFA OTP")
+	r.NotNil(code)
+	r.Equal(*code, capturedMfaCode)
+}
