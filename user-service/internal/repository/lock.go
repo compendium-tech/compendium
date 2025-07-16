@@ -9,4 +9,5 @@ type EmailLockRepository interface {
 
 type EmailLock interface {
 	Release(ctx context.Context) error
+	ReleaseAndHandleErr(ctx context.Context, err *error)
 }

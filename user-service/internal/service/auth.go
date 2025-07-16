@@ -49,11 +49,15 @@ func NewAuthService(
 	}
 }
 
-func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (err error) {
+func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signUp", request.Email)
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		lock.ReleaseAndHandleErr(ctx, &finalErr)
+	}()
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -107,19 +111,18 @@ func (s AuthService) SignUp(ctx context.Context, request domain.SignUpRequest) (
 		return err
 	}
 
-	err = s.emailSender.SendSignUpMfaEmail(request.Email, otp)
-	if err != nil {
-		return err
-	}
-
-	return lock.Release(ctx)
+	return s.emailSender.SendSignUpMfaEmail(request.Email, otp)
 }
 
-func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error) {
+func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "submitMfaOtp", request.Email)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		lock.ReleaseAndHandleErr(ctx, &finalErr)
+	}()
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -156,61 +159,23 @@ func (s AuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaO
 		return nil, err
 	}
 
-	csrfToken, err := s.tokenManager.NewCsrfToken()
+	session, err := s.createSession(ctx, user.Id, request.UserAgent, request.IpAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.deviceRepository.CreateDevice(ctx, model.Device{
-		Id:        uuid.New(),
-		UserId:    user.Id,
-		IpAddress: request.IpAddress,
-		UserAgent: request.UserAgent,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	accessTokenExpiry := time.Now().Add(15 * time.Minute)
-	accessToken, err := s.tokenManager.NewAccessToken(user.Id, csrfToken, accessTokenExpiry)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshTokenExpiry := time.Now().Add(20 * 24 * time.Hour)
-	refreshToken, err := s.tokenManager.NewRefreshToken()
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
-		UserId: user.Id,
-		Token:  refreshToken,
-		Expiry: refreshTokenExpiry,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	err = lock.Release(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &domain.SessionResponse{
-		CsrfToken:          csrfToken,
-		AccessToken:        accessToken,
-		AccessTokenExpiry:  accessTokenExpiry,
-		RefreshToken:       refreshToken,
-		RefreshTokenExpiry: refreshTokenExpiry,
-	}, nil
+	return session, nil
 }
 
-func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error) {
+func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
 	lock, err := s.emailLockRepository.ObtainEmailLock(ctx, "signIn", request.Email)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		lock.ReleaseAndHandleErr(ctx, &finalErr)
+	}()
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -235,7 +200,7 @@ func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (
 		return nil, err
 	}
 
-	var session domain.SessionResponse
+	session := (*domain.SessionResponse)(nil)
 
 	if !deviceIsKnown {
 		otp := newSixDigitOtp()
@@ -249,43 +214,64 @@ func (s AuthService) SignIn(ctx context.Context, request domain.SignInRequest) (
 			return nil, err
 		}
 	} else {
-		session.CsrfToken, err = s.tokenManager.NewCsrfToken()
+		session, err = s.createSession(ctx, user.Id, request.UserAgent, request.IpAddress)
+
 		if err != nil {
 			return nil, err
 		}
-
-		session.AccessTokenExpiry = time.Now().Add(15 * time.Minute)
-		session.AccessToken, err = s.tokenManager.NewAccessToken(user.Id, session.CsrfToken, session.AccessTokenExpiry)
-		if err != nil {
-			return nil, err
-		}
-
-		session.RefreshTokenExpiry = time.Now().Add(20 * 24 * time.Hour)
-		session.RefreshToken, err = s.tokenManager.NewRefreshToken()
-		if err != nil {
-			return nil, err
-		}
-
-		err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
-			UserId: user.Id,
-			Token:  session.RefreshToken,
-			Expiry: session.RefreshTokenExpiry,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = lock.Release(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	if !deviceIsKnown {
 		return &domain.SignInResponse{IsMfaRequired: true, Session: nil}, nil
 	} else {
-		return &domain.SignInResponse{IsMfaRequired: false, Session: &session}, nil
+		return &domain.SignInResponse{IsMfaRequired: false, Session: session}, nil
 	}
+}
+
+func (s AuthService) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
+	csrfToken, err := s.tokenManager.NewCsrfToken()
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.deviceRepository.CreateDevice(ctx, model.Device{
+		Id:        uuid.New(),
+		UserId:    userId,
+		UserAgent: userAgent,
+		IpAddress: ipAddress,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	accessTokenExpiry := time.Now().Add(15 * time.Minute)
+	accessToken, err := s.tokenManager.NewAccessToken(userId, csrfToken, accessTokenExpiry)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenExpiry := time.Now().Add(20 * 24 * time.Hour)
+	refreshToken, err := s.tokenManager.NewRefreshToken()
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
+		UserId: userId,
+		Token:  refreshToken,
+		Expiry: refreshTokenExpiry,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.SessionResponse{
+		CsrfToken:          csrfToken,
+		AccessToken:        accessToken,
+		AccessTokenExpiry:  accessTokenExpiry,
+		RefreshToken:       refreshToken,
+		RefreshTokenExpiry: refreshTokenExpiry,
+	}, nil
 }
 
 func newSixDigitOtp() string {
