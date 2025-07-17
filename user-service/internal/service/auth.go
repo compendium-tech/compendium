@@ -372,7 +372,7 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
 	log.L(ctx).Infof("Refreshing session %s", request.RefreshToken)
 
-	userId, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, request.RefreshToken)
+	userId, isReused, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, request.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
@@ -383,12 +383,23 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
+	if isReused {
+		log.L(ctx).Warnf("Refresh Token Reuse Detected! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", userId, request.RefreshToken)
+
+		if err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId); err != nil {
+			log.L(ctx).Errorf("Failed to remove all refresh tokens for user %s after reuse detection: %v", userId, err)
+			return nil, err
+		}
+
+		return nil, appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
+	}
+
 	session, err := s.createSession(ctx, userId, request.UserAgent, request.IpAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Infof("Session %s refreshed successfully (%s)", request.RefreshToken, session.RefreshToken)
+	log.L(ctx).Infof("Session %s refreshed successfully (%s) for user %s", request.RefreshToken, session.RefreshToken, userId)
 
 	return session, nil
 }
@@ -396,7 +407,7 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 func (s *authServiceImpl) Logout(ctx context.Context, refreshToken string) error {
 	log.L(ctx).Infof("Invalidating session %s", refreshToken)
 
-	userId, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, refreshToken)
+	userId, isReused, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, refreshToken)
 	if err != nil {
 		return err
 	}
@@ -405,6 +416,17 @@ func (s *authServiceImpl) Logout(ctx context.Context, refreshToken string) error
 		log.L(ctx).Errorf("Invalid refresh token (%s) was used", refreshToken)
 
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	if isReused {
+		log.L(ctx).Warnf("Refresh Token Reuse Detected! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", userId, refreshToken)
+
+		if err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId); err != nil {
+			log.L(ctx).Errorf("Failed to remove all refresh tokens for user %s after reuse detection: %v", userId, err)
+			return err
+		}
+
+		return appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
 	}
 
 	log.L(ctx).Infof("Session %s was invalidated successfully", refreshToken)
