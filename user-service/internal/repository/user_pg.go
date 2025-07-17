@@ -104,6 +104,35 @@ func (r *PgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	return nil
 }
 
+func (r *PgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
+	query := `
+		UPDATE users
+		SET name = $1
+		WHERE id = $2
+		RETURNING id, name, email, is_email_verified, is_admin, password_hash, created_at
+	`
+	user := &model.User{}
+	row := r.db.QueryRowContext(ctx, query, name, id)
+
+	err := row.Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.IsEmailVerified,
+		&user.IsAdmin,
+		&user.PasswordHash,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, tracerr.Errorf("no user found with ID %s to update name", id)
+		}
+
+		return nil, tracerr.Wrap(err)
+	}
+	return user, nil
+}
+
 func (r *PgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error {
 	query := `
 		UPDATE users

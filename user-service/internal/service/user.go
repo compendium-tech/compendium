@@ -12,6 +12,7 @@ import (
 
 type UserService interface {
 	GetAccount(ctx context.Context) (*domain.AccountResponse, error)
+	UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
 }
 
 type userServiceImpl struct {
@@ -45,6 +46,30 @@ func (u *userServiceImpl) GetAccount(ctx context.Context) (*domain.AccountRespon
 	}
 
 	log.L(ctx).Info("Account details fetched successfully")
+
+	return &domain.AccountResponse{
+		Id:        user.Id,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
+}
+
+func (u *userServiceImpl) UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
+	log.L(ctx).Info("Updating authenticated user account details")
+
+	userId, err := auth.GetUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Info("Updating authenticated user account details in database")
+	user, err := u.userRepository.UpdateName(ctx, userId, request.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Info("Account details updated successfully")
 
 	return &domain.AccountResponse{
 		Id:        user.Id,

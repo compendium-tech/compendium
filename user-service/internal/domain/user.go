@@ -12,3 +12,7 @@ type AccountResponse struct {
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"createdAt"`
 }
+
+type UpdateAccount struct {
+	Name string `json:"name" validate:"required,min=1,max=100"`
+}
