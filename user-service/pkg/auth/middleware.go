@@ -22,7 +22,7 @@ type AuthMiddleware struct {
 
 func (a AuthMiddleware) Handle(c *gin.Context) {
 	userId, isCsrfTokenValid := a.parseAuthHeader(c)
-	if userId == (uuid.UUID{}) {
+	if userId == uuid.Nil {
 		return
 	}
 
@@ -60,12 +60,12 @@ func requireCsrf(c *gin.Context) error {
 func (a AuthMiddleware) parseAuthHeader(c *gin.Context) (uuid.UUID, bool) {
 	accessToken, err := c.Cookie("accessToken")
 	if err != nil {
-		return uuid.UUID{}, false
+		return uuid.Nil, false
 	}
 
 	claims, err := a.TokenManager.ParseAccessToken(accessToken)
 	if err != nil {
-		return uuid.UUID{}, false
+		return uuid.Nil, false
 	}
 
 	csrfToken := c.GetHeader(csrfTokenHeaderName)

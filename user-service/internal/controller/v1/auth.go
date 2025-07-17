@@ -9,7 +9,6 @@ import (
 	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/service"
 	"github.com/seacite-tech/compendium/user-service/internal/validate"
-	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
 type AuthController struct {
@@ -51,136 +50,152 @@ func (a *AuthController) signUp(c *gin.Context) error {
 }
 
 func (a *AuthController) createSession(c *gin.Context) error {
-	flow := c.Query("flow")
-	if flow != "password" && flow != "mfa" && flow != "refresh" {
+	switch c.Query("flow") {
+	case "mfa":
+		return a.submitMfaOtp(c)
+	case "password":
+		return a.signIn(c)
+	case "refresh":
+		return a.refresh(c)
+	default:
 		return appErr.Errorf(appErr.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
 	}
+}
 
-	if flow == "mfa" {
-		var body domain.SubmitMfaOtpRequestBody
+func (a *AuthController) submitMfaOtp(c *gin.Context) error {
+	var body domain.SubmitMfaOtpRequestBody
 
-		if err := c.BindJSON(&body); err != nil {
-			return err
-		}
+	if err := c.BindJSON(&body); err != nil {
+		return err
+	}
 
-		if err := validate.Validate.Struct(body); err != nil {
-			return err
-		}
+	if err := validate.Validate.Struct(body); err != nil {
+		return err
+	}
 
-		request := domain.SubmitMfaOtpRequest{
-			Email:     body.Email,
-			Otp:       body.Otp,
-			IpAddress: httphelp.GetClientIP(c),
-			UserAgent: httphelp.GetUserAgent(c),
-		}
+	request := domain.SubmitMfaOtpRequest{
+		Email:     body.Email,
+		Otp:       body.Otp,
+		IpAddress: httphelp.GetClientIP(c),
+		UserAgent: httphelp.GetUserAgent(c),
+	}
 
-		response, err := a.authService.SubmitMfaOtp(c.Request.Context(), request)
-		if err != nil {
-			return err
-		}
+	response, err := a.authService.SubmitMfaOtp(c.Request.Context(), request)
+	if err != nil {
+		return err
+	}
 
-		setAuthCookies(c, response)
+	setAuthCookies(c, response)
 
+	c.JSON(http.StatusCreated, response.IntoBody())
+	return nil
+}
+
+func (a *AuthController) signIn(c *gin.Context) error {
+	var body domain.SignInRequestBody
+
+	if err := c.BindJSON(&body); err != nil {
+		return err
+	}
+
+	if err := validate.Validate.Struct(body); err != nil {
+		return err
+	}
+
+	request := domain.SignInRequest{
+		Email:     body.Email,
+		Password:  body.Password,
+		IpAddress: httphelp.GetClientIP(c),
+		UserAgent: httphelp.GetUserAgent(c),
+	}
+
+	response, err := a.authService.SignIn(c.Request.Context(), request)
+	if err != nil {
+		return err
+	}
+
+	if response.Session != nil {
+		setAuthCookies(c, response.Session)
+	}
+
+	if !response.IsMfaRequired {
 		c.JSON(http.StatusCreated, response.IntoBody())
-	} else if flow == "password" {
-		var body domain.SignInRequestBody
-
-		if err := c.BindJSON(&body); err != nil {
-			return err
-		}
-
-		if err := validate.Validate.Struct(body); err != nil {
-			return err
-		}
-
-		request := domain.SignInRequest{
-			Email:     body.Email,
-			Password:  body.Password,
-			IpAddress: httphelp.GetClientIP(c),
-			UserAgent: httphelp.GetUserAgent(c),
-		}
-
-		response, err := a.authService.SignIn(c.Request.Context(), request)
-		if err != nil {
-			return err
-		}
-
-		if response.Session != nil {
-			setAuthCookies(c, response.Session)
-		}
-
-		if !response.IsMfaRequired {
-			c.JSON(http.StatusCreated, response.IntoBody())
-		} else {
-			c.JSON(http.StatusAccepted, response.IntoBody())
-		}
 	} else {
-		auth.RequireAuth(c)
-
-		refreshTokenCookie, err := c.Request.Cookie("refreshToken")
-		if err != nil {
-			return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
-		}
-
-		response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
-			RefreshToken: refreshTokenCookie.Value,
-			IpAddress:    httphelp.GetClientIP(c),
-			UserAgent:    httphelp.GetUserAgent(c),
-		})
-		if err != nil {
-			return err
-		}
-
-		setAuthCookies(c, response)
-
-		c.JSON(http.StatusCreated, response.IntoBody())
+		c.JSON(http.StatusAccepted, response.IntoBody())
 	}
 
 	return nil
 }
 
+func (a *AuthController) refresh(c *gin.Context) error {
+	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	if err != nil {
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
+		RefreshToken: refreshTokenCookie.Value,
+		IpAddress:    httphelp.GetClientIP(c),
+		UserAgent:    httphelp.GetUserAgent(c),
+	})
+	if err != nil {
+		return err
+	}
+
+	setAuthCookies(c, response)
+
+	c.JSON(http.StatusCreated, response.IntoBody())
+	return nil
+}
+
 func (a *AuthController) resetPassword(c *gin.Context) error {
-	flow := c.Query("flow")
-	if flow != "init" && flow != "finish" {
+	switch c.Query("flow") {
+	case "init":
+		return a.initPasswordReset(c)
+	case "finish":
+		return a.finishPasswordReset(c)
+	default:
 		return appErr.Errorf(appErr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
 	}
+}
 
-	if flow == "init" {
-		var request domain.InitPasswordResetRequest
+func (a *AuthController) initPasswordReset(c *gin.Context) error {
+	var request domain.InitPasswordResetRequest
 
-		if err := c.BindJSON(&request); err != nil {
-			return err
-		}
-
-		if err := validate.Validate.Struct(request); err != nil {
-			return err
-		}
-
-		err := a.authService.InitPasswordReset(c.Request.Context(), request)
-		if err != nil {
-			return err
-		}
-
-		c.Status(http.StatusAccepted)
-	} else {
-		var request domain.FinishPasswordResetRequest
-
-		if err := c.BindJSON(&request); err != nil {
-			return err
-		}
-
-		if err := validate.Validate.Struct(request); err != nil {
-			return err
-		}
-
-		err := a.authService.FinishPasswordReset(c.Request.Context(), request)
-		if err != nil {
-			return err
-		}
-
-		c.Status(http.StatusOK)
+	if err := c.BindJSON(&request); err != nil {
+		return err
 	}
 
+	if err := validate.Validate.Struct(request); err != nil {
+		return err
+	}
+
+	err := a.authService.InitPasswordReset(c.Request.Context(), request)
+	if err != nil {
+		return err
+	}
+
+	c.Status(http.StatusAccepted)
+	return nil
+}
+
+func (a *AuthController) finishPasswordReset(c *gin.Context) error {
+	var request domain.FinishPasswordResetRequest
+
+	if err := c.BindJSON(&request); err != nil {
+		return err
+	}
+
+	if err := validate.Validate.Struct(request); err != nil {
+		return err
+	}
+
+	err := a.authService.FinishPasswordReset(c.Request.Context(), request)
+	if err != nil {
+		return err
+	}
+
+	c.Status(http.StatusOK)
 	return nil
 }
 

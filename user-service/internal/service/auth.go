@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	commonAuth "github.com/seacite-tech/compendium/common/pkg/auth"
 	log "github.com/seacite-tech/compendium/common/pkg/log"
 	"github.com/seacite-tech/compendium/user-service/internal/domain"
 	"github.com/seacite-tech/compendium/user-service/internal/email"
@@ -372,19 +371,12 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
 	log.L(ctx).Info("Refreshing session")
 
-	userId, err := commonAuth.GetUserId(ctx)
+	userId, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, request.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Infof("Invalidating refresh token")
-
-	success, err := s.refreshTokenRepository.TryRemoveRefreshTokenByUserIdAndToken(ctx, userId, request.RefreshToken)
-	if err != nil {
-		return nil, err
-	}
-
-	if !success {
+	if userId == uuid.Nil {
 		log.L(ctx).Error("Invalid refresh token was used")
 
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")

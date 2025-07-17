@@ -9,5 +9,5 @@ import (
 
 type RefreshTokenRepository interface {
 	AddRefreshToken(ctx context.Context, token model.RefreshToken) error
-	TryRemoveRefreshTokenByUserIdAndToken(ctx context.Context, userId uuid.UUID, token string) (bool, error)
+	TryRemoveRefreshTokenByToken(ctx context.Context, token string) (uuid.UUID, error)
 }

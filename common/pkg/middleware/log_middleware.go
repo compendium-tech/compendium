@@ -24,7 +24,7 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 
 	var userId string
 
-	if userUuid == (uuid.UUID{}) {
+	if userUuid == uuid.Nil {
 		userId = "unauthenticated"
 	} else {
 		userId = userUuid.String()
