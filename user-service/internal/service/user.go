@@ -1,8 +1,18 @@
 package service
 
-import "github.com/seacite-tech/compendium/user-service/internal/repository"
+import (
+	"context"
 
-type UserService interface{}
+	"github.com/seacite-tech/compendium/common/pkg/auth"
+	log "github.com/seacite-tech/compendium/common/pkg/log"
+	"github.com/seacite-tech/compendium/user-service/internal/domain"
+	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
+	"github.com/seacite-tech/compendium/user-service/internal/repository"
+)
+
+type UserService interface {
+	GetAccount(ctx context.Context) (*domain.AccountResponse, error)
+}
 
 type userServiceImpl struct {
 	userRepository repository.UserRepository
@@ -12,4 +22,34 @@ func NewUserService(userRepository repository.UserRepository) *userServiceImpl {
 	return &userServiceImpl{
 		userRepository: userRepository,
 	}
+}
+
+func (u *userServiceImpl) GetAccount(ctx context.Context) (*domain.AccountResponse, error) {
+	log.L(ctx).Info("Getting authenticated user account details")
+
+	userId, err := auth.GetUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Info("Fetching authenticated user account details in database")
+	user, err := u.userRepository.FindById(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		log.L(ctx).Warn("Information about authenticated user not found, perhaphs session is invalid?")
+
+		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	log.L(ctx).Info("Account details fetched successfully")
+
+	return &domain.AccountResponse{
+		Id:        user.Id,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
 }

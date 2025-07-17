@@ -23,6 +23,35 @@ func NewPgUserRepository(db *sql.DB) *PgUserRepository {
 	}
 }
 
+func (r *PgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	user := &model.User{}
+	query := `
+		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
+		FROM users
+		WHERE id = $1
+	`
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	err := row.Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.IsEmailVerified,
+		&user.IsAdmin,
+		&user.PasswordHash,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, tracerr.Wrap(err)
+	}
+
+	return user, nil
+}
+
 func (r *PgUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
 	query := `
@@ -45,6 +74,7 @@ func (r *PgUserRepository) FindByEmail(ctx context.Context, email string) (*mode
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
+
 		return nil, tracerr.Wrap(err)
 	}
 
