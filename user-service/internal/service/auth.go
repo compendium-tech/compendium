@@ -24,6 +24,7 @@ type AuthService interface {
 	InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
 	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
+	Logout(ctx context.Context, refreshToken string) error
 }
 
 type authServiceImpl struct {
@@ -369,7 +370,7 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 }
 
 func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
-	log.L(ctx).Info("Refreshing session")
+	log.L(ctx).Infof("Refreshing session %s", request.RefreshToken)
 
 	userId, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, request.RefreshToken)
 	if err != nil {
@@ -377,7 +378,7 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 	}
 
 	if userId == uuid.Nil {
-		log.L(ctx).Error("Invalid refresh token was used")
+		log.L(ctx).Errorf("Invalid refresh token (%s) was used", request.RefreshToken)
 
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
@@ -387,9 +388,28 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 		return nil, err
 	}
 
-	log.L(ctx).Info("Session refreshed successfully")
+	log.L(ctx).Infof("Session %s refreshed successfully (%s)", request.RefreshToken, session.RefreshToken)
 
 	return session, nil
+}
+
+func (s *authServiceImpl) Logout(ctx context.Context, refreshToken string) error {
+	log.L(ctx).Infof("Invalidating session %s", refreshToken)
+
+	userId, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, refreshToken)
+	if err != nil {
+		return err
+	}
+
+	if userId == uuid.Nil {
+		log.L(ctx).Errorf("Invalid refresh token (%s) was used", refreshToken)
+
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	log.L(ctx).Infof("Session %s was invalidated successfully", refreshToken)
+
+	return nil
 }
 
 func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {

@@ -25,6 +25,7 @@ func (a AuthController) MakeRoutes(e *gin.Engine) {
 	e.POST("/api/v1/users", appErr.HandleAppErr(a.signUp))
 	e.POST("/api/v1/sessions", appErr.HandleAppErr(a.createSession))
 	e.PUT("/api/v1/password", appErr.HandleAppErr(a.resetPassword))
+	e.DELETE("/api/v1/session", appErr.HandleAppErr(a.logout))
 }
 
 func (a *AuthController) signUp(c *gin.Context) error {
@@ -191,6 +192,21 @@ func (a *AuthController) finishPasswordReset(c *gin.Context) error {
 	}
 
 	err := a.authService.FinishPasswordReset(c.Request.Context(), request)
+	if err != nil {
+		return err
+	}
+
+	c.Status(http.StatusOK)
+	return nil
+}
+
+func (a *AuthController) logout(c *gin.Context) error {
+	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	if err != nil {
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	err = a.authService.Logout(c.Request.Context(), refreshTokenCookie.Value)
 	if err != nil {
 		return err
 	}
