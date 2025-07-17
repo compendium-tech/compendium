@@ -28,6 +28,7 @@
         -   [Password Resets](#password-resets)
             -   [Initiating Password Resets](#initiating-password-resets)
             -   [MFA for Password Resets](#mfa-for-password-resets)
+        -   [Refresh](#refresh)
         -   [Token Management and Security Note](#token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
 
@@ -288,6 +289,8 @@ POST /api/v1/sessions?flow=password
 If the credentials are correct and MFA is not required for this specific login attempt (e.g., the device is remembered), the server responds similarly to the MFA verification step during sign-up. It sets the csrfToken, accessToken, and refreshToken as HTTP-only cookies and provides their expiry times in the response body. The `isMfaRequired` flag will be false.
 
 ```http
+201 Created
+
 Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
@@ -312,6 +315,8 @@ POST /api/v1/sessions?flow=password
 In this scenario, the server's response will indicate that MFA is required by setting `isMfaRequired` to `true`. It will not issue access or refresh tokens at this stage.
 
 ```http
+202 Accepted
+
 {
   "isMfaRequired": true,
 }
@@ -331,6 +336,8 @@ POST /api/v1/sessions?flow=mfa
 Upon successful OTP verification, the server will then issue the `csrfToken`, `accessToken`, and `refreshToken` as HTTP-only cookies, along with their expiry times in the response body.
 
 ```http
+201 Created
+
 Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
@@ -373,6 +380,29 @@ PUT /api/v1/password?flow=finish
 ```
 
 If the OTP is valid and the new password meets the system's security requirements, the server updates the user's password.
+
+### Refresh
+
+The refresh mechanism allows users to obtain a new access token without needing to re-authenticate with their credentials. To refresh an expired access token, the client sends a POST request to the `/api/v1/sessions` endpoint with the `flow` parameter set to `refresh`. This request must include refresh token in the Cookie header. The server uses the refresh token to verify the user's session and issue a new, valid access token.
+
+```http
+POST /api/v1/sessions?flow=refresh
+
+Cookie: accessToken=..., refreshToken=...
+```
+
+If the provided refresh token is valid and has not expired, the server will respond by issuing a new access token and refresh token (to implement refresh token rotation). These tokens are set as HTTP-only cookies.
+
+```http
+201 Created
+
+Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
+
+{
+  "accessTokenExpiry": "...",
+  "refreshTokenExpiry": "...",
+}
+```
 
 ### Token Management and Security Note
 It's important to note the roles of the tokens and cookies in this flow:
