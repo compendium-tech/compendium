@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
+	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/model"
 	"github.com/ztrue/tracerr"
 )
@@ -139,7 +139,7 @@ func (r *PgUserRepository) CreateUser(ctx context.Context, user model.User) erro
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
-			return apperr.Errorf(apperr.EmailTakenError, "email is already taken")
+			return appErr.Errorf(appErr.EmailTakenError, "email is already taken")
 		}
 
 		return tracerr.Wrap(err)

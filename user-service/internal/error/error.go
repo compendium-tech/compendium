@@ -13,6 +13,7 @@ const (
 	TooManyRequestsError
 	MfaNotRequestedError
 	InvalidMfaOtpError
+	InvalidSessionError
 )
 
 type AppErrorKind int

@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	commonAuth "github.com/seacite-tech/compendium/common/pkg/auth"
 	log "github.com/seacite-tech/compendium/common/pkg/log"
 	"github.com/seacite-tech/compendium/user-service/internal/domain"
 	"github.com/seacite-tech/compendium/user-service/internal/email"
-	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
+	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/hash"
 	"github.com/seacite-tech/compendium/user-service/internal/model"
 	"github.com/seacite-tech/compendium/user-service/internal/repository"
@@ -23,6 +24,7 @@ type AuthService interface {
 	SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error)
 	InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
+	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
 }
 
 type authServiceImpl struct {
@@ -74,13 +76,13 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 		if user.IsEmailVerified {
 			log.L(ctx).Error("User tried to sign up even though email is taken")
 
-			return apperr.Errorf(apperr.EmailTakenError, "Email is already taken")
+			return appErr.Errorf(appErr.EmailTakenError, "Email is already taken")
 		}
 
 		if time.Now().UTC().Sub(user.CreatedAt) < 60*time.Second {
 			log.L(ctx).Error("User tried to repeat sign up attempt in less than 60 seconds")
 
-			return apperr.Errorf(apperr.TooManyRequestsError, "Too many sign up attempts")
+			return appErr.Errorf(appErr.TooManyRequestsError, "Too many sign up attempts")
 		}
 	}
 
@@ -134,7 +136,7 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 	}
 
 	if user == nil {
-		return nil, apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+		return nil, appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -143,11 +145,11 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 	}
 
 	if otp == nil {
-		return nil, apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+		return nil, appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	if *otp != request.Otp {
-		return nil, apperr.Errorf(apperr.InvalidMfaOtpError, "Invalid 2FA otp")
+		return nil, appErr.Errorf(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
 	}
 
 	if !user.IsEmailVerified {
@@ -185,7 +187,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 
 	if user == nil {
-		return nil, apperr.Errorf(apperr.InvalidCredentialsError, "Invalid credentials")
+		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
 	isPasswordValid, err := s.passwordHasher.IsPasswordHashValid(user.PasswordHash, request.Password)
@@ -194,7 +196,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 
 	if !isPasswordValid {
-		return nil, apperr.Errorf(apperr.InvalidCredentialsError, "Invalid credentials")
+		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
 	deviceIsKnown, err := s.deviceRepository.DeviceExists(user.Id, request.UserAgent, request.IpAddress)
@@ -244,7 +246,7 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 	}
 
 	if user == nil || !user.IsEmailVerified {
-		return apperr.Errorf(apperr.UserNotFoundError, "User with given email address doesn't exist")
+		return appErr.Errorf(appErr.UserNotFoundError, "User with given email address doesn't exist")
 	}
 
 	otp := newSixDigitOtp()
@@ -262,9 +264,7 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 		return err
 	}
 
-	defer func() {
-		lock.ReleaseAndHandleErr(ctx, &finalErr)
-	}()
+	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -272,7 +272,7 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	}
 
 	if user == nil || !user.IsEmailVerified {
-		return apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+		return appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -281,11 +281,11 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	}
 
 	if otp == nil {
-		return apperr.Errorf(apperr.MfaNotRequestedError, "2FA was not requested")
+		return appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	if *otp != request.Otp {
-		return apperr.Errorf(apperr.InvalidMfaOtpError, "Invalid 2FA otp")
+		return appErr.Errorf(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
 	}
 
 	err = s.mfaRepository.RemoveMfaOtpByEmail(ctx, request.Email)
@@ -299,6 +299,24 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	}
 
 	return s.userRepository.UpdatePasswordHash(ctx, user.Id, passwordHash)
+}
+
+func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
+	userId, err := commonAuth.GetUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	success, err := s.refreshTokenRepository.TryRemoveRefreshTokenByUserIdAndToken(ctx, userId, request.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	if !success {
+		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	return s.createSession(ctx, userId, request.UserAgent, request.IpAddress)
 }
 
 func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {

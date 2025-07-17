@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/seacite-tech/compendium/common/pkg/log"
-	"github.com/seacite-tech/compendium/common/pkg/middleware"
+	commonMiddleware "github.com/seacite-tech/compendium/common/pkg/middleware"
 	"github.com/seacite-tech/compendium/user-service/internal/config"
 	v1 "github.com/seacite-tech/compendium/user-service/internal/controller/v1"
 	"github.com/seacite-tech/compendium/user-service/internal/email"
@@ -45,9 +45,10 @@ func NewApp(deps Dependencies) *gin.Engine {
 		deps.EmailSender, deps.TokenManager, deps.PasswordHasher)
 
 	r := gin.Default()
-	r.Use(middleware.RequestIdMiddleware{AllowToSet: false}.Handle())
-	r.Use(middleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle())
-	r.Use(middleware.DefaultCors().Handle())
+	r.Use(commonMiddleware.RequestIdMiddleware{AllowToSet: false}.Handle)
+	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
+	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
+	r.Use(commonMiddleware.DefaultCors().Handle)
 
 	v1.NewAuthController(authService).MakeRoutes(r)
 

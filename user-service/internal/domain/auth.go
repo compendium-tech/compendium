@@ -80,7 +80,9 @@ type SessionResponseBody struct {
 }
 
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	RefreshToken string
+	UserAgent    string
+	IpAddress    string
 }
 
 type RefreshTokenResponse struct {
@@ -89,6 +91,10 @@ type RefreshTokenResponse struct {
 	RefreshToken       string `json:"refreshToken"`
 	AccessTokenExpiry  int64  `json:"accessTokenExpiry"`
 	RefreshTokenExpiry int64  `json:"refreshTokenExpiry"`
+}
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
 
 type InitPasswordResetRequest struct {

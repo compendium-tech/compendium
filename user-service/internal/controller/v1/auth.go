@@ -6,9 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/seacite-tech/compendium/common/pkg/httphelp"
 	"github.com/seacite-tech/compendium/user-service/internal/domain"
-	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
+	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/service"
 	"github.com/seacite-tech/compendium/user-service/internal/validate"
+	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
 type AuthController struct {
@@ -22,9 +23,9 @@ func NewAuthController(authService service.AuthService) AuthController {
 }
 
 func (a AuthController) MakeRoutes(e *gin.Engine) {
-	e.POST("/api/v1/users", apperr.HandleAppErr(a.signUp))
-	e.POST("/api/v1/sessions", apperr.HandleAppErr(a.createSession))
-	e.PUT("/api/v1/password", apperr.HandleAppErr(a.resetPassword))
+	e.POST("/api/v1/users", appErr.HandleAppErr(a.signUp))
+	e.POST("/api/v1/sessions", appErr.HandleAppErr(a.createSession))
+	e.PUT("/api/v1/password", appErr.HandleAppErr(a.resetPassword))
 }
 
 func (a *AuthController) signUp(c *gin.Context) error {
@@ -51,8 +52,8 @@ func (a *AuthController) signUp(c *gin.Context) error {
 
 func (a *AuthController) createSession(c *gin.Context) error {
 	flow := c.Query("flow")
-	if flow != "password" && flow != "mfa" {
-		return apperr.Errorf(apperr.RequestValidationError, "Flow parameter must be equal to `mfa` or `password`.")
+	if flow != "password" && flow != "mfa" && flow != "refresh" {
+		return appErr.Errorf(appErr.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
 	}
 
 	if flow == "mfa" {
@@ -78,10 +79,10 @@ func (a *AuthController) createSession(c *gin.Context) error {
 			return err
 		}
 
-		setAuthCookies(c, response.CsrfToken, response.AccessToken, response.RefreshToken)
+		setAuthCookies(c, response)
 
 		c.JSON(http.StatusCreated, response.IntoBody())
-	} else {
+	} else if flow == "password" {
 		var body domain.SignInRequestBody
 
 		if err := c.BindJSON(&body); err != nil {
@@ -105,7 +106,7 @@ func (a *AuthController) createSession(c *gin.Context) error {
 		}
 
 		if response.Session != nil {
-			setAuthCookies(c, response.Session.CsrfToken, response.Session.AccessToken, response.Session.RefreshToken)
+			setAuthCookies(c, response.Session)
 		}
 
 		if !response.IsMfaRequired {
@@ -113,6 +114,26 @@ func (a *AuthController) createSession(c *gin.Context) error {
 		} else {
 			c.JSON(http.StatusAccepted, response.IntoBody())
 		}
+	} else {
+		auth.RequireAuth(c)
+
+		refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+		if err != nil {
+			return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+		}
+
+		response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
+			RefreshToken: refreshTokenCookie.Value,
+			IpAddress:    httphelp.GetClientIP(c),
+			UserAgent:    httphelp.GetUserAgent(c),
+		})
+		if err != nil {
+			return err
+		}
+
+		setAuthCookies(c, response)
+
+		c.JSON(http.StatusCreated, response.IntoBody())
 	}
 
 	return nil
@@ -121,7 +142,7 @@ func (a *AuthController) createSession(c *gin.Context) error {
 func (a *AuthController) resetPassword(c *gin.Context) error {
 	flow := c.Query("flow")
 	if flow != "init" && flow != "finish" {
-		return apperr.Errorf(apperr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
+		return appErr.Errorf(appErr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
 	}
 
 	if flow == "init" {
@@ -163,10 +184,10 @@ func (a *AuthController) resetPassword(c *gin.Context) error {
 	return nil
 }
 
-func setAuthCookies(c *gin.Context, csrfToken, accessToken, refreshToken string) {
+func setAuthCookies(c *gin.Context, session *domain.SessionResponse) {
 	cookieExpiry := 30 * 365 * 24 * 3600
 
-	c.SetCookie("csrfToken", csrfToken, cookieExpiry, "/", "", false, false)
-	c.SetCookie("accessToken", accessToken, cookieExpiry, "/", "", false, true)
-	c.SetCookie("refreshToken", refreshToken, cookieExpiry, "/", "", false, true)
+	c.SetCookie("csrfToken", session.CsrfToken, cookieExpiry, "/", "", false, false)
+	c.SetCookie("accessToken", session.AccessToken, cookieExpiry, "/", "", false, true)
+	c.SetCookie("refreshToken", session.RefreshToken, cookieExpiry, "/", "", false, true)
 }

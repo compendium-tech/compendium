@@ -31,18 +31,18 @@ func NewJwtBasedTokenManager(signingKey string) (*JwtBasedTokenManager, error) {
 }
 
 type JwtTokenClaims struct {
-	Id        string `json:"jti,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	Subject   string `json:"sub,omitempty"`
-	CsrfToken string `json:"csrf,omitempty"`
+	Id        string    `json:"jti,omitempty"`
+	Issuer    string    `json:"iss,omitempty"`
+	ExpiresAt int64     `json:"exp,omitempty"`
+	Subject   uuid.UUID `json:"sub,omitempty"`
+	CsrfToken string    `json:"csrf,omitempty"`
 }
 
 func (c JwtTokenClaims) Valid() error {
 	return jwt.StandardClaims{
 		Issuer:    c.Issuer,
 		ExpiresAt: c.ExpiresAt,
-		Subject:   c.Subject,
+		Subject:   c.Subject.String(),
 	}.Valid()
 }
 
@@ -50,7 +50,7 @@ func (m *JwtBasedTokenManager) NewAccessToken(userId uuid.UUID, csrfToken string
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, JwtTokenClaims{
 		Issuer:    "user-service",
 		ExpiresAt: expiresAt.Unix(),
-		Subject:   userId.String(),
+		Subject:   userId,
 		CsrfToken: csrfToken,
 	})
 
@@ -76,7 +76,7 @@ func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenCl
 
 	claims, ok := token.Claims.(JwtTokenClaims)
 	if !ok {
-		return nil, tracerr.Errorf("failed to read user claims from token")
+		return nil, tracerr.New("failed to read user claims from token")
 	}
 
 	return &claims, nil
@@ -84,10 +84,6 @@ func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenCl
 
 func (m *JwtBasedTokenManager) NewCsrfToken() (string, error) {
 	return newRandomString(16)
-}
-
-func (m *JwtBasedTokenManager) newCsrfTokenHashSalt() (string, error) {
-	return newRandomString(10)
 }
 
 func (m *JwtBasedTokenManager) NewRefreshToken() (string, error) {

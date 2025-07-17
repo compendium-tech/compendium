@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -107,69 +106,32 @@ func (r *RedisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	return nil
 }
 
-func (r *RedisRefreshTokenRepository) GetRefreshTokenByUserIdAndToken(ctx context.Context, userId uuid.UUID, token string) (*model.RefreshToken, error) {
-	key := r.createRefreshTokenKey(userId, token)
-
-	// Retrieve all fields from the hash
-	hashData, err := r.client.HGetAll(ctx, key).Result()
-	if err == redis.Nil {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, tracerr.Errorf("failed to get refresh token hash from Redis: %w", err)
-	}
-	if len(hashData) == 0 { // Key exists but has no fields, or was just expired
-		return nil, nil
-	}
-
-	// Reconstruct the RefreshToken model from hash fields
-	var refreshToken model.RefreshToken
-	refreshToken.Token = hashData[tokenHashField]
-
-	parsedUserID, err := uuid.Parse(hashData[userIdHashField])
-	if err != nil {
-		return nil, tracerr.Errorf("failed to parse userId from hash: %w", err)
-	}
-	refreshToken.UserId = parsedUserID
-
-	expiryUnixNano, err := strconv.ParseInt(hashData[expiryHashField], 10, 64)
-	if err != nil {
-		return nil, tracerr.Errorf("failed to parse expiry from hash: %w", err)
-	}
-	refreshToken.Expiry = time.Unix(0, expiryUnixNano)
-
-	// Even if Redis returns it, check if its internal expiry is passed.
-	if time.Now().After(refreshToken.Expiry) {
-		// As a cleanup, remove the token from Redis if it's found but expired.
-		// This also removes it from the user's ZSET.
-		err := r.RemoveRefreshTokenByUserIdAndToken(ctx, userId, token)
-		if err != nil {
-			return nil, tracerr.Errorf("failed to remove expired refresh token: %w", err)
-		}
-		return nil, nil // Treat as not found if expired
-	}
-
-	return &refreshToken, nil
-}
-
-func (r *RedisRefreshTokenRepository) RemoveRefreshTokenByUserIdAndToken(ctx context.Context, userId uuid.UUID, token string) error {
+func (r *RedisRefreshTokenRepository) TryRemoveRefreshTokenByUserIdAndToken(ctx context.Context, userId uuid.UUID, token string) (bool, error) {
 	tokenKey := r.createRefreshTokenKey(userId, token)
 	userTokensZSetKey := r.createUserTokensKey(userId)
 
 	pipe := r.client.Pipeline()
 
 	// Delete the individual token hash data
-	pipe.Del(ctx, tokenKey)
+	delCmd := pipe.Del(ctx, tokenKey)
 
 	// Remove the token from the user's sorted set
 	// Note: We use the `token` string itself as the member in the ZSET.
-	pipe.ZRem(ctx, userTokensZSetKey, token)
+	zRemCmd := pipe.ZRem(ctx, userTokensZSetKey, token)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return tracerr.Errorf("failed to remove refresh token from Redis: %w", err)
+		return false, tracerr.Errorf("failed to remove refresh token from Redis: %w", err)
 	}
-	return nil
+
+	// Check the number of affected keys from the Del command.
+	// If the token hash was deleted, it means the token was found.
+	// We also check ZRem for consistency, though Del is usually sufficient for existence.
+	if delCmd.Val() > 0 || zRemCmd.Val() > 0 {
+		return true, nil // Token was found and removed
+	}
+
+	return false, nil // Token was not found
 }
 
 func (r *RedisRefreshTokenRepository) createRefreshTokenKey(userId uuid.UUID, token string) string {

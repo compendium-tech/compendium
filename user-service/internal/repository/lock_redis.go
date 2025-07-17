@@ -9,7 +9,7 @@ import (
 	"github.com/bsm/redislock"
 	"github.com/redis/go-redis/v9"
 	"github.com/seacite-tech/compendium/common/pkg/log"
-	apperr "github.com/seacite-tech/compendium/user-service/internal/error"
+	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/ztrue/tracerr"
 )
 
@@ -58,7 +58,7 @@ func (r *RedisAuthLockRepository) ObtainLock(ctx context.Context, email string) 
 	if err != nil {
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain email lock")
-			return nil, apperr.Errorf(apperr.TooManyRequestsError, "Too many requests")
+			return nil, appErr.Errorf(appErr.TooManyRequestsError, "Too many requests")
 		}
 
 		return nil, tracerr.Wrap(err)

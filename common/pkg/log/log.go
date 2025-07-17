@@ -8,7 +8,7 @@ import (
 
 type loggerKey struct{}
 
-var LoggerKey loggerKey = loggerKey{}
+var LoggerKey = loggerKey{}
 
 // Logger set by logger middleware, stored in a context.
 func L(ctx context.Context) *logrus.Entry {
