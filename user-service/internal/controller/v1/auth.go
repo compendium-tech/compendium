@@ -22,10 +22,13 @@ func NewAuthController(authService service.AuthService) AuthController {
 }
 
 func (a AuthController) MakeRoutes(e *gin.Engine) {
-	e.POST("/api/v1/users", appErr.HandleAppErr(a.signUp))
-	e.POST("/api/v1/sessions", appErr.HandleAppErr(a.createSession))
-	e.PUT("/api/v1/password", appErr.HandleAppErr(a.resetPassword))
-	e.DELETE("/api/v1/session", appErr.HandleAppErr(a.logout))
+	v1 := e.Group("/api/v1/")
+	{
+		v1.POST("/users", appErr.HandleAppErr(a.signUp))
+		v1.POST("/sessions", appErr.HandleAppErr(a.createSession))
+		v1.PUT("/password", appErr.HandleAppErr(a.resetPassword))
+		v1.DELETE("/session", appErr.HandleAppErr(a.logout))
+	}
 }
 
 func (a *AuthController) signUp(c *gin.Context) error {
