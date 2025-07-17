@@ -11,6 +11,12 @@ import (
 	"github.com/seacite-tech/compendium/user-service/internal/validate"
 )
 
+const (
+	csrfTokenCookieName    = "csrfToken"
+	accessTokenCookieName  = "accessToken"
+	refreshTokenCookieName = "refreshToken"
+)
+
 type AuthController struct {
 	authService service.AuthService
 }
@@ -132,7 +138,7 @@ func (a *AuthController) signIn(c *gin.Context) error {
 }
 
 func (a *AuthController) refresh(c *gin.Context) error {
-	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
@@ -204,7 +210,7 @@ func (a *AuthController) finishPasswordReset(c *gin.Context) error {
 }
 
 func (a *AuthController) logout(c *gin.Context) error {
-	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
@@ -221,7 +227,7 @@ func (a *AuthController) logout(c *gin.Context) error {
 func setAuthCookies(c *gin.Context, session *domain.SessionResponse) {
 	cookieExpiry := 30 * 365 * 24 * 3600
 
-	c.SetCookie("csrfToken", session.CsrfToken, cookieExpiry, "/", "", false, false)
-	c.SetCookie("accessToken", session.AccessToken, cookieExpiry, "/", "", false, true)
-	c.SetCookie("refreshToken", session.RefreshToken, cookieExpiry, "/", "", false, true)
+	c.SetCookie(csrfTokenCookieName, session.CsrfToken, cookieExpiry, "/", "", false, false)
+	c.SetCookie(accessTokenCookieName, session.AccessToken, cookieExpiry, "/", "", false, true)
+	c.SetCookie(refreshTokenCookieName, session.RefreshToken, cookieExpiry, "/", "", false, true)
 }
