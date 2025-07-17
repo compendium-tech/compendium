@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/service"
+	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
 type UserController struct {
@@ -19,7 +20,12 @@ func NewUserController(userService service.UserService) UserController {
 }
 
 func (u UserController) MakeRoutes(e *gin.Engine) {
-	e.GET("/api/v1/account", appErr.HandleAppErr(u.getAccount))
+	v1 := e.Group("/api/v1/")
+	{
+		authenticated := v1.Group("/")
+		authenticated.Use(auth.RequireAuth)
+		authenticated.GET("/account", appErr.HandleAppErr(u.getAccount))
+	}
 }
 
 func (u *UserController) getAccount(c *gin.Context) error {
