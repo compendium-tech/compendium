@@ -45,8 +45,14 @@ func (k AppErrorKind) httpStatus() int {
 		return http.StatusUnauthorized
 	case InvalidMfaOtpError:
 		return http.StatusUnauthorized
+	case InvalidSessionError:
+		return http.StatusUnauthorized
 	case TooManyRequestsError:
 		return http.StatusTooManyRequests
+	case UserNotFoundError:
+		return http.StatusNotFound
+	case EmailTakenError:
+		return http.StatusConflict
 	default:
 		return http.StatusBadRequest
 	}
