@@ -33,7 +33,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 	})
 	logrus.SetReportCaller(true)
 
-	authEmailLockRepository := repository.NewRedisAuthEmailLockRepository(deps.RedisClient)
+	authEmailLockRepository := repository.NewRedisAuthLockRepository(deps.RedisClient)
 	deviceRepository := repository.NewPgDeviceRepository(deps.PgDb)
 	userRepository := repository.NewPgUserRepository(deps.PgDb)
 	mfaRepository := repository.NewRedisMfaRepository(deps.RedisClient)

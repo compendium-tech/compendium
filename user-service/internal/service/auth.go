@@ -26,18 +26,18 @@ type AuthService interface {
 }
 
 type authServiceImpl struct {
-	authEmailLockRepository repository.AuthEmailLockRepository
-	deviceRepository        repository.DeviceRepository
-	userRepository          repository.UserRepository
-	mfaRepository           repository.MfaRepository
-	refreshTokenRepository  repository.RefreshTokenRepository
-	emailSender             email.EmailSender
-	tokenManager            auth.TokenManager
-	passwordHasher          hash.PasswordHasher
+	authLockRepository     repository.AuthLockRepository
+	deviceRepository       repository.DeviceRepository
+	userRepository         repository.UserRepository
+	mfaRepository          repository.MfaRepository
+	refreshTokenRepository repository.RefreshTokenRepository
+	emailSender            email.EmailSender
+	tokenManager           auth.TokenManager
+	passwordHasher         hash.PasswordHasher
 }
 
 func NewAuthService(
-	authEmailLockRepository repository.AuthEmailLockRepository,
+	authEmailLockRepository repository.AuthLockRepository,
 	deviceRepository repository.DeviceRepository,
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
@@ -46,26 +46,24 @@ func NewAuthService(
 	tokenManager auth.TokenManager,
 	passwordHasher hash.PasswordHasher) *authServiceImpl {
 	return &authServiceImpl{
-		authEmailLockRepository: authEmailLockRepository,
-		deviceRepository:        deviceRepository,
-		userRepository:          userRepository,
-		mfaRepository:           mfaRepository,
-		refreshTokenRepository:  refreshTokenRepository,
-		emailSender:             emailSender,
-		tokenManager:            tokenManager,
-		passwordHasher:          passwordHasher,
+		authLockRepository:     authEmailLockRepository,
+		deviceRepository:       deviceRepository,
+		userRepository:         userRepository,
+		mfaRepository:          mfaRepository,
+		refreshTokenRepository: refreshTokenRepository,
+		emailSender:            emailSender,
+		tokenManager:           tokenManager,
+		passwordHasher:         passwordHasher,
 	}
 }
 
 func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
-	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
+	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		lock.ReleaseAndHandleErr(ctx, &finalErr)
-	}()
+	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -123,14 +121,12 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 }
 
 func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
-	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
+	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		lock.ReleaseAndHandleErr(ctx, &finalErr)
-	}()
+	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -176,14 +172,12 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
-	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
+	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		lock.ReleaseAndHandleErr(ctx, &finalErr)
-	}()
+	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -237,14 +231,12 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 }
 
 func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
-	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
+	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		lock.ReleaseAndHandleErr(ctx, &finalErr)
-	}()
+	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
 	user, err := s.userRepository.FindByEmail(ctx, request.Email)
 	if err != nil {
@@ -265,7 +257,7 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 }
 
 func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
-	lock, err := s.authEmailLockRepository.ObtainLock(ctx, request.Email)
+	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
 	}
