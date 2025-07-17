@@ -16,11 +16,20 @@ import (
 const authLockTtl = 60 * time.Second
 
 type authLock struct {
-	lock *redislock.Lock
+	lock  *redislock.Lock
+	email string
 }
 
 func (e *authLock) Release(ctx context.Context) error {
-	return tracerr.Wrap(e.lock.Release(ctx))
+	err := e.lock.Release(ctx)
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	log.L(ctx).Infof("Successfully released auth lock for %s", e.email)
+
+	return nil
 }
 
 func (e *authLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
@@ -54,15 +63,20 @@ func NewRedisAuthLockRepository(rdb *redis.Client) *RedisAuthLockRepository {
 }
 
 func (r *RedisAuthLockRepository) ObtainLock(ctx context.Context, email string) (AuthLock, error) {
+	log.L(ctx).Infof("Obtaining auth lock for %s", email)
+
 	lock, err := r.client.Obtain(ctx, fmt.Sprintf("auth_locks:%s", email), authLockTtl, nil)
 	if err != nil {
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain email lock")
+
 			return nil, appErr.Errorf(appErr.TooManyRequestsError, "Too many requests")
 		}
 
 		return nil, tracerr.Wrap(err)
 	}
 
-	return &authLock{lock: lock}, nil
+	log.L(ctx).Infof("Successfully obtained auth lock for %s", email)
+
+	return &authLock{lock: lock, email: email}, nil
 }

@@ -60,6 +60,8 @@ func NewAuthService(
 }
 
 func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
+	log.L(ctx).Infof("Signing up user with email: %s", request.Email)
+
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
@@ -74,13 +76,13 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 
 	if user != nil {
 		if user.IsEmailVerified {
-			log.L(ctx).Error("User tried to sign up even though email is taken")
+			log.L(ctx).Errorf("User with email %s tried to sign up but email is already taken and verified", request.Email)
 
 			return appErr.Errorf(appErr.EmailTakenError, "Email is already taken")
 		}
 
 		if time.Now().UTC().Sub(user.CreatedAt) < 60*time.Second {
-			log.L(ctx).Error("User tried to repeat sign up attempt in less than 60 seconds")
+			log.L(ctx).Errorf("User with email %s tried to repeat sign up in less than 60 seconds", request.Email)
 
 			return appErr.Errorf(appErr.TooManyRequestsError, "Too many sign up attempts")
 		}
@@ -92,12 +94,15 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 	}
 
 	if user != nil && !user.IsEmailVerified {
-		err := s.userRepository.UpdatePasswordHashAndCreatedAt(ctx, user.Id, passwordHash, time.Now().UTC())
+		log.L(ctx).Infof("Updating password hash and creation time for unverified user: %s", request.Email)
 
+		err := s.userRepository.UpdatePasswordHashAndCreatedAt(ctx, user.Id, passwordHash, time.Now().UTC())
 		if err != nil {
 			return err
 		}
 	} else {
+		log.L(ctx).Infof("Creating new user with email: %s", request.Email)
+
 		err := s.userRepository.CreateUser(ctx, model.User{
 			Id:              uuid.New(),
 			Name:            request.Name,
@@ -107,11 +112,12 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 			PasswordHash:    passwordHash,
 			CreatedAt:       time.Now().UTC(),
 		})
-
 		if err != nil {
 			return err
 		}
 	}
+
+	log.L(ctx).Infof("Setting MFA OTP for email: %s", request.Email)
 
 	otp := newSixDigitOtp()
 	err = s.mfaRepository.SetMfaOtpByEmail(ctx, request.Email, otp)
@@ -119,10 +125,20 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 		return err
 	}
 
-	return s.emailSender.SendSignUpMfaEmail(request.Email, otp)
+	log.L(ctx).Infof("Sending sign-up MFA email to: %s", request.Email)
+
+	if err := s.emailSender.SendSignUpMfaEmail(request.Email, otp); err != nil {
+		return err
+	}
+
+	log.L(ctx).Info("User sign-up initiated successfully")
+
+	return nil
 }
 
 func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
+	log.L(ctx).Infof("Submitting MFA OTP for email: %s", request.Email)
+
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
@@ -136,6 +152,8 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 	}
 
 	if user == nil {
+		log.L(ctx).Errorf("MFA submission for non-existent user or MFA not requested for email: %s", request.Email)
+
 		return nil, appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
@@ -145,20 +163,27 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 	}
 
 	if otp == nil {
+		log.L(ctx).Errorf("MFA submission but no OTP found for email: %s", request.Email)
+
 		return nil, appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	if *otp != request.Otp {
+		log.L(ctx).Errorf("Invalid MFA OTP submitted for email: %s", request.Email)
+
 		return nil, appErr.Errorf(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
 	}
 
 	if !user.IsEmailVerified {
-		err = s.userRepository.UpdateIsEmailVerifiedByEmail(ctx, request.Email, true)
+		log.L(ctx).Infof("Marking email as verified for user: %s", request.Email)
 
+		err = s.userRepository.UpdateIsEmailVerifiedByEmail(ctx, request.Email, true)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	log.L(ctx).Infof("Removing MFA OTP for email: %s", request.Email)
 
 	err = s.mfaRepository.RemoveMfaOtpByEmail(ctx, request.Email)
 	if err != nil {
@@ -170,10 +195,14 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 		return nil, err
 	}
 
+	log.L(ctx).Info("MFA OTP submitted successfully and session created")
+
 	return session, nil
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
+	log.L(ctx).Infof("Signing in user with email: %s", request.Email)
+
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return nil, err
@@ -187,6 +216,8 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 
 	if user == nil {
+		log.L(ctx).Errorf("Sign-in with invalid credentials for email: %s (user not found)", request.Email)
+
 		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
@@ -196,6 +227,8 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 
 	if !isPasswordValid {
+		log.L(ctx).Errorf("Sign-in with invalid credentials for email: %s (password mismatch)", request.Email)
+
 		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
@@ -207,6 +240,8 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	session := (*domain.SessionResponse)(nil)
 
 	if !deviceIsKnown {
+		log.L(ctx).Infof("Device is not known for user %s. Initiating MFA", user.Id)
+
 		otp := newSixDigitOtp()
 		err = s.mfaRepository.SetMfaOtpByEmail(ctx, request.Email, otp)
 		if err != nil {
@@ -217,22 +252,26 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		session, err = s.createSession(ctx, user.Id, request.UserAgent, request.IpAddress)
 
+		log.L(ctx).Info("Sign-in is successfully processed, MFA required")
+
+		return &domain.SignInResponse{IsMfaRequired: true, Session: nil}, nil
+	} else {
+		log.L(ctx).Infof("Device is known for user %s. Creating session", user.Id)
+		session, err = s.createSession(ctx, user.Id, request.UserAgent, request.IpAddress)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	if !deviceIsKnown {
-		return &domain.SignInResponse{IsMfaRequired: true, Session: nil}, nil
-	} else {
+		log.L(ctx).Info("Sign-in successful, no MFA required")
+
 		return &domain.SignInResponse{IsMfaRequired: false, Session: session}, nil
 	}
 }
 
 func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
+	log.L(ctx).Infof("Initiating password reset for email: %s", request.Email)
+
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
@@ -246,8 +285,11 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 	}
 
 	if user == nil || !user.IsEmailVerified {
+		log.L(ctx).Errorf("Password reset initiated for non-existent or unverified user: %s", request.Email)
 		return appErr.Errorf(appErr.UserNotFoundError, "User with given email address doesn't exist")
 	}
+
+	log.L(ctx).Infof("Setting MFA OTP for password reset for email: %s", request.Email)
 
 	otp := newSixDigitOtp()
 	err = s.mfaRepository.SetMfaOtpByEmail(ctx, request.Email, otp)
@@ -255,10 +297,20 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 		return err
 	}
 
-	return s.emailSender.SendSignInMfaEmail(request.Email, otp)
+	log.L(ctx).Infof("Sending password reset MFA email to: %s", request.Email)
+
+	if err := s.emailSender.SendSignInMfaEmail(request.Email, otp); err != nil {
+		return err
+	}
+
+	log.L(ctx).Info("Password reset initiated successfully")
+
+	return nil
 }
 
 func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
+	log.L(ctx).Infof("Finishing password reset for email: %s", request.Email)
+
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
 	if err != nil {
 		return err
@@ -272,6 +324,8 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	}
 
 	if user == nil || !user.IsEmailVerified {
+		log.L(ctx).Errorf("Password reset finish for non-existent or unverified user, or MFA not requested for email: %s", request.Email)
+
 		return appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
@@ -281,12 +335,18 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	}
 
 	if otp == nil {
+		log.L(ctx).Errorf("Password reset finish but no OTP found for email: %s", request.Email)
+
 		return appErr.Errorf(appErr.MfaNotRequestedError, "2FA was not requested")
 	}
 
 	if *otp != request.Otp {
+		log.L(ctx).Errorf("Invalid MFA OTP submitted for password reset for email: %s", request.Email)
+
 		return appErr.Errorf(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
 	}
+
+	log.L(ctx).Infof("Removing MFA OTP for email %s after successful password reset OTP verification", request.Email)
 
 	err = s.mfaRepository.RemoveMfaOtpByEmail(ctx, request.Email)
 	if err != nil {
@@ -298,14 +358,26 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 		return err
 	}
 
-	return s.userRepository.UpdatePasswordHash(ctx, user.Id, passwordHash)
+	log.L(ctx).Infof("Updating password hash for user: %s", user.Id)
+
+	if err := s.userRepository.UpdatePasswordHash(ctx, user.Id, passwordHash); err != nil {
+		return err
+	}
+
+	log.L(ctx).Info("Password reset finished successfully")
+
+	return nil
 }
 
 func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
+	log.L(ctx).Info("Refreshing session")
+
 	userId, err := commonAuth.GetUserId(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	log.L(ctx).Infof("Invalidating refresh token")
 
 	success, err := s.refreshTokenRepository.TryRemoveRefreshTokenByUserIdAndToken(ctx, userId, request.RefreshToken)
 	if err != nil {
@@ -313,17 +385,30 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 	}
 
 	if !success {
+		log.L(ctx).Error("Invalid refresh token was used")
+
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
-	return s.createSession(ctx, userId, request.UserAgent, request.IpAddress)
+	session, err := s.createSession(ctx, userId, request.UserAgent, request.IpAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Info("Session refreshed successfully")
+
+	return session, nil
 }
 
 func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
+	log.L(ctx).Infof("Creating new session for user: %s", userId)
+
 	csrfToken, err := s.tokenManager.NewCsrfToken()
 	if err != nil {
 		return nil, err
 	}
+
+	log.L(ctx).Infof("Creating new device entry for user %s", userId)
 
 	err = s.deviceRepository.CreateDevice(ctx, model.Device{
 		Id:        uuid.New(),
@@ -347,6 +432,8 @@ func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, u
 		return nil, err
 	}
 
+	log.L(ctx).Infof("Adding refresh token to repository for user %s", userId)
+
 	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
 		UserId: userId,
 		Token:  refreshToken,
@@ -355,6 +442,8 @@ func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, u
 	if err != nil {
 		return nil, err
 	}
+
+	log.L(ctx).Infof("Session created successfully for user %s", userId)
 
 	return &domain.SessionResponse{
 		CsrfToken:          csrfToken,
