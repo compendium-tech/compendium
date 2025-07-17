@@ -10,9 +10,9 @@ import (
 	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 )
 
-type isCsrfKey struct{}
+type _isCsrfKey struct{}
 
-var IsCsrfKey = isCsrfKey{}
+var isCsrfKey = _isCsrfKey{}
 
 const csrfTokenHeaderName = "X-Csrf-Token"
 
@@ -26,9 +26,10 @@ func (a AuthMiddleware) Handle(c *gin.Context) {
 		return
 	}
 
-	ctx := context.WithValue(c.Request.Context(), auth.UserIdKey, userId)
+	ctx := c.Request.Context()
+	auth.SetUserId(&ctx, userId)
 	if isCsrfTokenValid {
-		ctx = context.WithValue(ctx, IsCsrfKey, true)
+		ctx = context.WithValue(ctx, isCsrfKey, true)
 	}
 
 	c.Request = c.Request.WithContext(ctx)
@@ -50,7 +51,7 @@ func requireAuth(c *gin.Context) error {
 }
 
 func requireCsrf(c *gin.Context) error {
-	if _, ok := c.Request.Context().Value(IsCsrfKey).(bool); ok {
+	if _, ok := c.Request.Context().Value(isCsrfKey).(bool); ok {
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
