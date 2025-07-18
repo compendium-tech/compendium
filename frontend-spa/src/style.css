@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* src/assets/fonts.css */
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Asta Sans';
+  src: url('/src/assets/fonts/AstaSans-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-400: #fb923c;
+  --color-primary-600: #ea580c;
+  --font-sans: 'Asta Sans', sans-serif;
+}
