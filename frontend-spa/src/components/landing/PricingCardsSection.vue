@@ -9,11 +9,11 @@
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <AnimatedCard v-for="(plan, index) in pricing" :key="index" :delay="0.2 * index">
+        <div v-for="(plan, index) in pricing" :key="index">
           <div :class="`bg-white rounded-2xl overflow-hidden shadow-lg border h-full flex flex-col ${plan.highlight
-            ? 'border-primary-600 ring-2 ring-primary-600 md:transform md:scale-105 z-10'
+            ? 'border-primary-600 ring-2 ring-primary-600 md:scale-105 z-10'
             : 'border-gray-200'
-            }`">
+            }`" class="animate-fade-in-up">
             <div v-if="plan.highlight" class="bg-primary-600 text-white text-center py-2">
               Most Popular
             </div>
@@ -43,7 +43,7 @@
               </button>
             </div>
           </div>
-        </AnimatedCard>
+        </div>
       </div>
     </div>
   </section>

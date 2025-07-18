@@ -27,16 +27,16 @@
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8">
-        <AnimatedCard v-for="(step, _index) in steps" :key="step.id" :delay="step.delay">
+        <div v-for="(step, _index) in steps" :key="step.id" :delay="step.delay">
           <div
-            class="bg-white p-8 rounded-2xl h-full flex flex-col transition-all transform duration-300 hover:scale-105 hover:border-primary-400 hover:border-solid border-hidden border-2">
+            class="bg-white p-8 rounded-2xl h-full flex flex-col transition-all transform duration-300 hover:scale-105 hover:border-primary-400 hover:border-solid border-hidden border-2 animate-fade-in-up">
             <div class="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-6">
               <div class="text-primary-600 text-2xl font-bold">{{ step.number }}</div>
             </div>
             <h3 class="text-xl font-bold mb-3">{{ step.title }}</h3>
             <p class="text-gray-600 text-left">{{ step.description }}</p>
           </div>
-        </AnimatedCard>
+        </div>
       </div>
 
       <div class="mt-16 text-center">
@@ -51,7 +51,6 @@
 
 <script setup>
 import { ref } from 'vue';
-import AnimatedCard from './AnimatedCard.vue';
 
 const steps = ref([
   {

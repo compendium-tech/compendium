@@ -6,17 +6,17 @@
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <AnimatedCard v-for="(stat, index) in stats" :key="index" :delay="0.1 * index">
-          <div class=" p-6 rounded-xl text-center h-full">
+        <div v-for="(stat, index) in stats" :key="index" :delay="0.1 * index">
+          <div class="animate-fade-in-up p-6 rounded-xl text-center h-full">
             <div class="text-primary-600 mb-4 flex justify-center">
               <component :is="stat.icon" class="h-10 w-10" />
             </div>
-            <h3 class="text-3xl font-bold mb-2">
+            <h3 class="text-3xl font-bold mb-2 text-primary-600">
               <span ref="counterEls">{{ stat.initialValue }}</span>{{ stat.unit }}
             </h3>
             <p class="text-gray-600">{{ stat.label }}</p>
           </div>
-        </AnimatedCard>
+        </div>
       </div>
     </div>
   </section>
@@ -24,7 +24,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import AnimatedCard from './AnimatedCard.vue'
 
 // Icons
 const AlertTriangle = {
@@ -98,7 +97,6 @@ const stats = [
 const counterEls = ref([])
 
 onMounted(() => {
-  // Start counters when component mounts
   stats.forEach((stat, index) => {
     animateCounter(
       counterEls.value[index],
@@ -111,7 +109,6 @@ onMounted(() => {
 
 function animateCounter(el, target, duration, decimalPlaces = 0) {
   const start = 0
-  const increment = target / (duration / 16) // 60fps
   let current = start
   const startTime = performance.now()
 

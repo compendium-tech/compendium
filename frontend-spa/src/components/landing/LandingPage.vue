@@ -1,19 +1,17 @@
 <template>
-  <main>
-    <Header />
-    <HeroSection />
-    <ProblemStatsSection />
-    <StepsSection />
-    <PricingCardsSection />
-    <ReadyToStartSection />
-
-    <Footer />
-  </main>
+  <StandardLayout>
+    <div>
+      <HeroSection />
+      <ProblemStatsSection />
+      <StepsSection />
+      <PricingCardsSection />
+      <ReadyToStartSection />
+    </div>
+  </StandardLayout>
 </template>
 
 <script setup>
-import Header from '../layout/Header.vue'
-import Footer from '../layout/Footer.vue'
+import StandardLayout from "../layout/StandardLayout.vue"
 import StepsSection from "./StepsSection.vue"
 import HeroSection from './HeroSection.vue'
 import ProblemStatsSection from './ProblemStatsSection.vue'

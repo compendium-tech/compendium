@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-gray-900 text-gray-300 pt-20 pb-12 relative overflow-hidden">
+  <div class="bg-gray-900 text-gray-300 pt-20 pb-12 relative overflow-hidden">
     <div class="absolute top-0 left-0 w-full h-20 overflow-hidden">
       <svg class="absolute top-0 left-0 w-full h-20" viewBox="0 0 1200 120" preserveAspectRatio="none">
         <path
@@ -84,7 +84,7 @@
         </div>
       </div>
     </div>
-  </footer>
+  </div>
 </template>
 
 <script setup>

@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* src/assets/fonts.css */
 @font-face {
   font-family: 'Asta Sans';
   src: url('/fonts/AstaSans-Regular.ttf') format('truetype');
@@ -55,4 +54,16 @@
   --color-primary-400: #fb923c;
   --color-primary-600: #ea580c;
   --font-sans: 'Asta Sans', sans-serif;
+  --animate-fade-in-up: fade-in-up 0.8s ease-out;
+
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
