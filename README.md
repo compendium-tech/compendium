@@ -31,6 +31,7 @@
         -   [Refresh](#refresh)
         -   [Token Management and Security Note](#token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
+    -   [Setting Up](#setting-up)
 
 -----
 
@@ -176,6 +177,8 @@ Request reviews from appropriate team members and add relevant labels or assign 
 
 ```bash
 git clone github.com/seacite-tech/compendium
+
+# User service
 cd user-service
 go run cmd/main.go # run server
 go test ./...      # test
@@ -413,4 +416,12 @@ It's important to note the roles of the tokens and cookies in this flow:
 A key point regarding the `csrfToken`: Even if the `csrfToken` is also included as a claim within the `accessToken`, this design is acceptable. The primary protection for the `accessToken` and `refreshToken` comes from their HTTP-only nature, preventing client-side script access. The `csrfToken` serves its purpose by being readable by JavaScript for inclusion in requests, thereby validating that the request originated from the legitimate client application. So this is used in our current auth implementation in `user-service/`.
 
 # Monolithic SPA frontend
-Presentation/API Layer's (e.g., HTTP handlers, gRPC servers) purpose is to handle incoming requests, marshal/unmarshal data, and call the service layer. Generic unexpected internal server errors from the service layer should ideally be handled and logged at this level (or by a dedicated error handling middleware) to avoid code duplication across handlers and service layer. Business logic-related errors (e.g., "not found" scenarios) should be returned as custom error types from the service layer and then logged with the contextual logger and converted into an appropriate, user-friendly API response.
+
+## Setting Up
+
+```
+git clone github.com/seacite-tech/compendium
+cd frontend-spa
+npm install
+npm run dev
+```
