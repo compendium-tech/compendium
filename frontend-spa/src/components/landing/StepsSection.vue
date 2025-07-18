@@ -1,23 +1,5 @@
 <template>
   <section class="py-20 bg-gray-50 relative">
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
-      <div class="absolute border-2 border-primary-400 rounded-full"
-        style="width: 180px; height: 180px; top: 15%; left: 5%; animation: pulse 12s infinite">
-      </div>
-      <div class="absolute border-2 border-primary-400 rounded-full"
-        style="width: 220px; height: 220px; top: 25%; left: 75%; animation: pulse 15s infinite">
-      </div>
-      <div class="absolute border-2 border-primary-400 rounded-full"
-        style="width: 150px; height: 150px; top: 65%; left: 10%; animation: pulse 18s infinite">
-      </div>
-      <div class="absolute border-2 border-primary-400 rounded-full"
-        style="width: 250px; height: 250px; top: 45%; left: 60%; animation: pulse 14s infinite">
-      </div>
-      <div class="absolute border-2 border-primary-400 rounded-full"
-        style="width: 120px; height: 120px; top: 75%; left: 80%; animation: pulse 16s infinite">
-      </div>
-    </div>
-
     <div class="max-w-7xl mx-auto px-4 relative z-10">
       <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">
         Your Path to <span class="text-primary-600">Admission Success</span>
@@ -76,19 +58,3 @@ const steps = ref([
   },
 ]);
 </script>
-
-<style>
-@keyframes pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.1;
-  }
-
-  50% {
-    transform: scale(1.05);
-    opacity: 0.15;
-  }
-}
-</style>

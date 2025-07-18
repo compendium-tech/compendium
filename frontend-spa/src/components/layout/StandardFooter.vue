@@ -19,7 +19,7 @@
               <img src="/icon.svg" alt="Compendium Logo" />
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-white">Compendium<span class="text-primary-400">.</span></h2>
+              <h2 class="text-2xl font-semibold text-white">compendium<span class="text-primary-400">.</span></h2>
               <p class="text-primary-400">Your AI Education Partner</p>
             </div>
           </div>

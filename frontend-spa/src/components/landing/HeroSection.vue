@@ -21,7 +21,7 @@
 
       <button
         class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
-        Start Free Trial
+        Start your academic journey
       </button>
 
       <CollegeMarquee class="mt-16 max-w-screen" />
