@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 px-4 bg-white">
+  <section class="mb-12 px-4 bg-white">
     <div class="max-w-6xl mx-auto">
       <h2 class="text-3xl md:text-4xl font-bold mb-16 text-center">
         The Application <span class="text-primary-600">Struggle</span> Is Real
@@ -7,11 +7,13 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <AnimatedCard v-for="(stat, index) in stats" :key="index" :delay="0.1 * index">
-          <div class="bg-primary-50 p-6 rounded-xl text-center h-full">
+          <div class=" p-6 rounded-xl text-center h-full">
             <div class="text-primary-600 mb-4 flex justify-center">
               <component :is="stat.icon" class="h-10 w-10" />
             </div>
-            <h3 class="text-3xl font-bold mb-2">{{ stat.value }}</h3>
+            <h3 class="text-3xl font-bold mb-2">
+              <span ref="counterEls">{{ stat.initialValue }}</span>{{ stat.unit }}
+            </h3>
             <p class="text-gray-600">{{ stat.label }}</p>
           </div>
         </AnimatedCard>
@@ -21,6 +23,7 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import AnimatedCard from './AnimatedCard.vue'
 
 // Icons
@@ -57,9 +60,80 @@ const Percent = {
 }
 
 const stats = [
-  { icon: AlertTriangle, value: "73%", label: "of students feel overwhelmed by applications" },
-  { icon: Clock, value: "120+ hours", label: "wasted on university research" },
-  { icon: Calendar, value: "42%", label: "miss scholarship deadlines" },
-  { icon: Percent, value: "3.7x", label: "higher rejection rates for unpolished essays" }
+  {
+    icon: AlertTriangle,
+    value: 73,
+    initialValue: 0,
+    unit: "%",
+    label: "of students feel overwhelmed by applying to colleges",
+    duration: 1500
+  },
+  {
+    icon: Clock,
+    value: 120,
+    initialValue: 0,
+    unit: "+ hours",
+    label: "wasted on university research",
+    duration: 2000
+  },
+  {
+    icon: Calendar,
+    value: 56,
+    initialValue: 0,
+    unit: "%",
+    label: "of students have no strategy in preparing for exams",
+    duration: 1500
+  },
+  {
+    icon: Percent,
+    value: 3.7,
+    initialValue: 0,
+    unit: "x",
+    label: "higher rejection rates for unpolished applications",
+    duration: 1800,
+    decimalPlaces: 1
+  }
 ]
+
+const counterEls = ref([])
+
+onMounted(() => {
+  // Start counters when component mounts
+  stats.forEach((stat, index) => {
+    animateCounter(
+      counterEls.value[index],
+      stat.value,
+      stat.duration,
+      stat.decimalPlaces
+    )
+  })
+})
+
+function animateCounter(el, target, duration, decimalPlaces = 0) {
+  const start = 0
+  const increment = target / (duration / 16) // 60fps
+  let current = start
+  const startTime = performance.now()
+
+  function updateCounter(timestamp) {
+    const elapsed = timestamp - startTime
+    const progress = Math.min(elapsed / duration, 1)
+
+    if (decimalPlaces > 0) {
+      current = Number((target * progress).toFixed(decimalPlaces))
+    } else {
+      current = Math.floor(target * progress)
+    }
+
+    el.textContent = current
+
+    if (progress < 1) {
+      requestAnimationFrame(updateCounter)
+    } else {
+      el.textContent = decimalPlaces > 0 ? target.toFixed(decimalPlaces) : target
+    }
+  }
+
+  requestAnimationFrame(updateCounter)
+}
 </script>

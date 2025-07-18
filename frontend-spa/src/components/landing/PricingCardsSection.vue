@@ -35,7 +35,7 @@
                 </li>
               </ul>
 
-              <button :class="`w-full py-3 rounded-lg font-medium mt-auto ${plan.highlight
+              <button :class="`w-full py-3 rounded-xl font-medium mt-auto ${plan.highlight
                 ? 'bg-primary-600 hover:bg-primary-700 text-white'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                 }`">
@@ -52,42 +52,34 @@
 <script setup>
 const pricing = [
   {
-    name: "Starter",
-    price: "$0",
+    name: "Student",
+    price: "$5",
     description: "Perfect for individual students",
     features: [
       "University database access",
-      "3 essay reviews/month",
-      "Deadline tracker",
-      "Basic scholarship search",
+      "Essay and extracurricular activity reviews",
       "Exam preparation resources"
     ],
     highlight: false
   },
   {
-    name: "Pro Team",
+    name: "Team",
     price: "$10",
     description: "For small groups & counselors",
     features: [
       "Everything in Starter",
-      "Up to 5 students",
-      "Unlimited essay reviews",
-      "Priority support",
-      "Scholarship matching",
-      "AI-powered shortlisting"
+      "Invite 15 students",
+      "Invite counselors and recommenders to your personalized workspace"
     ],
     highlight: true
   },
   {
-    name: "Enterprise",
-    price: "$20",
+    name: "Community",
+    price: "$30",
     description: "Schools & large organizations",
     features: [
       "Everything in Pro",
-      "20+ student licenses",
-      "Dedicated advisor",
-      "Custom reporting",
-      "Interview prep modules",
+      "Invite 150+ students",
       "Advanced analytics"
     ],
     highlight: false
