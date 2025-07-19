@@ -5,19 +5,16 @@
         <div>
           <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
-            <input id="email" type="email" v-model.trim="email" required autocomplete="email"
-              placeholder="johndoe@gmail.com" :class="inputClasses" @input="validateField('email')" />
-            <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}</p>
+            <CInput id="email" type="email" v-model.trim="email" required autocomplete="email"
+              placeholder="johndoe@gmail.com" @input="validateField('email')" :error="validationErrors.email" />
           </div>
         </div>
 
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-            <input id="password" type="password" v-model="password" required autocomplete="current-password"
-              placeholder="A strong password" :class="inputClasses" @input="validateField('password')" />
-            <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
-              validationErrors.password }}</p>
+            <CInput id="password" type="password" v-model="password" required autocomplete="current-password"
+              placeholder="A strong password" @input="validateField('password')" :error="validationErrors.password" />
           </div>
         </div>
 
@@ -39,8 +36,8 @@
       <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
         <div>
           <div class="mt-2">
-            <input id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
-              maxlength="6" :class="inputClasses" @input="validateField('otp')" />
+            <CInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
+              maxlength="6" @input="validateField('otp')" />
             <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
           </div>
         </div>
@@ -76,6 +73,7 @@ import { authService } from '../../api'
 import { useAuthStore } from '../../stores/auth.ts'
 import { handleError } from './handleAuthErrorUtil'
 import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from '../../utils/validationUtils';
+import CInput from "../ui/CInput.vue"
 
 enum State {
   Credentials,
@@ -97,8 +95,6 @@ const state = ref<State>(State.Credentials)
 
 const countdown = ref<number>(0)
 let countdownTimer: number | undefined = undefined
-
-const inputClasses: string = 'block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6'
 
 const headerText = computed<string>(() => {
   switch (state.value) {
