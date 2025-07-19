@@ -9,7 +9,7 @@
         <div v-for="(stat, index) in stats" :key="index" :delay="0.1 * index">
           <div class="animate-fade-in-up p-6 rounded-xl text-center h-full">
             <div class="text-primary-600 mb-4 flex justify-center">
-              <component :is="stat.icon" class="h-10 w-10" />
+              <Icon :icon="stat.icon" class="h-10 w-10" />
             </div>
             <h3 class="text-3xl font-bold mb-2 text-primary-600">
               <span ref="counterEls">{{ stat.initialValue }}</span>{{ stat.unit }}
@@ -22,115 +22,100 @@
   </section>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { Icon } from '@iconify/vue';
 
-// Icons
-const AlertTriangle = {
-  template: `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
-  `
+interface Stat {
+  icon: string;
+  value: number;
+  initialValue: number;
+  unit: string;
+  label: string;
+  duration: number;
+  decimalPlaces?: number;
 }
 
-const Clock = {
-  template: `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  `
-}
-
-const Calendar = {
-  template: `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  `
-}
-
-const Percent = {
-  template: `
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
-    </svg>
-  `
-}
-
-const stats = [
+const stats: Stat[] = [
   {
-    icon: AlertTriangle,
+    icon: 'solar:sad-circle-outline',
     value: 73,
     initialValue: 0,
     unit: "%",
     label: "of students feel overwhelmed by applying to colleges",
-    duration: 1500
+    duration: 1500,
   },
   {
-    icon: Clock,
+    icon: 'game-icons:extra-time',
     value: 120,
     initialValue: 0,
     unit: "+ hours",
     label: "wasted on university research",
-    duration: 2000
+    duration: 2000,
   },
   {
-    icon: Calendar,
+    icon: 'streamline-freehand:edit-pen-write-paper',
     value: 56,
     initialValue: 0,
     unit: "%",
     label: "of students have no strategy in preparing for exams",
-    duration: 1500
+    duration: 1500,
   },
   {
-    icon: Percent,
+    icon: 'pepicons-pencil:cv-circle-off',
     value: 3.7,
     initialValue: 0,
     unit: "x",
     label: "higher rejection rates for unpolished applications",
     duration: 1800,
-    decimalPlaces: 1
-  }
-]
+    decimalPlaces: 1,
+  },
+];
 
-const counterEls = ref([])
+const counterEls = ref<HTMLElement[]>([]);
 
 onMounted(() => {
   stats.forEach((stat, index) => {
-    animateCounter(
-      counterEls.value[index],
-      stat.value,
-      stat.duration,
-      stat.decimalPlaces
-    )
-  })
-})
+    if (counterEls.value[index]) {
+      animateCounter(
+        counterEls.value[index],
+        stat.value,
+        stat.duration,
+        stat.decimalPlaces
+      );
+    }
+  });
+});
 
-function animateCounter(el, target, duration, decimalPlaces = 0) {
-  const start = 0
-  let current = start
-  const startTime = performance.now()
+function animateCounter(
+  el: HTMLElement,
+  target: number,
+  duration: number,
+  decimalPlaces: number = 0
+): void {
+  const start: number = 0;
+  let current: number = start;
+  const startTime: DOMHighResTimeStamp = performance.now();
 
-  function updateCounter(timestamp) {
-    const elapsed = timestamp - startTime
-    const progress = Math.min(elapsed / duration, 1)
+  function updateCounter(timestamp: DOMHighResTimeStamp): void {
+    const elapsed: number = timestamp - startTime;
+    const progress: number = Math.min(elapsed / duration, 1);
 
     if (decimalPlaces > 0) {
-      current = Number((target * progress).toFixed(decimalPlaces))
+      current = Number((target * progress).toFixed(decimalPlaces));
     } else {
-      current = Math.floor(target * progress)
+      current = Math.floor(target * progress);
     }
 
-    el.textContent = current
+    el.textContent = current.toString();
 
     if (progress < 1) {
-      requestAnimationFrame(updateCounter)
+      requestAnimationFrame(updateCounter);
     } else {
-      el.textContent = decimalPlaces > 0 ? target.toFixed(decimalPlaces) : target
+      el.textContent = decimalPlaces > 0 ? target.toFixed(decimalPlaces) : target.toString();
     }
   }
 
-  requestAnimationFrame(updateCounter)
+  requestAnimationFrame(updateCounter);
 }
 </script>

@@ -10,7 +10,7 @@
   </StandardLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import StandardLayout from "../layout/StandardLayout.vue"
 import StepsSection from "./StepsSection.vue"
 import HeroSection from './HeroSection.vue'

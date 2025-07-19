@@ -1,6 +1,6 @@
 <template>
   <div class="relative overflow-hidden">
-    <Vue3Marquee clone=true>
+    <Vue3Marquee :clone='true'>
       <div class="flex items-center space-x-16 mr-16">
         <div v-for="(logo, index) in logos" :key="`first-${index}`">
           <img :src="logo.src" :alt="logo.alt"
@@ -11,7 +11,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Vue3Marquee } from 'vue3-marquee'
 
 import { ref } from 'vue';
@@ -53,13 +53,4 @@ const logos = ref([
     heightClass: 'h-18'
   },
 ]);
-</script>
-<script>
-
-export default {
-  name: "CollegeMarquee",
-  components: {
-    Vue3Marquee,
-  },
-}
 </script>

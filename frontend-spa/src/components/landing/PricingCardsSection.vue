@@ -49,8 +49,16 @@
   </section>
 </template>
 
-<script setup>
-const pricing = [
+<script setup lang="ts">
+interface PricingCard {
+  name: string
+  price: string
+  description: string
+  features: string[]
+  highlight: boolean
+}
+
+const pricing: PricingCard[] = [
   {
     name: "Student",
     price: "$5",

@@ -9,7 +9,7 @@
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8">
-        <div v-for="(step, _index) in steps" :key="step.id" :delay="step.delay">
+        <div v-for="(step, _index) in steps" :key="step.number" :delay="step.delay">
           <div
             class="bg-white p-8 rounded-2xl h-full flex flex-col transition-all transform duration-300 hover:scale-105 hover:border-primary-400 hover:border-solid border-hidden border-2 animate-fade-in-up">
             <div class="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-6">
@@ -31,30 +31,32 @@
   </section>
 </template>
 
-<script setup>
-import { ref } from 'vue';
+<script setup lang="ts">
+interface Step {
+  number: number
+  title: string
+  description: string
+  delay: number
+}
 
-const steps = ref([
+const steps: Step[] = [
   {
-    id: 1,
     number: 1,
     title: 'University Research',
     description: 'Explore 5,000+ global institutions with detailed profiles to find your perfect academic match.',
     delay: 0.1,
   },
   {
-    id: 2,
     number: 2,
     title: 'Application Crafting',
     description: 'Get guidance for standout essays, recommendations, and activity descriptions.',
     delay: 0.3,
   },
   {
-    id: 3,
     number: 3,
     title: 'Exams Preparation',
     description: 'Master standardized tests with personalized study plans and proven strategies.',
     delay: 0.5,
   },
-]);
+]
 </script>

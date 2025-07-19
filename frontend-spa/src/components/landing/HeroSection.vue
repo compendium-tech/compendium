@@ -31,7 +31,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import CollegeMarquee from './CollegeMarquee.vue'
 import { RouterLink } from 'vue-router'
 </script>
