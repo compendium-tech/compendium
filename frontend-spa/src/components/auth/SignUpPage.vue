@@ -95,8 +95,6 @@
 import { RouterLink } from 'vue-router';
 import { authService } from '../../api';
 import { useAuthStore } from '../../stores/auth';
-import StandardLayout from '../layout/StandardLayout.vue';
-
 
 export default {
   components: { RouterLink },
