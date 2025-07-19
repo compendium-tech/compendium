@@ -449,6 +449,7 @@ func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, u
 		UserId:    userId,
 		UserAgent: userAgent,
 		IpAddress: ipAddress,
+		CreatedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		return nil, err
