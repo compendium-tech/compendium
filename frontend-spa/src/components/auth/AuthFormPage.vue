@@ -5,13 +5,13 @@
         <img src="/icon.svg" alt="Your Company" class="mx-auto h-20 w-auto" />
       </RouterLink>
       <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
-        {{ currentStep === 'signup' ? 'Create Your Account' : 'Verify Your Email (OTP)' }}
+        {{ headerText }}
       </h2>
     </div>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <form v-if="currentStep === 'signup'" @submit.prevent="submitSignUp" class="space-y-6">
-        <div>
+      <form v-if="currentStep === 'form'" @submit.prevent="handleSubmit" class="space-y-6">
+        <div v-if="mode === 'signup'">
           <label for="name" class="block text-sm/6 font-medium text-gray-900">Full Name</label>
           <div class="mt-2">
             <input id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
@@ -32,16 +32,17 @@
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-            <input id="password" type="password" v-model="password" required autocomplete="new-password"
-              placeholder="A strong password" :class="inputClasses" />
+            <input id="password" type="password" v-model="password" required
+              :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'" placeholder="A strong password"
+              :class="inputClasses" />
             <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600">{{ validationErrors.password }}</p>
           </div>
         </div>
 
         <div>
-          <button type="submit" :disabled="isLoading || !isSignUpFormValid"
+          <button type="submit" :disabled="isLoading || !isFormValid"
             class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
-            Sign Up
+            {{ mode === 'signup' ? 'Sign Up' : 'Sign In' }}
             <span v-if="isLoading"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent"></span>
           </button>
@@ -77,15 +78,22 @@
             Resend Code <span v-if="countdown > 0">({{ countdown }}s)</span>
           </button>
           <p>
-            <button @click="goBackToSignUp" class="font-semibold text-gray-600 hover:text-gray-500">Go Back</button>
+            <button @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go Back</button>
           </p>
         </div>
       </div>
 
-      <p v-if="currentStep === 'signup'" class="mt-10 text-center text-sm/6 text-gray-500">
-        Already a member?
-        <router-link to="/signin" class="font-semibold text-primary-600 hover:text-primary-500">Sign in to your
-          account</router-link>
+      <p v-if="currentStep === 'form'" class="mt-10 text-center text-sm/6 text-gray-500">
+        <template v-if="mode === 'signup'">
+          Already a member?
+          <RouterLink to="/auth/signin" class="font-semibold text-primary-600 hover:text-primary-500">Sign in to your
+            account</RouterLink>
+        </template>
+        <template v-else>
+          Not a member?
+          <RouterLink to="/auth/signup" class="font-semibold text-primary-600 hover:text-primary-500">Create your
+            account</RouterLink>
+        </template>
       </p>
     </div>
   </div>
@@ -98,6 +106,13 @@ import { useAuthStore } from '../../stores/auth';
 
 export default {
   components: { RouterLink },
+  props: {
+    mode: {
+      type: String,
+      default: 'signup', // Can be 'signup' or 'signin'
+      validator: (value) => ['signup', 'signin'].includes(value),
+    },
+  },
   data() {
     return {
       name: '',
@@ -108,7 +123,7 @@ export default {
       isLoadingMfa: false,
       serverError: '',
       validationErrors: {},
-      currentStep: 'signup',
+      currentStep: 'form', // Can be 'form' (for signup/signin) or 'verifyOtp'
       countdown: 0,
       countdownTimer: null,
     };
@@ -117,8 +132,18 @@ export default {
     inputClasses() {
       return 'block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6';
     },
-    isSignUpFormValid() {
-      return this.name.length > 0 && this.validateEmail(this.email) && this.password.length >= 8;
+    headerText() {
+      if (this.currentStep === 'verifyOtp') {
+        return 'Verify Your Email (OTP)';
+      }
+      return this.mode === 'signup' ? 'Create Your Account' : 'Log in to Your Account';
+    },
+    isFormValid() {
+      if (this.mode === 'signup') {
+        return this.name.length > 0 && this.validateEmail(this.email) && this.password.length >= 8;
+      } else { // signin mode
+        return this.validateEmail(this.email) && this.password.length >= 8;
+      }
     },
     isOtpFormValid() {
       return /^\d{6}$/.test(this.otp);
@@ -142,10 +167,11 @@ export default {
     validateEmail(email) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     },
-    validateSignUpForm() {
+    validateForm() {
       this.validationErrors = {};
       let isValid = true;
-      if (!this.name.trim()) {
+
+      if (this.mode === 'signup' && !this.name.trim()) {
         this.validationErrors.name = 'Full Name is required.';
         isValid = false;
       }
@@ -187,7 +213,7 @@ export default {
 
         switch (statusCode) {
           case 401:
-            this.serverError = 'Invalid OTP. Please check the code and try again.';
+            this.serverError = 'Invalid credentials or OTP. Please check and try again.';
             break;
           case 409:
             this.serverError = 'This email address is already registered. Please try logging in.';
@@ -218,17 +244,34 @@ export default {
       this.validationErrors = {};
     },
 
-    async submitSignUp() {
+    async handleSubmit() {
       this.clearMessages();
-      if (!this.validateSignUpForm()) {
+      if (!this.validateForm()) {
         return;
       }
 
       this.isLoading = true;
       try {
-        await authService.signUp(this.name, this.email, this.password);
-        this.currentStep = 'verifyOtp';
-        this.startCountdown();
+        if (this.mode === 'signup') {
+          await authService.signUp(this.name, this.email, this.password);
+          this.currentStep = 'verifyOtp';
+          this.startCountdown();
+        } else {
+          const response = await authService.signInPassword(this.email, this.password);
+          if (response.data.isMfaRequired) {
+            this.currentStep = 'verifyOtp';
+            this.startCountdown();
+          } else {
+            const authStore = useAuthStore();
+            authStore.setSession(
+              response.data.accessTokenExpiry,
+              this.email
+            );
+            setTimeout(() => {
+              this.$router.push('/dashboard');
+            }, 1500);
+          }
+        }
       } catch (err) {
         this.handleApiError(err);
       } finally {
@@ -245,7 +288,7 @@ export default {
       this.isLoadingMfa = true;
       const authStore = useAuthStore();
       try {
-        const response = await authService.verifyMfaSignUp(this.email, this.otp);
+        const response = await authService.verifyMfaSignIn(this.email, this.otp); // Changed to verifyMfaSignIn
         authStore.setSession(
           response.data.accessTokenExpiry,
           this.email
@@ -268,7 +311,11 @@ export default {
 
       this.isLoading = true;
       try {
-        await authService.signUp(this.name, this.email, this.password);
+        if (this.mode === 'signup') {
+          await authService.signUp(this.name, this.email, this.password);
+        } else {
+          await authService.signInPassword(this.email, this.password);
+        }
         this.startCountdown();
       } catch (err) {
         this.handleApiError(err);
@@ -292,8 +339,8 @@ export default {
       }, 1000);
     },
 
-    goBackToSignUp() {
-      this.currentStep = 'signup';
+    goBackToForm() {
+      this.currentStep = 'form';
       this.otp = '';
       this.clearMessages();
       clearInterval(this.countdownTimer);
