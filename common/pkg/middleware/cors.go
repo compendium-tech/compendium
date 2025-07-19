@@ -19,7 +19,7 @@ func DefaultCors() Cors {
 	return Cors{
 		AllowOrigin:      "http://localhost:5173",
 		MaxAge:           1728000,
-		AllowMethods:     "GET, POST, OPTIONS*",
+		AllowMethods:     "GET, POST, OPTIONS",
 		AllowHeaders:     "DNT,X-Csrf-Token,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Cookie",
 		ExposeHeaders:    "*",
 		AllowCredentials: true,
