@@ -93,7 +93,7 @@ func (m *JwtBasedTokenManager) NewRefreshToken() (string, error) {
 func newRandomString(size int) (string, error) {
 	b := make([]byte, size)
 
-	s := rand.NewSource(time.Now().UnixMilli())
+	s := rand.NewSource(time.Now().UnixMicro())
 	r := rand.New(s)
 
 	if _, err := r.Read(b); err != nil {
