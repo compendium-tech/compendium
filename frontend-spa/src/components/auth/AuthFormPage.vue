@@ -44,7 +44,7 @@
             class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
             {{ mode === 'signup' ? 'Sign Up' : 'Sign In' }}
             <span v-if="isLoading"
-              class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent"></span>
+              class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
           </button>
         </div>
         <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
@@ -66,7 +66,7 @@
               class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
               Verify Account
               <span v-if="isLoadingMfa"
-                class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent"></span>
+                class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
             </button>
           </div>
           <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
@@ -103,6 +103,18 @@
 import { RouterLink } from 'vue-router';
 import { authService } from '../../api';
 import { useAuthStore } from '../../stores/auth';
+
+const AppErrorKind = {
+  InternalServerError: 0,
+  RequestValidationError: 1,
+  InvalidCredentialsError: 2,
+  EmailTakenError: 3,
+  UserNotFoundError: 4,
+  TooManyRequestsError: 5,
+  MfaNotRequestedError: 6,
+  InvalidMfaOtpError: 7,
+  InvalidSessionError: 8,
+};
 
 export default {
   components: { RouterLink },
@@ -208,35 +220,43 @@ export default {
       this.serverError = '';
 
       if (err.response) {
-        const statusCode = err.response.status;
-        const errorMessage = err.response.data?.message || 'An unexpected error occurred.';
+        const errorKind = err.response.data?.errorKind;
+        const defaultErrorMessage = 'An unexpected error occurred.';
 
-        switch (statusCode) {
-          case 401:
-            this.serverError = 'Invalid credentials or OTP. Please check and try again.';
+        switch (errorKind) {
+          case AppErrorKind.RequestValidationError:
+            this.serverError = 'Invalid request data. Please check your input.';
             break;
-          case 409:
+          case AppErrorKind.InvalidCredentialsError:
+            this.serverError = 'Invalid email or password. Please try again.';
+            break;
+          case AppErrorKind.EmailTakenError:
             this.serverError = 'This email address is already registered. Please try logging in.';
             break;
-          case 429:
+          case AppErrorKind.UserNotFoundError:
+            this.serverError = 'User not found. Please check your email address.';
+            break;
+          case AppErrorKind.TooManyRequestsError:
             this.serverError = 'Too many requests. Please wait a moment before trying again.';
             break;
-          case 500:
-            this.serverError = 'Something went wrong on our end. Please try again later.';
+          case AppErrorKind.MfaNotRequestedError:
+            this.serverError = 'MFA was not requested for this session.';
             break;
-          case 400:
-            this.serverError = errorMessage;
+          case AppErrorKind.InvalidMfaOtpError:
+            this.serverError = 'Invalid OTP. Please check the code and try again.';
+            break;
+          case AppErrorKind.InvalidSessionError:
+            this.serverError = 'Your session is invalid or expired. Please sign in again.';
             break;
           default:
-            this.serverError = errorMessage;
+            this.serverError = defaultErrorMessage;
             break;
         }
       } else if (err.request) {
         this.serverError = 'Network error. Please check your internet connection.';
       } else {
-        this.serverError = err.message || 'An unexpected error occurred.';
+        this.serverError = defaultErrorMessage;
       }
-      console.error('API Error:', err);
     },
 
     clearMessages() {
@@ -288,7 +308,7 @@ export default {
       this.isLoadingMfa = true;
       const authStore = useAuthStore();
       try {
-        const response = await authService.verifyMfaSignIn(this.email, this.otp); // Changed to verifyMfaSignIn
+        const response = await authService.verifyMfaSignIn(this.email, this.otp);
         authStore.setSession(
           response.data.accessTokenExpiry,
           this.email

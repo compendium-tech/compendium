@@ -19,47 +19,6 @@ apiClient.interceptors.request.use(config => {
   return Promise.reject(error);
 });
 
-let isRefreshing = false;
-
-apiClient.interceptors.response.use(
-  response => response,
-  async error => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      if (isRefreshing) {
-        return new Promise(function(resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-        .then(() => apiClient(originalRequest))
-        .catch(err => Promise.reject(err));
-      }
-
-      isRefreshing = true;
-
-      return new Promise(async (resolve, reject) => {
-        try {
-          const _refreshResponse = await authService.refreshToken();
-          isRefreshing = false;
-          processQueue(null);
-          resolve(apiClient(originalRequest));
-        } catch (refreshError) {
-          isRefreshing = false;
-          processQueue(refreshError);
-          console.error('Refresh token failed, logging out:', refreshError);
-          alert('Session expired. Please sign in again.');
-          window.location.href = '/signin';
-          reject(refreshError);
-        }
-      });
-    }
-
-    return Promise.reject(error);
-  }
-);
-
 export const authService = {
   signUp: (name, email, password) => {
     return apiClient.post('/users', { name, email, password });
@@ -104,6 +63,11 @@ const processQueue = (error, tokenRefreshed = false) => {
 apiClient.interceptors.response.use(
   response => response,
   async error => {
+    console.log(window.location.pathname)
+    if (window.location.pathname.startsWith('/auth/')) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
     const authStore = useAuthStore(); // Get the store instance
 
