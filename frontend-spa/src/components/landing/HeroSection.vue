@@ -19,10 +19,12 @@
         China.
       </p>
 
-      <button
-        class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
-        Start your academic journey
-      </button>
+      <RouterLink to="/auth/signup">
+        <button
+          class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+          Start your academic journey
+        </button>
+      </RouterLink>
 
       <CollegeMarquee class="mt-16 max-w-screen" />
     </div>
@@ -31,4 +33,5 @@
 
 <script setup>
 import CollegeMarquee from './CollegeMarquee.vue'
+import { RouterLink } from 'vue-router'
 </script>
