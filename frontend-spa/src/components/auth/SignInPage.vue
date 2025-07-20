@@ -5,7 +5,7 @@
         <div>
           <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
-            <CInput id="email" type="email" v-model.trim="email" required autocomplete="email"
+            <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" @input="validateField('email')" :error="validationErrors.email" />
           </div>
         </div>
@@ -13,7 +13,7 @@
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-            <CInput id="password" type="password" v-model="password" required autocomplete="current-password"
+            <BaseInput id="password" type="password" v-model="password" required autocomplete="current-password"
               placeholder="A strong password" @input="validateField('password')" :error="validationErrors.password" />
           </div>
         </div>
@@ -73,7 +73,7 @@ import { authService } from '../../api'
 import { useAuthStore } from '../../stores/auth.ts'
 import { handleError } from './handleAuthErrorUtil'
 import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from '../../utils/validationUtils';
-import CInput from "../ui/CInput.vue"
+import BaseInput from "../ui/BaseInput.vue"
 
 enum State {
   Credentials,

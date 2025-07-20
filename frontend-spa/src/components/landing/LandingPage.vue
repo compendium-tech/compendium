@@ -5,6 +5,7 @@
       <ProblemStatsSection />
       <StepsSection />
       <PricingCardsSection />
+      <FAQSection />
       <ReadyToStartSection />
     </div>
   </StandardLayout>
@@ -17,4 +18,5 @@ import HeroSection from './HeroSection.vue'
 import ProblemStatsSection from './ProblemStatsSection.vue'
 import PricingCardsSection from './PricingCardsSection.vue'
 import ReadyToStartSection from "./ReadyToStartSection.vue"
+import FAQSection from "./FAQSection.vue"
 </script>

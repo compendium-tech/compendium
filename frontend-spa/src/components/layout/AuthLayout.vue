@@ -21,7 +21,7 @@
       </template>
       <template v-else>
         Not a member?
-        <RouterLink to="/auth/signup" class="font-semibold text-primary-600 hover:text-primary-500">Create your
+        <RouterLink to="/auth/signin" class="font-semibold text-primary-600 hover:text-primary-500">Create your
           account</RouterLink>
       </template>
     </p>

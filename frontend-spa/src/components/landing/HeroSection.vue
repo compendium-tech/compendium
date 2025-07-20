@@ -10,7 +10,7 @@
         <span>Introducing Compendium</span>
       </div>
 
-      <h1 class="text-3xl md:text-4xl lg:text-6xl font-bold mb-6">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
         Your <span class="text-primary-600">College Application</span> Assistant
       </h1>
 
@@ -19,11 +19,10 @@
         China.
       </p>
 
-      <RouterLink to="/auth/signup">
-        <button
-          class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+      <RouterLink to="/auth/signin">
+        <BaseButton variant="primary" size="md" hover-effect="scale">
           Start your academic journey
-        </button>
+        </BaseButton>
       </RouterLink>
 
       <CollegeMarquee class="mt-16 max-w-screen" />
@@ -33,5 +32,6 @@
 
 <script setup lang="ts">
 import CollegeMarquee from './CollegeMarquee.vue'
+import BaseButton from "../ui/BaseButton.vue"
 import { RouterLink } from 'vue-router'
 </script>

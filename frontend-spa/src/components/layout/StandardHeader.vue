@@ -11,7 +11,7 @@
         </div>
       </RouterLink>
       <template v-if="!authStore.isAuthenticated">
-        <RouterLink to="/auth/signup">
+        <RouterLink to="/auth/signin">
           <button
             class="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white py-2 px-6 rounded-xl transition-all transform hover:scale-105">
             <span>Sign up</span>

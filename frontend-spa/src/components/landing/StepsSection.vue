@@ -8,10 +8,10 @@
         How Compendium guides you through every step of the application journey
       </p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:px-8">
         <div v-for="(step, _index) in steps" :key="step.number" :delay="step.delay">
           <div
-            class="bg-white p-8 rounded-2xl h-full flex flex-col transition-all transform duration-300 hover:scale-105 hover:border-primary-400 hover:border-solid border-hidden border-2 animate-fade-in-up">
+            class="bg-white p-8 rounded-2xl h-full flex flex-col transition-all transform duration-300 hover:border-primary-400 hover:border-solid border-white border-2 animate-fade-in-up">
             <div class="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-6">
               <div class="text-primary-600 text-2xl font-bold">{{ step.number }}</div>
             </div>
@@ -22,16 +22,15 @@
       </div>
 
       <div class="mt-16 text-center">
-        <button
-          class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-xl text-lg transition-all transform hover:scale-105">
-          See How It Works
-        </button>
+        <BaseButton>See How It Work </BaseButton>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import BaseButton from "../ui/BaseButton.vue"
+
 interface Step {
   number: number
   title: string

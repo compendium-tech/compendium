@@ -30,11 +30,11 @@
                 <div class="mt-1 flex rounded-lg shadow-sm">
                   <input v-model="editableName" type="text" id="name" :disabled="!isEditingName"
                     class="flex-1 block w-full rounded-l-md border-primary-100 focus:border-primary-100 sm:text-lg p-2.5 disabled:bg-gray-100 disabled:text-gray-600" />
-                  <button @click="toggleEditName"
-                    class="flex items-center text-lg px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-primary-600 hover:bg-primary-400 transition-colors duration-200 ">
+                  <BaseButton class="flex items-center" @click="toggleEditName" variant="primary" size="sm"
+                    :hover-effect="isEditingName ? 'none' : 'scale'">
                     <Icon :icon="isEditingName ? 'mdi:content-save' : 'mdi:pencil'" class="h-5 w-5 mr-2" />
                     <span>{{ isEditingName ? 'Save' : 'Edit' }}</span>
-                  </button>
+                  </BaseButton>
                 </div>
                 <p v-if="nameUpdateMessage" :class="nameUpdateSuccess ? 'text-green-600' : 'text-red-600'"
                   class="mt-2 text-sm">{{ nameUpdateMessage }}</p>
@@ -49,42 +49,11 @@
                 Status: <span :class="subscriptionStatusClass">{{ user.subscriptionStatus }}</span>
                 <span v-if="user.subscriptionExpires"> (Expires: {{ formattedSubscriptionExpiry }})</span>
               </div>
-              <button @click="handleSubscribe"
-                class="flex items-center text-lg px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-primary-600 hover:bg-primary-400 transition-colors duration-200 ">
+              <BaseButton class="flex items-center" @click="handleSubscribe" variant="primary" size="sm">
                 <Icon icon="famicons:card-outline" class="w-6 h-6 mr-2" />
                 <span>Enter billing information</span>
-              </button>
+              </BaseButton>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="showChangePasswordModal"
-        class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">Change Password</h3>
-          <p class="text-gray-700 mb-6">This is a placeholder for the change password form. In a real application, you
-            would have input fields for current and new passwords here.</p>
-          <div class="flex justify-end space-x-3">
-            <button @click="showChangePasswordModal = false"
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
-            <button @click="handleChangePassword"
-              class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Confirm Change</button>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="showRemoveAccountModal"
-        class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">Remove Account</h3>
-          <p class="text-gray-700 mb-6">Are you sure you want to remove your account? This action cannot be undone.</p>
-          <div class="flex justify-end space-x-3">
-            <button @click="showRemoveAccountModal = false"
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Cancel</button>
-            <button @click="handleRemoveAccount"
-              class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">Yes,
-              Remove Account</button>
           </div>
         </div>
       </div>
@@ -97,6 +66,7 @@ import { ref, onMounted, computed } from 'vue';
 import { userService } from "../../api";
 import StandardLayout from "../layout/StandardLayout.vue";
 import { Icon } from '@iconify/vue';
+import BaseButton from "../ui/BaseButton.vue";
 
 const user = ref(null);
 const isLoading = ref(true);
@@ -105,9 +75,6 @@ const isEditingName = ref(false);
 const editableName = ref('');
 const nameUpdateMessage = ref('');
 const nameUpdateSuccess = ref(false);
-
-const showChangePasswordModal = ref(false);
-const showRemoveAccountModal = ref(false);
 
 const formattedCreationDate = computed(() => {
   if (user.value && user.value.createdAt) {
@@ -190,19 +157,6 @@ const toggleEditName = async () => {
     }
   }
   isEditingName.value = !isEditingName.value;
-};
-
-const handleChangePassword = () => {
-  console.log('Change Password button clicked. Implement password change form/logic here.');
-  showChangePasswordModal.value = false;
-};
-
-const handleRemoveAccount = async () => {
-  showRemoveAccountModal.value = false;
-};
-
-const handleSubscribe = async () => {
-  // Logic for handling subscription goes here
 };
 
 onMounted(() => {

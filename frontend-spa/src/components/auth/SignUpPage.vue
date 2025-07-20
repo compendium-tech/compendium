@@ -5,7 +5,7 @@
         <div>
           <label for="name" class="block text-sm/6 font-medium text-gray-900">Full Name</label>
           <div class="mt-2">
-            <CInput id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
+            <BaseInput id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
               @input="validateField('name')" />
             <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}</p>
           </div>
@@ -14,7 +14,7 @@
         <div>
           <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
-            <CInput id="email" type="email" v-model.trim="email" required autocomplete="email"
+            <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" input="validateField('email')" />
             <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}</p>
           </div>
@@ -23,7 +23,7 @@
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-            <CInput id="password" type="password" v-model="password" required autocomplete="new-password"
+            <BaseInput id="password" type="password" v-model="password" required autocomplete="new-password"
               placeholder="A strong password" @input="validateField('password')" />
             <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
               validationErrors.password }}</p>
@@ -48,7 +48,7 @@
       <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
         <div>
           <div class="mt-2">
-            <CInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
+            <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
               maxlength="6" @input="validateField('otp')" />
             <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
           </div>
@@ -85,7 +85,7 @@ import { authService } from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from '../../utils/validationUtils';
 import { handleError } from './handleAuthErrorUtil'
-import CInput from "../ui/CInput.vue"
+import BaseInput from "../ui/BaseInput.vue"
 
 enum State {
   Credentials,

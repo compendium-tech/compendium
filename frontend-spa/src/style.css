@@ -54,6 +54,7 @@
   --color-primary-400: #fb923c;
   --color-primary-600: #ea580c;
   --font-sans: 'Asta Sans', sans-serif;
+  --animate-fade-in: fade-in 0.3s ease-out;
   --animate-fade-in-up: fade-in-up 0.8s ease-out;
 
   @keyframes fade-in-up {
@@ -62,6 +63,18 @@
       transform: translateY(20px);
     }
     100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
       opacity: 1;
       transform: translateY(0);
     }

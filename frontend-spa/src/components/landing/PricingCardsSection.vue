@@ -10,8 +10,8 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div v-for="(plan, index) in pricing" :key="index">
-          <div :class="`bg-white rounded-2xl overflow-hidden shadow-lg border h-full flex flex-col ${plan.highlight
-            ? 'border-primary-600 ring-2 ring-primary-600 md:scale-105 z-10'
+          <div :class="`bg-white rounded-2xl overflow-hidden shadow-lg border-3 h-full flex flex-col ${plan.highlight
+            ? 'border-primary-600 md:scale-105 z-10'
             : 'border-gray-200'
             }`" class="animate-fade-in-up">
             <div v-if="plan.highlight" class="bg-primary-600 text-white text-center py-2">
@@ -35,12 +35,11 @@
                 </li>
               </ul>
 
-              <button :class="`w-full py-3 rounded-xl font-medium mt-auto ${plan.highlight
-                ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                }`">
-                Get Started
-              </button>
+              <RouterLink to="/auth/signin">
+                <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'">
+                  Get Started
+                </BaseButton>
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -50,6 +49,9 @@
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from "vue-router";
+import BaseButton from "../ui/BaseButton.vue";
+
 interface PricingCard {
   name: string
   price: string
