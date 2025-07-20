@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import CollegeMarquee from './CollegeMarquee.vue'
+import CollegeMarquee from "./CollegeMarquee.vue"
 import BaseButton from "../ui/BaseButton.vue"
-import { RouterLink } from 'vue-router'
+import { RouterLink } from "vue-router"
 </script>

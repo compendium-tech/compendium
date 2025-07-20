@@ -37,7 +37,7 @@ export enum AuthFormKind {
 </script>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink } from "vue-router"
 
 interface Props {
   headerText: string,

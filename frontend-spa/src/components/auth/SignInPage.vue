@@ -26,7 +26,7 @@
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
           </button>
         </div>
-        <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
+        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
       </form>
     </template>
 
@@ -49,7 +49,7 @@
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
           </button>
         </div>
-        <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
+        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
       </form>
 
       <div class="mt-6 text-center text-sm/6 space-y-3">
@@ -66,14 +66,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import AuthLayout, { AuthFormKind } from '../layout/AuthLayout.vue'
-import { authService } from '../../api'
-import { useAuthStore } from '../../stores/auth.ts'
-import { handleError } from './handleAuthErrorUtil'
-import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from '../../utils/validationUtils';
+import { ref, computed, onUnmounted } from "vue"
+import { useRouter } from "vue-router"
+import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
+import { authService } from "../../api.ts"
+import { useAuthStore } from "../../stores/auth.ts"
+import { handleApiError } from "./handleAuthErrorUtil"
+import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validationUtils"
 import BaseInput from "../ui/BaseInput.vue"
+import { ApiError } from "../../api.ts"
 
 enum State {
   Credentials,
@@ -83,13 +84,13 @@ enum State {
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = ref<string>('')
-const password = ref<string>('')
-const otp = ref<string>('')
+const email = ref<string>("")
+const password = ref<string>("")
+const otp = ref<string>("")
 
 const isLoading = ref<boolean>(false)
 const isLoadingMfa = ref<boolean>(false)
-const serverError = ref<string>('')
+const globalError = ref<string>("")
 const validationErrors = ref<Record<string, string>>({})
 const state = ref<State>(State.Credentials)
 
@@ -99,9 +100,9 @@ let countdownTimer: number | undefined = undefined
 const headerText = computed<string>(() => {
   switch (state.value) {
     case State.Credentials:
-      return 'Sign in to Your Account'
+      return "Sign in to Your Account"
     case State.Mfa:
-      return 'Verify Your Email Address'
+      return "Verify Your Email Address"
   }
 })
 
@@ -114,33 +115,33 @@ const isMfaFormValid = computed<boolean>(() => {
 })
 
 const validateField = (fieldName: string): void => {
-  serverError.value = ''
+  globalError.value = ""
 
   switch (fieldName) {
-    case 'email':
+    case "email":
       if (!email.value.trim()) {
-        validationErrors.value.email = 'Email address is required.'
+        validationErrors.value.email = "Email address is required."
       } else if (!isEmailValid(email.value)) {
-        validationErrors.value.email = 'Please enter a valid email address.'
+        validationErrors.value.email = "Please enter a valid email address."
       } else {
         delete validationErrors.value.email
       }
       break
-    case 'password':
+    case "password":
       if (!password.value) {
-        validationErrors.value.password = 'Password is required.'
+        validationErrors.value.password = "Password is required."
       } else if (!isPasswordValid(password.value)) {
         validationErrors.value.password =
-          'Password must be between 6 and 100 characters long, and contain at least one uppercase letter, one lowercase letter, one digit, and one special character (e.g., !@#$%^&*).'
+          "Password must be between 6 and 100 characters long, and contain at least one uppercase letter, one lowercase letter, one digit, and one special character (e.g., !@#$%^&*)."
       } else {
         delete validationErrors.value.password
       }
       break
-    case 'otp':
+    case "otp":
       if (!otp.value.trim()) {
-        validationErrors.value.otp = 'Verification code is required.'
+        validationErrors.value.otp = "Verification code is required."
       } else if (!isSixDigitCodeValid(otp.value)) {
-        validationErrors.value.otp = 'Verification code must be a 6-digit number.'
+        validationErrors.value.otp = "Verification code must be a 6-digit number."
       } else {
         delete validationErrors.value.otp
       }
@@ -152,11 +153,11 @@ const validateCredentialsForm = (): boolean => {
   validationErrors.value = {}
   let isValid = true
 
-  validateField('email');
-  validateField('password');
+  validateField("email")
+  validateField("password")
 
   if (Object.keys(validationErrors.value).length > 0) {
-    isValid = false;
+    isValid = false
   }
   return isValid
 }
@@ -164,16 +165,16 @@ const validateCredentialsForm = (): boolean => {
 const validateMfaForm = (): boolean => {
   validationErrors.value = {}
   let isValid = true
-  validateField('otp');
+  validateField("otp")
 
   if (Object.keys(validationErrors.value).length > 0) {
-    isValid = false;
+    isValid = false
   }
   return isValid
 }
 
 const clearMessages = (): void => {
-  serverError.value = ''
+  globalError.value = ""
   validationErrors.value = {}
 }
 
@@ -196,7 +197,7 @@ const startCountdown = (): void => {
 
 const goBackToForm = (): void => {
   state.value = State.Credentials
-  otp.value = ''
+  otp.value = ""
   clearMessages()
   if (countdownTimer) {
     clearInterval(countdownTimer)
@@ -211,23 +212,27 @@ const handleSubmit = async (): Promise<void> => {
   }
 
   isLoading.value = true
+
   try {
     const response = await authService.signInPassword(email.value, password.value)
 
-    if (response.data.isMfaRequired) {
+    if (response.isMfaRequired) {
       state.value = State.Mfa
       startCountdown()
-    } else {
-      authStore.setSession(
-        response.data.accessTokenExpiry,
-        email.value
-      )
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+      return
     }
-  } catch (err: any) {
-    handleError(err, serverError)
+
+    authStore.setSession(
+      response.accessTokenExpiry,
+      email.value
+    )
+
+    setTimeout(() => {
+      router.push("/dashboard")
+    }, 1500)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoading.value = false
   }
@@ -240,18 +245,20 @@ const verifyMfa = async (): Promise<void> => {
   }
 
   isLoadingMfa.value = true
+
   try {
     const response = await authService.verifyMfaSignIn(email.value, otp.value)
 
     authStore.setSession(
-      response.data.accessTokenExpiry,
+      response.accessTokenExpiry,
       email.value
     )
     setTimeout(() => {
-      router.push('/dashboard')
+      router.push("/dashboard")
     }, 1500)
-  } catch (err: any) {
-    handleError(err, serverError)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoadingMfa.value = false
   }
@@ -264,11 +271,13 @@ const resendOtp = async (): Promise<void> => {
   }
 
   isLoading.value = true
+
   try {
     await authService.signInPassword(email.value, password.value)
     startCountdown()
-  } catch (err: any) {
-    handleError(err, serverError)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoading.value = false
   }

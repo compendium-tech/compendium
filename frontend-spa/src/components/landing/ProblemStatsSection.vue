@@ -23,22 +23,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Icon } from '@iconify/vue';
+import { ref, onMounted } from "vue"
+import { Icon } from "@iconify/vue"
 
 interface Stat {
-  icon: string;
-  value: number;
-  initialValue: number;
-  unit: string;
-  label: string;
-  duration: number;
-  decimalPlaces?: number;
+  icon: string
+  value: number
+  initialValue: number
+  unit: string
+  label: string
+  duration: number
+  decimalPlaces?: number
 }
 
 const stats: Stat[] = [
   {
-    icon: 'solar:sad-circle-outline',
+    icon: "solar:sad-circle-outline",
     value: 73,
     initialValue: 0,
     unit: "%",
@@ -46,7 +46,7 @@ const stats: Stat[] = [
     duration: 1500,
   },
   {
-    icon: 'game-icons:extra-time',
+    icon: "game-icons:extra-time",
     value: 120,
     initialValue: 0,
     unit: "+ hours",
@@ -54,7 +54,7 @@ const stats: Stat[] = [
     duration: 2000,
   },
   {
-    icon: 'streamline-freehand:edit-pen-write-paper',
+    icon: "streamline-freehand:edit-pen-write-paper",
     value: 56,
     initialValue: 0,
     unit: "%",
@@ -62,7 +62,7 @@ const stats: Stat[] = [
     duration: 1500,
   },
   {
-    icon: 'pepicons-pencil:cv-circle-off',
+    icon: "pepicons-pencil:cv-circle-off",
     value: 3.7,
     initialValue: 0,
     unit: "x",
@@ -70,9 +70,9 @@ const stats: Stat[] = [
     duration: 1800,
     decimalPlaces: 1,
   },
-];
+]
 
-const counterEls = ref<HTMLElement[]>([]);
+const counterEls = ref<HTMLElement[]>([])
 
 onMounted(() => {
   stats.forEach((stat, index) => {
@@ -82,10 +82,10 @@ onMounted(() => {
         stat.value,
         stat.duration,
         stat.decimalPlaces
-      );
+      )
     }
-  });
-});
+  })
+})
 
 function animateCounter(
   el: HTMLElement,
@@ -93,29 +93,29 @@ function animateCounter(
   duration: number,
   decimalPlaces: number = 0
 ): void {
-  const start: number = 0;
-  let current: number = start;
-  const startTime: DOMHighResTimeStamp = performance.now();
+  const start: number = 0
+  let current: number = start
+  const startTime: DOMHighResTimeStamp = performance.now()
 
   function updateCounter(timestamp: DOMHighResTimeStamp): void {
-    const elapsed: number = timestamp - startTime;
-    const progress: number = Math.min(elapsed / duration, 1);
+    const elapsed: number = timestamp - startTime
+    const progress: number = Math.min(elapsed / duration, 1)
 
     if (decimalPlaces > 0) {
-      current = Number((target * progress).toFixed(decimalPlaces));
+      current = Number((target * progress).toFixed(decimalPlaces))
     } else {
-      current = Math.floor(target * progress);
+      current = Math.floor(target * progress)
     }
 
-    el.textContent = current.toString();
+    el.textContent = current.toString()
 
     if (progress < 1) {
-      requestAnimationFrame(updateCounter);
+      requestAnimationFrame(updateCounter)
     } else {
-      el.textContent = decimalPlaces > 0 ? target.toFixed(decimalPlaces) : target.toString();
+      el.textContent = decimalPlaces > 0 ? target.toFixed(decimalPlaces) : target.toString()
     }
   }
 
-  requestAnimationFrame(updateCounter);
+  requestAnimationFrame(updateCounter)
 }
 </script>

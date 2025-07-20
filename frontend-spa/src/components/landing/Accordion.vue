@@ -20,24 +20,26 @@
     </div>
   </div>
 </template>
+
 <script lang="ts">
 export interface AccordionItem {
-  title: string;
-  content: string;
+  title: string
+  content: string
 }
 </script>
+
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue"
 
 interface AccordionItems {
-  items: AccordionItem[];
+  items: AccordionItem[]
 }
 
-defineProps<AccordionItems>();
+defineProps<AccordionItems>()
 
-const openIndex = ref(-1);
+const openIndex = ref(-1)
 
 const toggleItem = (index: number) => {
-  openIndex.value = openIndex.value === index ? -1 : index;
+  openIndex.value = openIndex.value === index ? -1 : index
 };
 </script>

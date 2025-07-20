@@ -5,28 +5,36 @@
         <div>
           <label for="name" class="block text-sm/6 font-medium text-gray-900">Full Name</label>
           <div class="mt-2">
+
             <BaseInput id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
               @input="validateField('name')" />
-            <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}</p>
+            <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}
+            </p>
+
           </div>
         </div>
 
         <div>
           <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
+
             <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" input="validateField('email')" />
-            <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}</p>
+            <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}
+            </p>
+
           </div>
         </div>
 
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
+
             <BaseInput id="password" type="password" v-model="password" required autocomplete="new-password"
               placeholder="A strong password" @input="validateField('password')" />
             <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
               validationErrors.password }}</p>
+
           </div>
         </div>
 
@@ -38,7 +46,7 @@
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
           </button>
         </div>
-        <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
+        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
       </form>
     </template>
 
@@ -48,9 +56,11 @@
       <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
         <div>
           <div class="mt-2">
+
             <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
               maxlength="6" @input="validateField('otp')" />
             <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
+
           </div>
         </div>
         <div>
@@ -61,7 +71,7 @@
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
           </button>
         </div>
-        <p v-if="serverError" class="text-red-600 text-center text-sm mt-4">{{ serverError }}</p>
+        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
       </form>
 
       <div class="mt-6 text-center text-sm/6 space-y-3">
@@ -70,7 +80,8 @@
           Resend Code <span v-if="countdown > 0">({{ countdown }}s)</span>
         </button>
         <p>
-          <button @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go Back</button>
+          <button @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go
+            Back</button>
         </p>
       </div>
     </template>
@@ -78,14 +89,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import AuthLayout, { AuthFormKind } from '../layout/AuthLayout.vue'
-import { authService } from '../../api'
-import { useAuthStore } from '../../stores/auth'
-import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from '../../utils/validationUtils';
-import { handleError } from './handleAuthErrorUtil'
+import { ref, computed, onUnmounted } from "vue"
+import { useRouter } from "vue-router"
+import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
+import { authService } from "../../api.ts"
+import { useAuthStore } from "../../stores/auth.ts"
+import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validationUtils"
+import { handleApiError } from "./handleAuthErrorUtil"
 import BaseInput from "../ui/BaseInput.vue"
+import { ApiError } from "../../api.ts"
 
 enum State {
   Credentials,
@@ -95,14 +107,14 @@ enum State {
 const router = useRouter()
 const authStore = useAuthStore()
 
-const name = ref<string>('')
-const email = ref<string>('')
-const password = ref<string>('')
-const otp = ref<string>('')
+const name = ref<string>("")
+const email = ref<string>("")
+const password = ref<string>("")
+const otp = ref<string>("")
 
 const isLoading = ref<boolean>(false)
 const isLoadingMfa = ref<boolean>(false)
-const serverError = ref<string>('')
+const globalError = ref<string>("")
 const validationErrors = ref<Record<string, string>>({})
 const state = ref<State>(State.Credentials)
 
@@ -112,57 +124,57 @@ let countdownTimer: number | undefined = undefined
 const headerText = computed<string>(() => {
   switch (state.value) {
     case State.Mfa:
-      return 'Verify Your Email Address'
+      return "Verify Your Email Address"
     case State.Credentials:
-      return 'Create New Account'
+      return "Create New Account"
   }
 })
 
 const isCredentialsFormValid = computed<boolean>(() => {
   return name.value.length >= 1 && name.value.length <= 100 &&
     isEmailValid(email.value) &&
-    isPasswordValid(password.value);
-});
+    isPasswordValid(password.value)
+})
 
 const isMfaFormValid = computed<boolean>(() => {
-  return isSixDigitCodeValid(otp.value);
-});
+  return isSixDigitCodeValid(otp.value)
+})
 
 const validateField = (fieldName: string): void => {
   switch (fieldName) {
-    case 'name':
+    case "name":
       if (!name.value.trim()) {
-        validationErrors.value.name = 'Full Name is required.'
+        validationErrors.value.name = "Full Name is required."
       } else if (name.value.length > 100) {
-        validationErrors.value.name = 'Full Name cannot exceed 100 characters.'
+        validationErrors.value.name = "Full Name cannot exceed 100 characters."
       } else {
         delete validationErrors.value.name
       }
       break
-    case 'email':
+    case "email":
       if (!email.value.trim()) {
-        validationErrors.value.email = 'Email address is required.'
+        validationErrors.value.email = "Email address is required."
       } else if (!isEmailValid(email.value)) {
-        validationErrors.value.email = 'Please enter a valid email address.'
+        validationErrors.value.email = "Please enter a valid email address."
       } else {
         delete validationErrors.value.email
       }
       break
-    case 'password':
+    case "password":
       if (!password.value) {
-        validationErrors.value.password = 'Password is required.'
+        validationErrors.value.password = "Password is required."
       } else if (!isPasswordValid(password.value)) {
         validationErrors.value.password =
-          'Password must be between 6 and 100 characters long, and contain at least one uppercase letter, one lowercase letter, one digit, and one special character (e.g., !@#$%^&*).'
+          "Password must be between 6 and 100 characters long, and contain at least one uppercase letter, one lowercase letter, one digit, and one special character (e.g., !@#$%^&*)."
       } else {
         delete validationErrors.value.password
       }
       break
-    case 'otp':
+    case "otp":
       if (!otp.value.trim()) {
-        validationErrors.value.otp = 'Verification code is required.'
+        validationErrors.value.otp = "Verification code is required."
       } else if (!isSixDigitCodeValid(otp.value)) {
-        validationErrors.value.otp = 'Verification code must be a 6-digit number.'
+        validationErrors.value.otp = "Verification code must be a 6-digit number."
       } else {
         delete validationErrors.value.otp
       }
@@ -174,12 +186,12 @@ const validateCredentialsForm = (): boolean => {
   validationErrors.value = {}
   let isValid = true
 
-  validateField('name');
-  validateField('email');
-  validateField('password');
+  validateField("name")
+  validateField("email")
+  validateField("password")
 
   if (Object.keys(validationErrors.value).length > 0) {
-    isValid = false;
+    isValid = false
   }
 
   return isValid
@@ -188,16 +200,16 @@ const validateCredentialsForm = (): boolean => {
 const validateMfaForm = (): boolean => {
   validationErrors.value = {}
   let isValid = true
-  validateField('otp');
+  validateField("otp")
 
   if (Object.keys(validationErrors.value).length > 0) {
-    isValid = false;
+    isValid = false
   }
   return isValid
 }
 
 const clearMessages = (): void => {
-  serverError.value = ''
+  globalError.value = ""
   validationErrors.value = {}
 }
 
@@ -220,7 +232,7 @@ const startCountdown = (): void => {
 
 const goBackToForm = (): void => {
   state.value = State.Credentials
-  otp.value = ''
+  otp.value = ""
 
   clearMessages()
 
@@ -238,12 +250,15 @@ const handleSubmit = async (): Promise<void> => {
   }
 
   isLoading.value = true
+
   try {
     await authService.signUp(name.value, email.value, password.value)
+
     state.value = State.Mfa
     startCountdown()
-  } catch (err: any) {
-    handleError(err, serverError)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoading.value = false
   }
@@ -256,17 +271,21 @@ const verifyMfa = async (): Promise<void> => {
   }
 
   isLoadingMfa.value = true
+
   try {
     const response = await authService.verifyMfaSignUp(email.value, otp.value)
+
     authStore.setSession(
-      response.data.accessTokenExpiry,
+      response.accessTokenExpiry,
       email.value
     )
+
     setTimeout(() => {
-      router.push('/dashboard')
+      router.push("/dashboard")
     }, 1500)
-  } catch (err: any) {
-    handleError(err, serverError)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoadingMfa.value = false
   }
@@ -279,11 +298,13 @@ const resendOtp = async (): Promise<void> => {
   }
 
   isLoading.value = true
+
   try {
     await authService.signUp(name.value, email.value, password.value)
     startCountdown()
-  } catch (err: any) {
-    handleError(err, serverError)
+  } catch (error) {
+    if (error instanceof ApiError)
+      handleApiError(error, globalError)
   } finally {
     isLoading.value = false
   }

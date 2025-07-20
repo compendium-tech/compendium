@@ -17,7 +17,8 @@
     </div>
   </section>
 </template>
+
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-import BaseButton from "../ui/BaseButton.vue";
+import { RouterLink } from "vue-router"
+import BaseButton from "../ui/BaseButton.vue"
 </script>

@@ -90,54 +90,54 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Icon } from '@iconify/vue';
+import { ref } from "vue"
+import { Icon } from "@iconify/vue"
 
-const email = ref('');
+const email = ref("")
 
 const subscribe = () => {
   if (email.value) {
-    alert(`Subscribing with: ${email.value}`);
-    email.value = '';
+    alert(`Subscribing with: ${email.value}`)
+    email.value = ""
   }
-};
+}
 
 const socialLinks = ref([
-  { name: 'Facebook', icon: 'mdi:facebook', link: '#!' },
-  { name: 'Twitter', icon: 'mdi:twitter', link: '#!' },
-  { name: 'Instagram', icon: 'mdi:instagram', link: 'https://www.instagram.com/compendium_tech/' },
-  { name: 'LinkedIn', icon: 'mdi:linkedin', link: 'https://www.linkedin.com/company/ccompendium' },
-]);
+  { name: "Facebook", icon: "mdi:facebook", link: "#!" },
+  { name: "Twitter", icon: "mdi:twitter", link: "#!" },
+  { name: "Instagram", icon: "mdi:instagram", link: "https://www.instagram.com/compendium_tech/" },
+  { name: "LinkedIn", icon: "mdi:linkedin", link: "https://www.linkedin.com/company/ccompendium" },
+])
 
 const solutionLinks = ref([
-  { name: 'University Research', link: '#!' },
-  { name: 'Essay Checking', link: '#!' },
-  { name: 'Scholarship Matching', link: '#!' },
-  { name: 'Application Tracking', link: '#!' },
-  { name: 'Interview Preparation', link: '#!' },
-]);
+  { name: "University Research", link: "#!" },
+  { name: "Essay Checking", link: "#!" },
+  { name: "Scholarship Matching", link: "#!" },
+  { name: "Application Tracking", link: "#!" },
+  { name: "Interview Preparation", link: "#!" },
+])
 
 const resourceLinks = ref([
-  { name: 'Blog & Guides', link: '#!' },
-  { name: 'Success Stories', link: '#!' },
-  { name: 'University Database', link: '#!' },
-  { name: 'Scholarship Directory', link: '#!' },
-  { name: 'Webinars & Events', link: '#!' },
-]);
+  { name: "Blog & Guides", link: "#!" },
+  { name: "Success Stories", link: "#!" },
+  { name: "University Database", link: "#!" },
+  { name: "Scholarship Directory", link: "#!" },
+  { name: "Webinars & Events", link: "#!" },
+])
 
 const policyLinks = ref([
-  { name: 'Privacy Policy', link: '#!' },
-  { name: 'Terms of Service', link: '#!' },
-  { name: 'Cookie Policy', link: '#!' },
-]);
+  { name: "Privacy Policy", link: "#!" },
+  { name: "Terms of Service", link: "#!" },
+  { name: "Cookie Policy", link: "#!" },
+])
 </script>
 
 <style scoped>
 a {
-  transition: transform 0.3s ease, color 0.3s ease;
+  transition: transform 0.3s ease, color 0.3s ease
 }
 
 a:hover {
-  transform: translateX(5px);
+  transform: translateX(5px)
 }
 </style>

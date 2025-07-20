@@ -41,20 +41,20 @@ interface Step {
 const steps: Step[] = [
   {
     number: 1,
-    title: 'University Research',
-    description: 'Explore 5,000+ global institutions with detailed profiles to find your perfect academic match.',
+    title: "University Research",
+    description: "Explore 5,000+ global institutions with detailed profiles to find your perfect academic match.",
     delay: 0.1,
   },
   {
     number: 2,
-    title: 'Application Crafting',
-    description: 'Get guidance for standout essays, recommendations, and activity descriptions.',
+    title: "Application Crafting",
+    description: "Get guidance for standout essays, recommendations, and activity descriptions.",
     delay: 0.3,
   },
   {
     number: 3,
-    title: 'Exams Preparation',
-    description: 'Master standardized tests with personalized study plans and proven strategies.',
+    title: "Exams Preparation",
+    description: "Master standardized tests with personalized study plans and proven strategies.",
     delay: 0.5,
   },
 ]

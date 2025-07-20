@@ -30,8 +30,8 @@
 </template>
 
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
+import { Icon } from "@iconify/vue"
 import { useAuthStore } from "../../stores/auth.ts"
 
-const authStore = useAuthStore();
+const authStore = useAuthStore()
 </script>

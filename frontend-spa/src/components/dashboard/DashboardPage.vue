@@ -11,7 +11,7 @@
           <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary-600"></div>
           <p class="mt-3 text-lg text-primary-600">Loading user data...</p>
         </div>
-        <div v-if="error" class="text-center text-red-600">Error: {{ error }}</div>
+        <div v-if="globalError" class="text-center text-red-600">{{ globalError }}</div>
 
         <div v-if="user && !isLoading">
           <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
@@ -62,19 +62,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { userService } from "../../api";
-import StandardLayout from "../layout/StandardLayout.vue";
-import { Icon } from '@iconify/vue';
-import BaseButton from "../ui/BaseButton.vue";
+import { ref, onMounted, computed } from 'vue'
+import { userService } from '../../api.ts'
+import StandardLayout from '../layout/StandardLayout.vue'
+import { Icon } from '@iconify/vue'
+import BaseButton from '../ui/BaseButton.vue'
 
-const user = ref(null);
-const isLoading = ref(true);
-const error = ref(null);
-const isEditingName = ref(false);
-const editableName = ref('');
-const nameUpdateMessage = ref('');
-const nameUpdateSuccess = ref(false);
+const user = ref(null)
+const isLoading = ref(true)
+const globalError = ref(null)
+const isEditingName = ref(false)
+const editableName = ref('')
+const nameUpdateMessage = ref('')
+const nameUpdateSuccess = ref(false)
 
 const formattedCreationDate = computed(() => {
   if (user.value && user.value.createdAt) {
@@ -82,10 +82,10 @@ const formattedCreationDate = computed(() => {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
+    })
   }
-  return 'N/A';
-});
+  return 'N/A'
+})
 
 const formattedSubscriptionExpiry = computed(() => {
   if (user.value && user.value.subscriptionExpires) {
@@ -93,73 +93,73 @@ const formattedSubscriptionExpiry = computed(() => {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
+    })
   }
-  return 'N/A';
-});
+  return 'N/A'
+})
 
 const subscriptionStatusClass = computed(() => {
   if (user.value) {
     switch (user.value.subscriptionStatus) {
       case 'active':
-        return 'text-green-600 font-bold';
+        return 'text-green-600 font-bold'
       case 'trialing':
-        return 'text-primary-600 font-bold';
+        return 'text-primary-600 font-bold'
       case 'inactive':
-        return 'text-red-600 font-bold';
+        return 'text-red-600 font-bold'
       default:
-        return 'text-gray-600';
+        return 'text-gray-600'
     }
   }
-  return '';
-});
+  return ''
+})
 
 const fetchUserData = async () => {
-  isLoading.value = true;
-  error.value = null;
-  const startTime = Date.now(); // Record the start time
+  isLoading.value = true
+  globalError.value = null
+  const startTime = Date.now()
 
   try {
-    const data = (await userService.getAccountDetails()).data;
-    user.value = data;
-    editableName.value = data.name;
+    const data = await userService.getAccountDetails()
+    user.value = data
+    editableName.value = data.name
   } catch (err) {
-    error.value = err.message || 'Failed to fetch user data.';
+    globalError.value = err.message || 'Failed to fetch user data.'
   } finally {
-    const elapsedTime = Date.now() - startTime;
-    const minimumLoadTime = 1000; // 1 second in milliseconds
+    const elapsedTime = Date.now() - startTime
+    const minimumLoadTime = 1000
 
     if (elapsedTime < minimumLoadTime) {
       setTimeout(() => {
-        isLoading.value = false;
-      }, minimumLoadTime - elapsedTime);
+        isLoading.value = false
+      }, minimumLoadTime - elapsedTime)
     } else {
-      isLoading.value = false;
+      isLoading.value = false
     }
   }
-};
+}
 
 const toggleEditName = async () => {
   if (isEditingName.value) {
     try {
-      await userService.updateName(editableName.value);
-      user.value.name = editableName.value;
+      await userService.updateName(editableName.value)
+      user.value.name = editableName.value
 
-      nameUpdateMessage.value = 'Name updated successfully!';
-      nameUpdateSuccess.value = true;
+      nameUpdateMessage.value = 'Name updated successfully!'
+      nameUpdateSuccess.value = true
     } catch (err) {
-      nameUpdateMessage.value = 'Failed to update name: ' + (err.message || 'Unknown error');
-      nameUpdateSuccess.value = false;
+      nameUpdateMessage.value = 'Failed to update name: ' + (err.message || 'Unknown error')
+      nameUpdateSuccess.value = false
     } finally {
       setTimeout(() => {
-        nameUpdateMessage.value = '';
-      }, 3000);
+        nameUpdateMessage.value = ''
+      }, 3000)
     }
   }
-  isEditingName.value = !isEditingName.value;
-};
+  isEditingName.value = !isEditingName.value
+}
 
 onMounted(() => {
-  fetchUserData();
-});
+  fetchUserData()
+})
 </script>

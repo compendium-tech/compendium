@@ -12,55 +12,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRefs, useAttrs } from 'vue';
-import { Icon } from '@iconify/vue';
+import { computed, ref, toRefs, useAttrs } from "vue"
+import { Icon } from "@iconify/vue"
 
 interface Props {
-  error?: string;
-  type?: string;
+  error?: string
+  type?: string
 }
 
-const props = defineProps<Props>();
-const attrs = useAttrs();
+const props = defineProps<Props>()
+const attrs = useAttrs()
 
-const { error, type } = toRefs(props);
+const { error, type } = toRefs(props)
 
-const isPasswordVisible = ref(false);
+const isPasswordVisible = ref(false)
 
 const baseInputClasses = [
-  'block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900',
-  'outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400',
-  'focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6',
-];
+  "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900",
+  "outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400",
+  "focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6",
+]
 
-const emit = defineEmits(['update:modelValue', 'input']);
+const emit = defineEmits(["update:modelValue", "input"])
 
 const updateValue = (event: Event): void => {
-  const target = event.target as HTMLInputElement;
-  emit('update:modelValue', target.value);
-  emit('input', event);
-};
+  const target = event.target as HTMLInputElement
+  emit("update:modelValue", target.value)
+  emit("input", event)
+}
 
-const isPasswordType = computed<boolean>(() => type?.value === 'password');
+const isPasswordType = computed<boolean>(() => type?.value === "password")
 
 const currentInputType = computed<string>(() => {
-  return isPasswordType.value && isPasswordVisible.value ? 'text' : type?.value || 'text';
-});
+  return isPasswordType.value && isPasswordVisible.value ? "text" : type?.value || "text"
+})
 
 const mergedClasses = computed<string>(() => {
-  const incomingClasses = attrs.class || '';
-  const errorClass = props.error ? 'outline-red-600 focus:outline-red-600' : '';
-  const paddingRightClass = isPasswordType.value ? 'pr-10' : '';
+  const incomingClasses = attrs.class || ""
+  const errorClass = props.error ? "outline-red-600 focus:outline-red-600" : ""
+  const paddingRightClass = isPasswordType.value ? "pr-10" : ""
 
   return [
     ...baseInputClasses,
     errorClass,
     incomingClasses,
     paddingRightClass,
-  ].filter(Boolean).join(' ');
-});
+  ].filter(Boolean).join(" ")
+})
 
 const togglePasswordVisibility = (): void => {
-  isPasswordVisible.value = !isPasswordVisible.value;
-};
+  isPasswordVisible.value = !isPasswordVisible.value
+}
 </script>

@@ -1,53 +1,32 @@
 import { Ref } from "vue"
-import { AppErrorKind } from "../../api.js"
+import { ApiError, ApiErrorKind } from "../../api"
 
-export function handleError(err: any, targetReactiveObject: Ref<string>) {
-  targetReactiveObject.value = ""
+export const handleApiError = (
+  error: ApiError,
+  targetReactiveObject: Ref<string>
+) => {
+  targetReactiveObject.value = getErrorMessage(error)
+}
 
-  if (err.response) {
-    const errorKind = err.response.data?.errorKind
-    const defaultErrorMessage = "An unexpected error occurred."
-
-    switch (errorKind) {
-      case AppErrorKind.RequestValidationError:
-        targetReactiveObject.value =
-          "Invalid request data. Please check your input."
-        break
-      case AppErrorKind.InvalidCredentialsError:
-        targetReactiveObject.value =
-          "Invalid email or password. Please try again."
-        break
-      case AppErrorKind.EmailTakenError:
-        targetReactiveObject.value =
-          "This email address is already registered. Please try logging in."
-        break
-      case AppErrorKind.UserNotFoundError:
-        targetReactiveObject.value =
-          "User not found. Please check your email address."
-        break
-      case AppErrorKind.TooManyRequestsError:
-        targetReactiveObject.value =
-          "Too many requests. Please wait a moment before trying again."
-        break
-      case AppErrorKind.MfaNotRequestedError:
-        targetReactiveObject.value = "MFA was not requested for this session."
-        break
-      case AppErrorKind.InvalidMfaOtpError:
-        targetReactiveObject.value =
-          "Invalid OTP. Please check the code and try again."
-        break
-      case AppErrorKind.InvalidSessionError:
-        targetReactiveObject.value =
-          "Your session is invalid or expired. Please sign in again."
-        break
-      default:
-        targetReactiveObject.value = defaultErrorMessage
-        break
-    }
-  } else if (err.request) {
-    targetReactiveObject.value =
-      "Network error. Please check your internet connection."
-  } else {
-    targetReactiveObject.value = "Unexpected error happened."
+const getErrorMessage = (error: ApiError) => {
+  switch (error.kind) {
+    case ApiErrorKind.RequestValidationError:
+      return "Invalid request data. Please check your input."
+    case ApiErrorKind.InvalidCredentialsError:
+      return "Invalid email or password. Please try again."
+    case ApiErrorKind.EmailTakenError:
+      return "This email address is already registered. Please try logging in."
+    case ApiErrorKind.UserNotFoundError:
+      return "User not found. Please check your email address."
+    case ApiErrorKind.TooManyRequestsError:
+      return "Too many requests. Please wait a moment before trying again."
+    case ApiErrorKind.MfaNotRequestedError:
+      return "MFA was not requested for this session."
+    case ApiErrorKind.InvalidMfaOtpError:
+      return "Invalid OTP. Please check the code and try again."
+    case ApiErrorKind.InvalidSessionError:
+      return "Your session is invalid or expired. Please sign in again."
+    default:
+      return "An unexpected error occured."
   }
 }
