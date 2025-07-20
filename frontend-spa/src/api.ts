@@ -28,7 +28,13 @@ apiClient.interceptors.request.use(
   }
 )
 
-function parseAndThrowAxiosError(error: AxiosError): never {
+/**
+ * Parses an AxiosError and throws a custom ApiError.
+ * This centralizes error handling for API responses.
+ * @param error The AxiosError to parse.
+ * @throws ApiError A custom error containing kind and message.
+ */
+function parseAndThrowAxiosError(error: any): never {
   if (error.response) {
     const { data } = error.response
 
@@ -86,12 +92,13 @@ interface AuthService {
   refresh: () => Promise<SessionResponse>
 }
 
+// Implementation of the authentication service
 export const authService: AuthService = {
   signUp: async (name, email, password) => {
     try {
       const response = await apiClient.post("/users", { name, email, password })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -102,7 +109,7 @@ export const authService: AuthService = {
         otp,
       })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -113,7 +120,7 @@ export const authService: AuthService = {
         password,
       })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -124,7 +131,7 @@ export const authService: AuthService = {
         otp,
       })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -132,7 +139,7 @@ export const authService: AuthService = {
     try {
       const response = await apiClient.put("/password?flow=init", { email })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -144,7 +151,7 @@ export const authService: AuthService = {
         password: newPassword,
       })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -152,7 +159,7 @@ export const authService: AuthService = {
     try {
       const response = await apiClient.post("/sessions?flow=refresh")
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -168,7 +175,7 @@ export const userService: UserService = {
     try {
       const response = await apiClient.get("/account")
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -176,7 +183,7 @@ export const userService: UserService = {
     try {
       const response = await apiClient.put("/account", { name })
       return response.data
-    } catch (error: any) {
+    } catch (error) {
       parseAndThrowAxiosError(error)
     }
   },
@@ -194,6 +201,10 @@ interface FailedRequestPromise {
 
 let failedQueue: FailedRequestPromise[] = []
 
+/**
+ * Processes the queue of failed requests after a token refresh.
+ * @param error An ApiError if the refresh failed, or null if successful.
+ */
 const processQueue = (error: ApiError | null): void => {
   failedQueue.forEach(async (prom) => {
     if (error) {
@@ -207,12 +218,14 @@ const processQueue = (error: ApiError | null): void => {
       }
     }
   })
+
   failedQueue = []
 }
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
+    // If the request is to an auth path, don't try to refresh
     if (window.location.pathname.startsWith("/auth/")) {
       return Promise.reject(error)
     }
@@ -220,9 +233,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as RetryAxiosRequestConfig
     const authStore = useAuthStore()
 
+    // Check if it's a 401 Unauthorized error and hasn't been retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
+      // If a token refresh is already in progress, queue the current request
       if (authStore.isRefreshingToken) {
         return new Promise<AxiosResponse>((resolve, reject) => {
           failedQueue.push({
@@ -233,21 +248,25 @@ apiClient.interceptors.response.use(
         })
       }
 
+      authStore.setIsRefreshingToken(true)
+
       try {
         const refreshResponse = await authService.refresh()
 
         authStore.setSession(refreshResponse.accessTokenExpiry, authStore.email)
+
         processQueue(null)
+
         return apiClient(originalRequest)
       } catch (refreshError: any) {
         processQueue(refreshError)
         authStore.clearSession()
         location.href = "/auth/signin"
         return Promise.reject(refreshError)
+      } finally {
+        authStore.setIsRefreshingToken(false)
       }
     }
-
-    parseAndThrowAxiosError(error)
   }
 )
 

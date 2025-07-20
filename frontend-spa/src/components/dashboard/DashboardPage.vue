@@ -33,11 +33,11 @@
                   <BaseButton class="flex items-center" @click="toggleEditName" variant="primary" size="sm"
                     :hover-effect="isEditingName ? 'none' : 'scale'">
                     <Icon :icon="isEditingName ? 'mdi:content-save' : 'mdi:pencil'" class="h-5 w-5 mr-2" />
-                    <span>{{ isEditingName ? 'Save' : 'Edit' }}</span>
+                    <span>{{ isEditingName ? "Save" : "Edit" }}</span>
                   </BaseButton>
                 </div>
-                <p v-if="nameUpdateMessage" :class="nameUpdateSuccess ? 'text-green-600' : 'text-red-600'"
-                  class="mt-2 text-sm">{{ nameUpdateMessage }}</p>
+                <p v-if="nameUpdateMessage" :class="nameUpdateSuccess ? ' text-green-600' : 'text-red-600'"
+                  class=" mt-2 text-sm">{{ nameUpdateMessage }}</p>
               </div>
             </div>
           </div>
@@ -62,56 +62,56 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { userService } from '../../api.ts'
-import StandardLayout from '../layout/StandardLayout.vue'
-import { Icon } from '@iconify/vue'
-import BaseButton from '../ui/BaseButton.vue'
+import { ref, onMounted, computed } from "vue"
+import { userService } from "../../api.ts"
+import StandardLayout from "../layout/StandardLayout.vue"
+import { Icon } from "@iconify/vue"
+import BaseButton from "../ui/BaseButton.vue"
 
 const user = ref(null)
 const isLoading = ref(true)
 const globalError = ref(null)
 const isEditingName = ref(false)
-const editableName = ref('')
-const nameUpdateMessage = ref('')
+const editableName = ref("")
+const nameUpdateMessage = ref("")
 const nameUpdateSuccess = ref(false)
 
 const formattedCreationDate = computed(() => {
   if (user.value && user.value.createdAt) {
-    return new Date(user.value.createdAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(user.value.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
     })
   }
-  return 'N/A'
+  return "N/A"
 })
 
 const formattedSubscriptionExpiry = computed(() => {
   if (user.value && user.value.subscriptionExpires) {
-    return new Date(user.value.subscriptionExpires).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(user.value.subscriptionExpires).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
     })
   }
-  return 'N/A'
+  return "N/A"
 })
 
 const subscriptionStatusClass = computed(() => {
   if (user.value) {
     switch (user.value.subscriptionStatus) {
-      case 'active':
-        return 'text-green-600 font-bold'
-      case 'trialing':
-        return 'text-primary-600 font-bold'
-      case 'inactive':
-        return 'text-red-600 font-bold'
+      case "active":
+        return "text-green-600 font-bold"
+      case "trialing":
+        return "text-primary-600 font-bold"
+      case "inactive":
+        return "text-red-600 font-bold"
       default:
-        return 'text-gray-600'
+        return "text-gray-600"
     }
   }
-  return ''
+  return ""
 })
 
 const fetchUserData = async () => {
@@ -124,7 +124,7 @@ const fetchUserData = async () => {
     user.value = data
     editableName.value = data.name
   } catch (err) {
-    globalError.value = err.message || 'Failed to fetch user data.'
+    globalError.value = err.message || "Failed to fetch user data."
   } finally {
     const elapsedTime = Date.now() - startTime
     const minimumLoadTime = 1000
@@ -145,21 +145,56 @@ const toggleEditName = async () => {
       await userService.updateName(editableName.value)
       user.value.name = editableName.value
 
-      nameUpdateMessage.value = 'Name updated successfully!'
+      nameUpdateMessage.value = "Name updated successfully!"
       nameUpdateSuccess.value = true
     } catch (err) {
-      nameUpdateMessage.value = 'Failed to update name: ' + (err.message || 'Unknown error')
+      nameUpdateMessage.value = "Failed to update name: " + (err.message || "Unknown error")
       nameUpdateSuccess.value = false
     } finally {
       setTimeout(() => {
-        nameUpdateMessage.value = ''
+        nameUpdateMessage.value = ""
       }, 3000)
     }
   }
   isEditingName.value = !isEditingName.value
 }
 
+const handleSubscribe = () => {
+  if (window.Paddle) {
+    window.Paddle.Checkout.open({
+      product: "pro_01k0az151b5zeh8a2974yvr0gx",
+      customer: {
+        email: user.value ? user.value.email : "",
+      },
+      items: [
+        {
+          priceId: "pri_01k0az35r3w64r2qmmzvc3rsgd",
+          quantity: 1
+        }
+      ],
+      successCallback: (data) => {
+        console.log("Paddle checkout successful:", data)
+      },
+      closeCallback: () => {
+        console.log("Paddle checkout closed.")
+      }
+    })
+  } else {
+    console.error("Paddle.js not loaded!")
+    globalError.value = "Billing service is not available. Please try again later."
+  }
+}
+
 onMounted(() => {
+  if (window.Paddle) {
+    window.Paddle.Environment.set("sandbox")
+    window.Paddle.Setup({
+      token: "test_bf5c18ea62fd1d30c00bc5c2821",
+      debug: true
+    })
+  } else {
+    console.error("Paddle.js script not found. Make sure it is included in your index.html")
+  }
   fetchUserData()
 })
 </script>

@@ -36,7 +36,7 @@
       <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
         <div>
           <div class="mt-2">
-            <CInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
+            <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
               maxlength="6" @input="validateField('otp')" />
             <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
           </div>

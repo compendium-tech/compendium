@@ -30,7 +30,6 @@ const emit = defineEmits(["click"])
 const buttonClasses = computed(() => {
   let classes: string[] = []
 
-  // Variant classes
   switch (props.variant) {
     case "primary":
       classes.push("bg-primary-600 hover:bg-primary-700 text-white")

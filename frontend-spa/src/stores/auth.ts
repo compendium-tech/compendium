@@ -15,6 +15,10 @@ export const useAuthStore = defineStore("auth", {
       this.email = email
     },
 
+    setIsRefreshingToken(isRefreshingToken: boolean) {
+      this.isRefreshingToken = isRefreshingToken
+    },
+
     clearSession() {
       this.isAuthenticated = false
       this.accessTokenExpiry = null
