@@ -43,6 +43,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 		authEmailLockRepository, deviceRepository,
 		userRepository, mfaRepository, refreshTokenRepository,
 		deps.EmailSender, deps.TokenManager, deps.PasswordHasher)
+	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()
 	r.Use(commonMiddleware.RequestIdMiddleware{AllowToSet: false}.Handle)
@@ -51,6 +52,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(commonMiddleware.DefaultCors().Handle)
 
 	v1.NewAuthController(authService).MakeRoutes(r)
+	v1.NewUserController(userService).MakeRoutes(r)
 
 	return r
 }

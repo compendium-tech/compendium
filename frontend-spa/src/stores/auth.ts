@@ -28,18 +28,18 @@ export const useAuthStore = defineStore("auth", {
 
       this.isRefreshingToken = true
       try {
-        const response = await authService.refreshToken()
+        const response = await authService.refresh()
         this.setSession(
           response.data.accessTokenExpiry,
           this.email || response.data.email
         )
+        this.isRefreshingToken = false
         return true
       } catch (error) {
         if (error.response?.data?.errorKind === 8) this.clearSession()
 
-        return false
-      } finally {
         this.isRefreshingToken = false
+        return false
       }
     },
   },

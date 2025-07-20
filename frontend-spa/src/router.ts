@@ -3,8 +3,8 @@ import LandingPage from "./components/landing/LandingPage.vue"
 import SignUpPage from "./components/auth/SignUpPage.vue"
 import SignInPage from "./components/auth/SignInPage.vue"
 import NotFoundPage from "./components/NotFoundPage.vue"
+import DashboardPage from "./components/dashboard/DashboardPage.vue"
 import { useAuthStore } from "./stores/auth.ts"
-import { nextTick } from "vue"
 
 const routes = [
   {
@@ -15,6 +15,15 @@ const routes = [
       title: "Welcome",
       requiresAuth: false,
       redirectIfAuthenticated: false,
+    },
+  },
+  {
+    path: "/dashboard",
+    name: "dashboard",
+    component: DashboardPage,
+    meta: {
+      title: "Dashboard",
+      requiresAuth: true,
     },
   },
   {

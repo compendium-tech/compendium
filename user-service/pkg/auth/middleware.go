@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,16 +22,14 @@ type AuthMiddleware struct {
 }
 
 func (a AuthMiddleware) Handle(c *gin.Context) {
-	userId, isCsrfTokenValid := a.parseAuthHeader(c)
+	userId, isCsrfTokenValid := a.parseAccessTokenCookie(c)
 	if userId == uuid.Nil {
 		return
 	}
 
 	ctx := c.Request.Context()
 	auth.SetUserId(&ctx, userId)
-	if isCsrfTokenValid {
-		ctx = context.WithValue(ctx, isCsrfKey, true)
-	}
+	ctx = context.WithValue(ctx, isCsrfKey, isCsrfTokenValid)
 
 	c.Request = c.Request.WithContext(ctx)
 	c.Next()
@@ -51,15 +50,18 @@ func requireAuth(c *gin.Context) error {
 }
 
 func requireCsrf(c *gin.Context) error {
-	if _, ok := c.Request.Context().Value(isCsrfKey).(bool); ok {
+	isCsrfPresent, ok := c.Request.Context().Value(isCsrfKey).(bool)
+
+	if !ok || !isCsrfPresent {
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
 	return nil
 }
 
-func (a AuthMiddleware) parseAuthHeader(c *gin.Context) (uuid.UUID, bool) {
+func (a AuthMiddleware) parseAccessTokenCookie(c *gin.Context) (uuid.UUID, bool) {
 	accessToken, err := c.Cookie("accessToken")
+
 	if err != nil {
 		return uuid.Nil, false
 	}
@@ -70,7 +72,9 @@ func (a AuthMiddleware) parseAuthHeader(c *gin.Context) (uuid.UUID, bool) {
 	}
 
 	csrfToken := c.GetHeader(csrfTokenHeaderName)
+	fmt.Println(csrfToken)
 	if csrfToken != claims.CsrfToken {
+		fmt.Println(claims.CsrfToken)
 		return claims.Subject, false
 	}
 

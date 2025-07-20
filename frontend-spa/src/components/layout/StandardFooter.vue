@@ -14,15 +14,17 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
         <div class="lg:col-span-2">
-          <div class="flex items-center mb-6">
-            <div class="w-13 h-13 rounded-full flex items-center justify-center mr-4">
-              <img src="/icon.svg" alt="Compendium Logo" />
+          <RouterLink to="/">
+            <div class="flex items-center mb-6">
+              <div class="w-13 h-13 rounded-full flex items-center justify-center mr-4">
+                <img src="/icon.svg" alt="Compendium Logo" />
+              </div>
+              <div>
+                <h2 class="text-2xl font-semibold text-white">compendium<span class="text-primary-400">.</span></h2>
+                <p class="text-primary-400">Your AI Education Partner</p>
+              </div>
             </div>
-            <div>
-              <h2 class="text-2xl font-semibold text-white">compendium<span class="text-primary-400">.</span></h2>
-              <p class="text-primary-400">Your AI Education Partner</p>
-            </div>
-          </div>
+          </RouterLink>
           <p class="mb-6 max-w-sm">
             AI-powered university application assistant helping students worldwide get into their dream schools.
           </p>

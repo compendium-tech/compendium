@@ -60,8 +60,17 @@ export const authService = {
     })
   },
 
-  refreshToken: () => {
+  refresh: () => {
     return apiClient.post("/sessions?flow=refresh")
+  },
+}
+
+export const userService = {
+  getAccountDetails: async () => {
+    return await apiClient.get("/account");
+  },
+  updateName: async (name) => {
+    return await apiClient.put("/account", { name });
   },
 }
 
@@ -81,19 +90,16 @@ const processQueue = (error, tokenRefreshed = false) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log(window.location.pathname)
     if (window.location.pathname.startsWith("/auth/")) {
       return Promise.reject(error)
     }
 
     const originalRequest = error.config
-    const authStore = useAuthStore() // Get the store instance
+    const authStore = useAuthStore()
 
-    // Check if it's a 401 error and not a retry attempt for a token refresh that already failed
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true // Mark this request as retried once
+      originalRequest._retry = true
 
-      // If a refresh is already in progress, queue this request
       if (authStore.isRefreshingToken) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({
@@ -103,19 +109,17 @@ apiClient.interceptors.response.use(
         })
       }
 
-      // If no refresh is in progress, attempt to refresh
-      const refreshed = await authStore.refreshAccessToken()
+      console.log("Need to refresh")
+
+      const refreshed = await authStore.refresh()
 
       if (refreshed) {
-        // If refresh was successful, retry all queued requests and the original request
         processQueue(null, true)
-        return apiClient(originalRequest) // Retry the original failed request
+        return apiClient(originalRequest)
       } else {
-        // If refresh failed (e.g., refresh token expired), clear queue and reject all
         processQueue(error)
-        authStore.clearSession() // Ensure session is cleared if refresh failed
-        // The refreshAccessToken action already handles the alert and redirect
-        return Promise.reject(error) // Propagate the error for the original request
+        authStore.clearSession()
+        return Promise.reject(error)
       }
     }
 

@@ -31,7 +31,6 @@ func NewJwtBasedTokenManager(signingKey string) (*JwtBasedTokenManager, error) {
 }
 
 type JwtTokenClaims struct {
-	Id        string    `json:"jti,omitempty"`
 	Issuer    string    `json:"iss,omitempty"`
 	ExpiresAt int64     `json:"exp,omitempty"`
 	Subject   uuid.UUID `json:"sub,omitempty"`
@@ -63,20 +62,17 @@ func (m *JwtBasedTokenManager) NewAccessToken(userId uuid.UUID, csrfToken string
 }
 
 func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenClaims, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (i interface{}, err error) {
+	claims := JwtTokenClaims{}
+	_, err := jwt.ParseWithClaims(accessToken, &claims, func(token *jwt.Token) (i interface{}, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, tracerr.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		return []byte(m.signingKey), nil
 	})
+
 	if err != nil {
 		return nil, tracerr.Wrap(err)
-	}
-
-	claims, ok := token.Claims.(JwtTokenClaims)
-	if !ok {
-		return nil, tracerr.New("failed to read user claims from token")
 	}
 
 	return &claims, nil
