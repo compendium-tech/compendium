@@ -11,6 +11,7 @@
 -   **[System Architecture](#system-architecture)**
     -   [Setup guide](#setup-guide)
         -   [Paddle](#paddle)
+        -   [Kafka](#kafka)
 -   **[Microservice Backend](#microservice-backend)**
     -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
@@ -189,9 +190,7 @@ This section outlines the setup process for the various components of our system
 
 ### Paddle
 
-This section will guide you through setting up your Paddle sandbox environment and configuring the necessary subscription prices for the subscription-service.
-
-#### Create a Paddle Sandbox Account
+This section will guide you through setting up your Paddle sandbox environment and configuring the subscription service.
 
 If you don't already have one, you'll need a Paddle sandbox account for development and testing.
 
@@ -204,7 +203,7 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
   - Create a product named "Team Subscription".
   - Create a product named "Community Subscription".
   - Create Prices for Each Product.
-- **Configure Subscription Service:**
+- **Configure Subscription Service**:
     The subscription service relies on environment variables to connect to Paddle and identify the correct products.
     Navigate to the `subscription-service/` directory:
     ```bash
@@ -219,6 +218,89 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
     ```
     
     Your subscription service is now configured with the correct Paddle product IDs and ready for development and testing!
+
+### Kafka
+
+This guide provides quick setup instructions for Apache Kafka, suitable for an email delivery service, using three common methods: manual download, Docker, and Homebrew.
+
+### Prerequisites
+One of these:
+- Java 17+.
+- Docker Desktop (for Docker method).
+
+### Manual Download
+
+- **Download Kafka Binary**:
+  Download the latest release from https://kafka.apache.org/downloads.
+- **Extract & Navigate**:
+  ```bash
+  tar -xzf kafka_....tgz # Use your version
+  cd kafka_...
+  ```
+- **Generate Cluster ID & Format Logs**:
+  ```bash
+  KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+  bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/server.properties
+  ```
+- **Start Kafka Server**:
+  ```bash
+  bin/kafka-server-start.sh config/server.properties
+  ```
+- **Create Topic**:
+  ```bash
+  bin/kafka-topics.sh --create --topic private.emaildelivery.emails --bootstrap-server localhost:9092
+  ```
+
+### Using Docker
+
+- **Get the Docker image**:
+
+  ```bash
+  docker pull apache/kafka:4.0.0
+  ```
+
+- **Start the Kafka Docker container**:
+
+  ```bash
+  docker run -p 9092:9092 apache/kafka:4.0.0
+  ```
+
+- **Create Topic**:
+  ```bash
+  docker exec $(docker ps -q --filter ancestor=apache/kafka:4.0.0) /opt/kafka/bin/kafka-topics.sh --create --topic private.emaildelivery.emails --bootstrap-server localhost:9092
+  ```
+
+### Homebrew (macOS)
+
+- **Install Zookeeper (required by Kafka)**:
+  ```bash
+  brew install zookeeper
+  ```
+
+- **Install Kafka**:
+  ```bash
+  brew install kafka
+  ```
+
+  This will install Kafka along with its dependencies, including Zookeeper.
+
+- **Start Zookeeper**:
+  Kafka depends on Zookeeper for distributed coordination. You need to start Zookeeper first. In your terminal, run:
+  ```bash
+  zkServer start
+  ```
+- **Start Kafka Server**:
+  Now that Zookeeper is running, we need to start the Kafka server. In a new terminal window, run the following command:
+  ```bash
+  kafka-server-start /usr/local/etc/kafka/server.properties
+  ```
+  
+  This starts the Kafka server on the default port (9092).
+
+- **Create a Kafka Topic**
+  ```bash
+  kafka-topics --create --topic private.emaildelivery.emails --bootstrap-server localhost:9092
+  ```
 
 # Microservice backend
 
