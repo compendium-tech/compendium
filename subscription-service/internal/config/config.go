@@ -23,6 +23,7 @@ type AppConfig struct {
 	JwtSingingKey       string
 	CsrfTokenHashSalt   string
 	PaddleWebhookSecret string
+	PaddlePriceIds      PaddlePriceIds
 }
 
 func LoadAppConfig() *AppConfig {
@@ -38,6 +39,11 @@ func LoadAppConfig() *AppConfig {
 		JwtSingingKey:       "",
 		CsrfTokenHashSalt:   "",
 		PaddleWebhookSecret: "",
+		PaddlePriceIds: PaddlePriceIds{
+			StudentSubscriptionPriceId:   "",
+			TeamSubscriptionPriceId:      "",
+			CommunitySubscriptionPriceId: "",
+		},
 	}
 
 	env := os.Getenv("ENVIRONMENT")
@@ -54,6 +60,11 @@ func LoadAppConfig() *AppConfig {
 	appConfig.JwtSingingKey = os.Getenv("JWT_SIGNING_KEY")
 	appConfig.CsrfTokenHashSalt = os.Getenv("CSRF_TOKEN_HASH_SALT")
 	appConfig.PaddleWebhookSecret = os.Getenv("PADDLE_WEBHOOK_SECRET")
+	appConfig.PaddlePriceIds = PaddlePriceIds{
+		StudentSubscriptionPriceId:   os.Getenv("PADDLE_STUDENT_SUBSCRIPTION_PRICE_ID"),
+		TeamSubscriptionPriceId:      os.Getenv("PADDLE_TEAM_SUBSCRIPTION_PRICE_ID"),
+		CommunitySubscriptionPriceId: os.Getenv("PADDLE_COMMUNITY_SUBSCRIPTION_PRICE_ID"),
+	}
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {
 		var pgPort uint16

@@ -9,6 +9,7 @@ import (
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
 	"github.com/PaddleHQ/paddle-go-sdk/v4/pkg/paddlenotification"
+	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
 	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
@@ -21,16 +22,18 @@ import (
 const dateTimeLayout = time.RFC3339Nano
 
 type PaddleWebhookController struct {
-	service  service.SubscriptionService
-	verifier paddle.WebhookVerifier
+	subscriptionService   service.SubscriptionService
+	paddlePriceIds        config.PaddlePriceIds
+	paddleWebhookVerifier paddle.WebhookVerifier
 }
 
 func NewPaddleWebhookController(
-	service service.SubscriptionService,
-	verifier paddle.WebhookVerifier) *PaddleWebhookController {
+	subscriptionService service.SubscriptionService,
+	paddlePriceIds config.PaddlePriceIds,
+	paddleWebhookVerifier paddle.WebhookVerifier) *PaddleWebhookController {
 	return &PaddleWebhookController{
-		service:  service,
-		verifier: verifier,
+		subscriptionService:   subscriptionService,
+		paddleWebhookVerifier: paddleWebhookVerifier,
 	}
 }
 
@@ -44,7 +47,7 @@ type webhook struct {
 }
 
 func (p *PaddleWebhookController) Handle(c *gin.Context) error {
-	ok, err := p.verifier.Verify(c.Request)
+	ok, err := p.paddleWebhookVerifier.Verify(c.Request)
 
 	if err != nil && (errors.Is(err, paddle.ErrMissingSignature) || errors.Is(err, paddle.ErrInvalidSignatureFormat)) {
 		return appErr.Errorf(appErr.InvalidWebhookSignature, "Failed to verify request signature")
@@ -107,17 +110,17 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 	var subscriptionLevel model.SubscriptionLevel
 
 	switch item.Price.ID {
-	case "pri_01k0az35r3w64r2qmmzvc3rsgd":
+	case p.paddlePriceIds.StudentSubscriptionPriceId:
 		subscriptionLevel = model.SubscriptionLevelStudent
-	case "pri_01k0fr0pscgyf83jpntznp3qr9":
+	case p.paddlePriceIds.TeamSubscriptionPriceId:
 		subscriptionLevel = model.SubscriptionLevelTeam
-	case "pri_01k0fr1bgqqt9n4sahzbdfteca":
+	case p.paddlePriceIds.CommunitySubscriptionPriceId:
 		subscriptionLevel = model.SubscriptionLevelCommunity
 	default:
 		return appErr.Errorf(appErr.RequestValidationError, "Unknown price ID")
 	}
 
-	return p.service.PutSubscription(domain.PutSubscriptionRequest{
+	return p.subscriptionService.PutSubscription(domain.PutSubscriptionRequest{
 		UserID:            userId,
 		SubscriptionLevel: subscriptionLevel,
 		Till:              till,

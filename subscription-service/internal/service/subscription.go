@@ -14,7 +14,8 @@ type subscriptionService struct {
 	subscriptionRepository repository.SubscriptionRepository
 }
 
-func NewSubscriptionService(subscriptionRepository repository.SubscriptionRepository) SubscriptionService {
+func NewSubscriptionService(
+	subscriptionRepository repository.SubscriptionRepository) SubscriptionService {
 	return &subscriptionService{
 		subscriptionRepository: subscriptionRepository,
 	}
