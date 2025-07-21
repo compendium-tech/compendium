@@ -228,9 +228,14 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
 git clone github.com/compendium-tech/compendium
 
 # User service
-cd user-service
-go run cmd/main.go # run server
+cd ./user-service
 go test ./...      # test
+go run cmd/main.go # run server
+
+# Subscription service
+cd ../subscription-service
+go test ./...      # test
+go run cmd/main.go # run server
 ```
 
 ## Go code Guidelines
