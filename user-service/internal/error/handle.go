@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/seacite-tech/compendium/user-service/internal/validate"
+	"github.com/seacite-tech/compendium/common/pkg/validate"
 	log "github.com/sirupsen/logrus"
 	"github.com/ztrue/tracerr"
 )

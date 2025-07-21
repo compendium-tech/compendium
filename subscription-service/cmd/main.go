@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/adslmgrv/compendium/subscription-service/internal/app"
+	"github.com/adslmgrv/compendium/subscription-service/internal/config"
 	"github.com/joho/godotenv"
 	"github.com/seacite-tech/compendium/common/pkg/pg"
 	"github.com/seacite-tech/compendium/common/pkg/redis"
 	"github.com/seacite-tech/compendium/common/pkg/validate"
-	"github.com/seacite-tech/compendium/user-service/internal/app"
-	"github.com/seacite-tech/compendium/user-service/internal/config"
-	"github.com/seacite-tech/compendium/user-service/internal/email"
-	"github.com/seacite-tech/compendium/user-service/internal/hash"
 	"github.com/seacite-tech/compendium/user-service/pkg/auth"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -44,18 +41,10 @@ func main() {
 		fmt.Printf("Failed to connect to Redis, cause: %s", err)
 	}
 
-	smtpEmailSender, err := email.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
-	if err != nil {
-		fmt.Printf("Failed to initialize email service, cause: %s", err)
-		return
-	}
-
 	app.NewApp(app.Dependencies{
-		PgDb:           pgDB,
-		RedisClient:    redisClient,
-		Config:         cfg,
-		TokenManager:   tokenManager,
-		EmailSender:    smtpEmailSender,
-		PasswordHasher: hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
+		PgDb:         pgDB,
+		RedisClient:  redisClient,
+		Config:       cfg,
+		TokenManager: tokenManager,
 	}).Run()
 }

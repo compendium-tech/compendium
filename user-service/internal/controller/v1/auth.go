@@ -5,10 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/seacite-tech/compendium/common/pkg/httphelp"
+	"github.com/seacite-tech/compendium/common/pkg/validate"
 	"github.com/seacite-tech/compendium/user-service/internal/domain"
 	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/seacite-tech/compendium/user-service/internal/service"
-	"github.com/seacite-tech/compendium/user-service/internal/validate"
 )
 
 const (

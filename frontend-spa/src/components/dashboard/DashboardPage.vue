@@ -164,7 +164,7 @@ const handleSubscribe = () => {
     window.Paddle.Checkout.open({
       product: "pro_01k0az151b5zeh8a2974yvr0gx",
       customer: {
-        email: user.value ? user.value.email : "",
+        id: user.value ? user.value.id : "",
       },
       items: [
         {
