@@ -202,7 +202,7 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
   - Create a product named "Team Subscription".
   - Create a product named "Community Subscription".
   - Create Prices for Each Product.
-- **Configure Subscription Service**
+- **Configure Subscription Service:**
     The subscription service relies on environment variables to connect to Paddle and identify the correct products.
     Navigate to the `subscription-service/` directory:
     ```bash
