@@ -9,6 +9,8 @@
 -   **[Why Open Source? This is the Heart of It.](#why-open-source-this-is-the-heart-of-it)**
 -   **[Making changes](#making-changes)**
 -   **[System Architecture](#system-architecture)**
+    -   [Setup guide](#setup-guide)
+        -   [Paddle](#paddle)
 -   **[Microservice Backend](#microservice-backend)**
     -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
@@ -28,7 +30,7 @@
         -   [Refresh](#refresh)
         -   [Token Management and Security Note](#token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
-    -   [Running Locally](#running-locally)
+    -   [Running Locally](#running-locally-1)
 
 -----
 
