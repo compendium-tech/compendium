@@ -16,6 +16,8 @@ const (
 	InvalidSessionError
 )
 
+const ()
+
 type AppErrorKind int
 
 type AppError interface {

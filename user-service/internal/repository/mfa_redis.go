@@ -14,15 +14,15 @@ const (
 	mfaOtpTtl       = 120 * time.Second
 )
 
-type RedisMfaRepository struct {
+type redisMfaRepository struct {
 	client *redis.Client
 }
 
-func NewRedisMfaRepository(client *redis.Client) *RedisMfaRepository {
-	return &RedisMfaRepository{client: client}
+func NewRedisMfaRepository(client *redis.Client) MfaRepository {
+	return &redisMfaRepository{client: client}
 }
 
-func (r *RedisMfaRepository) SetMfaOtpByEmail(ctx context.Context, email string, otp string) error {
+func (r *redisMfaRepository) SetMfaOtpByEmail(ctx context.Context, email string, otp string) error {
 	err := r.client.Set(ctx, r.createMfaOtpKey(email), otp, mfaOtpTtl).Err()
 
 	if err != nil {
@@ -32,7 +32,7 @@ func (r *RedisMfaRepository) SetMfaOtpByEmail(ctx context.Context, email string,
 	return nil
 }
 
-func (r *RedisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string) (*string, error) {
+func (r *redisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string) (*string, error) {
 	code, err := r.client.Get(ctx, r.createMfaOtpKey(email)).Result()
 
 	if err != nil {
@@ -46,7 +46,7 @@ func (r *RedisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string)
 	return &code, nil
 }
 
-func (r *RedisMfaRepository) RemoveMfaOtpByEmail(ctx context.Context, email string) error {
+func (r *redisMfaRepository) RemoveMfaOtpByEmail(ctx context.Context, email string) error {
 	err := r.client.Del(ctx, r.createMfaOtpKey(email)).Err()
 
 	if err != nil {
@@ -56,6 +56,6 @@ func (r *RedisMfaRepository) RemoveMfaOtpByEmail(ctx context.Context, email stri
 	return nil
 }
 
-func (r *RedisMfaRepository) createMfaOtpKey(email string) string {
+func (r *redisMfaRepository) createMfaOtpKey(email string) string {
 	return fmt.Sprintf("%s%s", mfaOtpKeyPrefix, email)
 }

@@ -27,17 +27,17 @@ const (
 	createdHashField = "createdAt"
 )
 
-type RedisRefreshTokenRepository struct {
+type redisRefreshTokenRepository struct {
 	client *redis.Client
 }
 
-func NewRedisRefreshTokenRepository(client *redis.Client) *RedisRefreshTokenRepository {
-	return &RedisRefreshTokenRepository{
+func NewRedisRefreshTokenRepository(client *redis.Client) RefreshTokenRepository {
+	return &redisRefreshTokenRepository{
 		client: client,
 	}
 }
 
-func (r *RedisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token model.RefreshToken) error {
+func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token model.RefreshToken) error {
 	tokenKey := r.createRefreshTokenKey(token.UserId, token.Token)
 	userTokensKey := r.createUserTokensKey(token.UserId)
 	tokenToUserIDKey := r.createTokenToUserIDKey(token.Token)
@@ -105,7 +105,7 @@ func (r *RedisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	return nil
 }
 
-func (r *RedisRefreshTokenRepository) TryRemoveRefreshTokenByToken(ctx context.Context, token string) (uuid.UUID, bool, error) {
+func (r *redisRefreshTokenRepository) TryRemoveRefreshTokenByToken(ctx context.Context, token string) (uuid.UUID, bool, error) {
 	tokenToUserIDKey := r.createTokenToUserIDKey(token)
 	revokedTokenKey := r.createRevokedTokenKey(token)
 
@@ -162,7 +162,7 @@ func (r *RedisRefreshTokenRepository) TryRemoveRefreshTokenByToken(ctx context.C
 	return userID, false, nil // Returns userID and `false` for `isReused`
 }
 
-func (r *RedisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userId uuid.UUID) error {
+func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userId uuid.UUID) error {
 	userTokensKey := r.createUserTokensKey(userId)
 
 	// Get all tokens for the user from the ZSET
@@ -190,18 +190,18 @@ func (r *RedisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 	return nil
 }
 
-func (r *RedisRefreshTokenRepository) createRefreshTokenKey(userId uuid.UUID, token string) string {
+func (r *redisRefreshTokenRepository) createRefreshTokenKey(userId uuid.UUID, token string) string {
 	return fmt.Sprintf("%s%s:%s", refreshTokenKeyPrefix, userId.String(), token)
 }
 
-func (r *RedisRefreshTokenRepository) createUserTokensKey(userId uuid.UUID) string {
+func (r *redisRefreshTokenRepository) createUserTokensKey(userId uuid.UUID) string {
 	return fmt.Sprintf("%s%s", userTokensKeyPrefix, userId.String())
 }
 
-func (r *RedisRefreshTokenRepository) createTokenToUserIDKey(token string) string {
+func (r *redisRefreshTokenRepository) createTokenToUserIDKey(token string) string {
 	return fmt.Sprintf("%s%s", tokenToUserIDKeyPrefix, token)
 }
 
-func (r *RedisRefreshTokenRepository) createRevokedTokenKey(token string) string {
+func (r *redisRefreshTokenRepository) createRevokedTokenKey(token string) string {
 	return fmt.Sprintf("%s%s", revokedTokensKeyPrefix, token)
 }

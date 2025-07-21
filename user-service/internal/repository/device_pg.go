@@ -12,19 +12,20 @@ import (
 
 const maxDevicesPerUser = 10
 
-type PostgresDeviceRepository struct {
+type pgDeviceRepository struct {
 	db *sql.DB
 }
 
-func NewPgDeviceRepository(db *sql.DB) *PostgresDeviceRepository {
-	return &PostgresDeviceRepository{db: db}
+func NewPgDeviceRepository(db *sql.DB) DeviceRepository {
+	return &pgDeviceRepository{db: db}
 }
 
-func (r *PostgresDeviceRepository) CreateDevice(ctx context.Context, device model.Device) error {
+func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Device) (finalErr error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return tracerr.Errorf("failed to begin transaction: %w", err)
 	}
+
 	defer tx.Rollback()
 
 	// Check the number of devices for the user
@@ -64,7 +65,7 @@ func (r *PostgresDeviceRepository) CreateDevice(ctx context.Context, device mode
 	return tx.Commit()
 }
 
-func (r *PostgresDeviceRepository) DeviceExists(userId uuid.UUID, userAgent string, ipAddress string) (bool, error) {
+func (r *pgDeviceRepository) DeviceExists(userId uuid.UUID, userAgent string, ipAddress string) (bool, error) {
 	var exists bool
 	err := r.db.QueryRow(
 		`SELECT EXISTS(SELECT 1 FROM devices WHERE user_id = $1 AND user_agent = $2 AND ip_address = $3)`,

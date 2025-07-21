@@ -17,13 +17,13 @@ type smtpConnectionSettings struct {
 	from     string
 }
 
-type SmtpEmailSender struct {
+type smtpEmailSender struct {
 	smtpConnectionSettings
 
 	emailTemplates *template.Template
 }
 
-func NewSmtpEmailSender(host string, port uint16, username, password, from string) (*SmtpEmailSender, error) {
+func NewSmtpEmailSender(host string, port uint16, username, password, from string) (EmailSender, error) {
 	emailTemplates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func NewSmtpEmailSender(host string, port uint16, username, password, from strin
 		return nil, fmt.Errorf("email templates were not initialized correctly. perhaps `templates` folder doesn't exist?")
 	}
 
-	return &SmtpEmailSender{
+	return &smtpEmailSender{
 		smtpConnectionSettings: smtpConnectionSettings{
 			host:     host,
 			port:     port,
@@ -45,7 +45,7 @@ func NewSmtpEmailSender(host string, port uint16, username, password, from strin
 	}, nil
 }
 
-func (s *SmtpEmailSender) sendEmail(to, subject, body string) error {
+func (s *smtpEmailSender) sendEmail(to, subject, body string) error {
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 
 	msg := []byte("To: " + to + "\r\n" +
@@ -64,7 +64,7 @@ func (s *SmtpEmailSender) sendEmail(to, subject, body string) error {
 	return nil
 }
 
-func (s *SmtpEmailSender) executeTemplate(name string, data any) (string, error) {
+func (s *smtpEmailSender) executeTemplate(name string, data any) (string, error) {
 	body := new(strings.Builder)
 
 	if err := s.emailTemplates.ExecuteTemplate(body, name, data); err != nil {
@@ -78,7 +78,7 @@ type signUpEmailData struct {
 	VerificationCode string
 }
 
-func (s *SmtpEmailSender) SendSignUpMfaEmail(to, otp string) error {
+func (s *smtpEmailSender) SendSignUpMfaEmail(to, otp string) error {
 	data := signUpEmailData{VerificationCode: otp}
 	body, err := s.executeTemplate("sign_up.html", data)
 
@@ -93,7 +93,7 @@ type signInEmailData struct {
 	VerificationCode string
 }
 
-func (s *SmtpEmailSender) SendSignInMfaEmail(to, otp string) error {
+func (s *smtpEmailSender) SendSignInMfaEmail(to, otp string) error {
 	data := signInEmailData{VerificationCode: otp}
 	body, err := s.executeTemplate("sign_in.html", data)
 
@@ -108,7 +108,7 @@ type passwordResetEmailData struct {
 	VerificationCode string
 }
 
-func (s *SmtpEmailSender) SendPasswordResetMfaEmail(to string, otp string) error {
+func (s *smtpEmailSender) SendPasswordResetMfaEmail(to string, otp string) error {
 	data := passwordResetEmailData{VerificationCode: otp}
 	body, err := s.executeTemplate("password_reset.html", data)
 

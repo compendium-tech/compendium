@@ -13,17 +13,17 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-type PgUserRepository struct {
+type pgUserRepository struct {
 	db *sql.DB
 }
 
-func NewPgUserRepository(db *sql.DB) *PgUserRepository {
-	return &PgUserRepository{
+func NewPgUserRepository(db *sql.DB) UserRepository {
+	return &pgUserRepository{
 		db: db,
 	}
 }
 
-func (r *PgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *pgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
@@ -52,7 +52,7 @@ func (r *PgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.U
 	return user, nil
 }
 
-func (r *PgUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *pgUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
@@ -81,7 +81,7 @@ func (r *PgUserRepository) FindByEmail(ctx context.Context, email string) (*mode
 	return user, nil
 }
 
-func (r *PgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error {
+func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error {
 	query := `
 		UPDATE users
 		SET is_email_verified = $1
@@ -104,7 +104,7 @@ func (r *PgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	return nil
 }
 
-func (r *PgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
+func (r *pgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
 	query := `
 		UPDATE users
 		SET name = $1
@@ -133,7 +133,7 @@ func (r *PgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name st
 	return user, nil
 }
 
-func (r *PgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error {
+func (r *pgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error {
 	query := `
 		UPDATE users
 		SET password_hash = $1
@@ -156,7 +156,7 @@ func (r *PgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID,
 	return nil
 }
 
-func (r *PgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error {
+func (r *pgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error {
 	query := `
 		UPDATE users
 		SET password_hash = $1, created_at = $2
@@ -179,7 +179,7 @@ func (r *PgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, i
 	return nil
 }
 
-func (r *PgUserRepository) CreateUser(ctx context.Context, user model.User) error {
+func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User) error {
 	query := `
 		INSERT INTO users (id, name, email, is_email_verified, is_admin, password_hash, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)

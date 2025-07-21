@@ -15,17 +15,17 @@ type UserService interface {
 	UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
 }
 
-type userServiceImpl struct {
+type userService struct {
 	userRepository repository.UserRepository
 }
 
-func NewUserService(userRepository repository.UserRepository) *userServiceImpl {
-	return &userServiceImpl{
+func NewUserService(userRepository repository.UserRepository) UserService {
+	return &userService{
 		userRepository: userRepository,
 	}
 }
 
-func (u *userServiceImpl) GetAccount(ctx context.Context) (*domain.AccountResponse, error) {
+func (u *userService) GetAccount(ctx context.Context) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Getting authenticated user account details")
 
 	userId, err := auth.GetUserId(ctx)
@@ -55,7 +55,7 @@ func (u *userServiceImpl) GetAccount(ctx context.Context) (*domain.AccountRespon
 	}, nil
 }
 
-func (u *userServiceImpl) UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
+func (u *userService) UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Updating authenticated user account details")
 
 	userId, err := auth.GetUserId(ctx)

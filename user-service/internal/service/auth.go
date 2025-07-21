@@ -27,7 +27,7 @@ type AuthService interface {
 	Logout(ctx context.Context, refreshToken string) error
 }
 
-type authServiceImpl struct {
+type authService struct {
 	authLockRepository     repository.AuthLockRepository
 	deviceRepository       repository.DeviceRepository
 	userRepository         repository.UserRepository
@@ -46,8 +46,8 @@ func NewAuthService(
 	refreshTokenRepository repository.RefreshTokenRepository,
 	emailSender email.EmailSender,
 	tokenManager auth.TokenManager,
-	passwordHasher hash.PasswordHasher) *authServiceImpl {
-	return &authServiceImpl{
+	passwordHasher hash.PasswordHasher) AuthService {
+	return &authService{
 		authLockRepository:     authEmailLockRepository,
 		deviceRepository:       deviceRepository,
 		userRepository:         userRepository,
@@ -59,7 +59,7 @@ func NewAuthService(
 	}
 }
 
-func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
+func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) (finalErr error) {
 	log.L(ctx).Infof("Signing up user with email: %s", request.Email)
 
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
@@ -136,7 +136,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, request domain.SignUpReque
 	return nil
 }
 
-func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
+func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (_ *domain.SessionResponse, finalErr error) {
 	log.L(ctx).Infof("Submitting MFA OTP for email: %s", request.Email)
 
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
@@ -200,7 +200,7 @@ func (s *authServiceImpl) SubmitMfaOtp(ctx context.Context, request domain.Submi
 	return session, nil
 }
 
-func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
+func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) (_ *domain.SignInResponse, finalErr error) {
 	log.L(ctx).Infof("Signing in user with email: %s", request.Email)
 
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
@@ -269,7 +269,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, request domain.SignInReque
 	}
 }
 
-func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
+func (s *authService) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) (finalErr error) {
 	log.L(ctx).Infof("Initiating password reset for email: %s", request.Email)
 
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
@@ -308,7 +308,7 @@ func (s *authServiceImpl) InitPasswordReset(ctx context.Context, request domain.
 	return nil
 }
 
-func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
+func (s *authService) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) (finalErr error) {
 	log.L(ctx).Infof("Finishing password reset for email: %s", request.Email)
 
 	lock, err := s.authLockRepository.ObtainLock(ctx, request.Email)
@@ -369,7 +369,7 @@ func (s *authServiceImpl) FinishPasswordReset(ctx context.Context, request domai
 	return nil
 }
 
-func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
+func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
 	log.L(ctx).Infof("Refreshing session %s", request.RefreshToken)
 
 	userId, isReused, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, request.RefreshToken)
@@ -404,7 +404,7 @@ func (s *authServiceImpl) Refresh(ctx context.Context, request domain.RefreshTok
 	return session, nil
 }
 
-func (s *authServiceImpl) Logout(ctx context.Context, refreshToken string) error {
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	log.L(ctx).Infof("Invalidating session %s", refreshToken)
 
 	userId, isReused, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, refreshToken)
@@ -434,7 +434,7 @@ func (s *authServiceImpl) Logout(ctx context.Context, refreshToken string) error
 	return nil
 }
 
-func (s *authServiceImpl) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
+func (s *authService) createSession(ctx context.Context, userId uuid.UUID, userAgent, ipAddress string) (*domain.SessionResponse, error) {
 	log.L(ctx).Infof("Creating new session for user: %s", userId)
 
 	csrfToken, err := s.tokenManager.NewCsrfToken()

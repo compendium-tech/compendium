@@ -52,17 +52,17 @@ func (e *authLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
 	}
 }
 
-type RedisAuthLockRepository struct {
+type redisAuthLockRepository struct {
 	client *redislock.Client
 }
 
-func NewRedisAuthLockRepository(rdb *redis.Client) *RedisAuthLockRepository {
-	return &RedisAuthLockRepository{
+func NewRedisAuthLockRepository(rdb *redis.Client) AuthLockRepository {
+	return &redisAuthLockRepository{
 		client: redislock.New(rdb),
 	}
 }
 
-func (r *RedisAuthLockRepository) ObtainLock(ctx context.Context, email string) (AuthLock, error) {
+func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) (AuthLock, error) {
 	log.L(ctx).Infof("Obtaining auth lock for %s", email)
 
 	lock, err := r.client.Obtain(ctx, fmt.Sprintf("auth_locks:%s", email), authLockTtl, nil)

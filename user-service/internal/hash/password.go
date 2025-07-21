@@ -10,17 +10,17 @@ type PasswordHasher interface {
 	IsPasswordHashValid(passwordHash []byte, password string) (bool, error)
 }
 
-type BcryptPasswordHasher struct {
+type bcryptPasswordHasher struct {
 	cost int
 }
 
-func NewBcryptPasswordHasher(cost int) *BcryptPasswordHasher {
-	return &BcryptPasswordHasher{
+func NewBcryptPasswordHasher(cost int) PasswordHasher {
+	return &bcryptPasswordHasher{
 		cost: cost,
 	}
 }
 
-func (b *BcryptPasswordHasher) HashPassword(password string) ([]byte, error) {
+func (b *bcryptPasswordHasher) HashPassword(password string) ([]byte, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, tracerr.Wrap(err)
@@ -29,7 +29,7 @@ func (b *BcryptPasswordHasher) HashPassword(password string) ([]byte, error) {
 	return passwordHash, nil
 }
 
-func (b *BcryptPasswordHasher) IsPasswordHashValid(passwordHash []byte, password string) (bool, error) {
+func (b *bcryptPasswordHasher) IsPasswordHashValid(passwordHash []byte, password string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword(passwordHash, []byte(password))
 
 	if err != nil {
