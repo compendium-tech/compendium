@@ -6,15 +6,15 @@ import (
 	"math/rand"
 	"time"
 
+	log "github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/user-service/internal/domain"
+	"github.com/compendium-tech/compendium/user-service/internal/email"
+	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/hash"
+	"github.com/compendium-tech/compendium/user-service/internal/model"
+	"github.com/compendium-tech/compendium/user-service/internal/repository"
+	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/google/uuid"
-	log "github.com/seacite-tech/compendium/common/pkg/log"
-	"github.com/seacite-tech/compendium/user-service/internal/domain"
-	"github.com/seacite-tech/compendium/user-service/internal/email"
-	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
-	"github.com/seacite-tech/compendium/user-service/internal/hash"
-	"github.com/seacite-tech/compendium/user-service/internal/model"
-	"github.com/seacite-tech/compendium/user-service/internal/repository"
-	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
 type AuthService interface {

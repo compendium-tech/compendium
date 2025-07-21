@@ -1,4 +1,4 @@
-module github.com/seacite-tech/compendium/common
+module github.com/compendium-tech/compendium/common
 
 go 1.24.5
 

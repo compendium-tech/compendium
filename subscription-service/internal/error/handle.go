@@ -40,20 +40,5 @@ func HandleAppErr(f func(c *gin.Context) error) func(c *gin.Context) {
 }
 
 func (k AppErrorKind) httpStatus() int {
-	switch k {
-	case InvalidCredentialsError:
-		return http.StatusUnauthorized
-	case InvalidMfaOtpError:
-		return http.StatusUnauthorized
-	case InvalidSessionError:
-		return http.StatusUnauthorized
-	case TooManyRequestsError:
-		return http.StatusTooManyRequests
-	case UserNotFoundError:
-		return http.StatusNotFound
-	case EmailTakenError:
-		return http.StatusConflict
-	default:
-		return http.StatusBadRequest
-	}
+	return http.StatusBadRequest
 }

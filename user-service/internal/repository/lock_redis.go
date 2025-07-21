@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/bsm/redislock"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/redis/go-redis/v9"
-	"github.com/seacite-tech/compendium/common/pkg/log"
-	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 	"github.com/ztrue/tracerr"
 )
 

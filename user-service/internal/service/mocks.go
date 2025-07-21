@@ -7,7 +7,7 @@ package service
 import (
 	"context"
 
-	"github.com/seacite-tech/compendium/user-service/internal/domain"
+	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
 

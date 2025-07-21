@@ -1,4 +1,4 @@
-module github.com/adslmgrv/compendium/subscription-service
+module github.com/compendium-tech/compendium/subscription-service
 
 go 1.24.5
 

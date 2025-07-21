@@ -1,0 +1,140 @@
+package controller
+
+import (
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/PaddleHQ/paddle-go-sdk/v4"
+	"github.com/PaddleHQ/paddle-go-sdk/v4/pkg/paddlenotification"
+	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
+	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
+	"github.com/compendium-tech/compendium/subscription-service/internal/model"
+	"github.com/compendium-tech/compendium/subscription-service/internal/service"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/ztrue/tracerr"
+)
+
+const dateTimeLayout = time.RFC3339Nano
+
+type PaddleWebhookController struct {
+	service  service.SubscriptionService
+	verifier paddle.WebhookVerifier
+}
+
+func NewPaddleWebhookController(
+	service service.SubscriptionService,
+	verifier paddle.WebhookVerifier) *PaddleWebhookController {
+	return &PaddleWebhookController{
+		service:  service,
+		verifier: verifier,
+	}
+}
+
+func (p *PaddleWebhookController) MakeRoutes(e *gin.Engine) {
+	e.POST("/paddleWebhook", appErr.HandleAppErr(p.Handle))
+}
+
+type webhook struct {
+	EventID   string                           `json:"event_id"`
+	EventType paddlenotification.EventTypeName `json:"event_type"`
+}
+
+func (p *PaddleWebhookController) Handle(c *gin.Context) error {
+	ok, err := p.verifier.Verify(c.Request)
+
+	if err != nil && (errors.Is(err, paddle.ErrMissingSignature) || errors.Is(err, paddle.ErrInvalidSignatureFormat)) {
+		return appErr.Errorf(appErr.InvalidWebhookSignature, "Failed to verify request signature")
+	}
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if !ok {
+		return appErr.Errorf(appErr.InvalidWebhookSignature, "Failed to verify request signature")
+	}
+
+	var webhook webhook
+	if err = unmarshal(c.Request, &webhook); err != nil {
+		return err
+	}
+
+	switch webhook.EventType {
+	case paddlenotification.EventTypeNameSubscriptionCreated:
+		p.handleSubscriptionCreated(c)
+	}
+
+	return nil
+}
+
+func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) error {
+	var event paddlenotification.SubscriptionCreated
+	if err := unmarshal(c.Request, &event); err != nil {
+		return err
+	}
+
+	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+	}
+
+	till, err := time.Parse(dateTimeLayout, *event.Data.NextBilledAt)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+	}
+
+	userIdString := event.Data.CustomerID
+
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Customer id should be valid UUID")
+	}
+
+	if len(event.Data.Items) == 0 {
+		return appErr.Errorf(appErr.RequestValidationError, "User didn't subscribe to anything")
+	}
+
+	if len(event.Data.Items) > 1 {
+		return appErr.Errorf(appErr.RequestValidationError, "User shouldn't be able to purchase more than 1 item")
+	}
+
+	item := event.Data.Items[0]
+
+	var subscriptionLevel model.SubscriptionLevel
+
+	switch item.Price.ID {
+	case "pri_01k0az35r3w64r2qmmzvc3rsgd":
+		subscriptionLevel = model.SubscriptionLevelStudent
+	case "pri_01k0fr0pscgyf83jpntznp3qr9":
+		subscriptionLevel = model.SubscriptionLevelTeam
+	case "pri_01k0fr1bgqqt9n4sahzbdfteca":
+		subscriptionLevel = model.SubscriptionLevelCommunity
+	default:
+		return appErr.Errorf(appErr.RequestValidationError, "Unknown price ID")
+	}
+
+	return p.service.PutSubscription(domain.PutSubscriptionRequest{
+		UserID:            userId,
+		SubscriptionLevel: subscriptionLevel,
+		Till:              till,
+		Since:             since,
+	})
+}
+
+func unmarshal(r *http.Request, v any) error {
+	rawBody, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if err := json.Unmarshal(rawBody, v); err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "invalid request body")
+	}
+
+	return nil
+}

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/seacite-tech/compendium/common/pkg/auth"
-	"github.com/seacite-tech/compendium/common/pkg/log"
-	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
 )
 
 type _isCsrfKey struct{}

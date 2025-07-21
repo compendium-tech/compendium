@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/seacite-tech/compendium/user-service/internal/model"
 	"github.com/ztrue/tracerr"
 )
 

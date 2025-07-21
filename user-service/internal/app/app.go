@@ -3,17 +3,17 @@ package app
 import (
 	"database/sql"
 
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	"github.com/compendium-tech/compendium/user-service/internal/config"
+	v1 "github.com/compendium-tech/compendium/user-service/internal/controller/v1"
+	"github.com/compendium-tech/compendium/user-service/internal/email"
+	"github.com/compendium-tech/compendium/user-service/internal/hash"
+	"github.com/compendium-tech/compendium/user-service/internal/repository"
+	"github.com/compendium-tech/compendium/user-service/internal/service"
+	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"github.com/seacite-tech/compendium/common/pkg/log"
-	commonMiddleware "github.com/seacite-tech/compendium/common/pkg/middleware"
-	"github.com/seacite-tech/compendium/user-service/internal/config"
-	v1 "github.com/seacite-tech/compendium/user-service/internal/controller/v1"
-	"github.com/seacite-tech/compendium/user-service/internal/email"
-	"github.com/seacite-tech/compendium/user-service/internal/hash"
-	"github.com/seacite-tech/compendium/user-service/internal/repository"
-	"github.com/seacite-tech/compendium/user-service/internal/service"
-	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 	"github.com/sirupsen/logrus"
 )
 

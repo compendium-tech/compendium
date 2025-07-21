@@ -192,7 +192,7 @@ TODO
 ## Running locally
 
 ```bash
-git clone github.com/seacite-tech/compendium
+git clone github.com/compendium-tech/compendium
 
 # User service
 cd user-service
@@ -436,7 +436,7 @@ A key point regarding the `csrfToken`: Even if the `csrfToken` is also included 
 ## Running Locally
 
 ```
-git clone github.com/seacite-tech/compendium
+git clone github.com/compendium-tech/compendium
 cd frontend-spa
 npm install
 npm run dev

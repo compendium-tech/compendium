@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
-	"github.com/seacite-tech/compendium/user-service/internal/model"
 	"github.com/ztrue/tracerr"
 )
 

@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/httphelp"
+	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/seacite-tech/compendium/common/pkg/auth"
-	"github.com/seacite-tech/compendium/common/pkg/httphelp"
-	"github.com/seacite-tech/compendium/common/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 

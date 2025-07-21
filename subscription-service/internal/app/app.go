@@ -4,14 +4,15 @@ import (
 	"database/sql"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
-	"github.com/adslmgrv/compendium/subscription-service/internal/config"
-	"github.com/adslmgrv/compendium/subscription-service/internal/controller"
-	"github.com/adslmgrv/compendium/subscription-service/internal/repository"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	"github.com/compendium-tech/compendium/subscription-service/internal/config"
+	"github.com/compendium-tech/compendium/subscription-service/internal/controller"
+	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
+	"github.com/compendium-tech/compendium/subscription-service/internal/service"
+	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"github.com/seacite-tech/compendium/common/pkg/log"
-	commonMiddleware "github.com/seacite-tech/compendium/common/pkg/middleware"
-	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,6 +31,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 	logrus.SetReportCaller(true)
 
 	subscriptionRepository := repository.NewPgSubscriptionRepository(deps.PgDb)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepository)
 
 	r := gin.Default()
 	r.Use(commonMiddleware.RequestIdMiddleware{AllowToSet: false}.Handle)
@@ -38,7 +40,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(commonMiddleware.DefaultCors().Handle)
 
 	controller.NewPaddleWebhookController(
-		subscriptionRepository,
+		subscriptionService,
 		*paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
 
 	return r

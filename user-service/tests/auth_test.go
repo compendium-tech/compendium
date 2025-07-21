@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/compendium-tech/compendium/user-service/internal/model"
+	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/google/uuid"
-	"github.com/seacite-tech/compendium/user-service/internal/model"
-	"github.com/seacite-tech/compendium/user-service/internal/repository"
 	"github.com/stretchr/testify/mock"
 )
 

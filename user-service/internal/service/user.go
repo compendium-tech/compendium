@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/seacite-tech/compendium/common/pkg/auth"
-	log "github.com/seacite-tech/compendium/common/pkg/log"
-	"github.com/seacite-tech/compendium/user-service/internal/domain"
-	appErr "github.com/seacite-tech/compendium/user-service/internal/error"
-	"github.com/seacite-tech/compendium/user-service/internal/repository"
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	log "github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/user-service/internal/domain"
+	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/repository"
 )
 
 type UserService interface {

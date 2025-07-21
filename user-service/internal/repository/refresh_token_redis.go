@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/compendium-tech/compendium/user-service/internal/model" // Assuming this path is correct
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/seacite-tech/compendium/user-service/internal/model" // Assuming this path is correct
 	"github.com/ztrue/tracerr"
 )
 

@@ -9,9 +9,9 @@ import (
 type SubscriptionLevel string
 
 const (
-	SubscriptionLevelFree    SubscriptionLevel = "student"
-	SubscriptionLevelBasic   SubscriptionLevel = "team"
-	SubscriptionLevelPremium SubscriptionLevel = "community"
+	SubscriptionLevelStudent   SubscriptionLevel = "student"
+	SubscriptionLevelTeam      SubscriptionLevel = "team"
+	SubscriptionLevelCommunity SubscriptionLevel = "community"
 )
 
 type Subscription struct {

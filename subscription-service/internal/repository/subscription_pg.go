@@ -2,9 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 
-	"github.com/adslmgrv/compendium/subscription-service/internal/model"
+	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
 )
@@ -17,14 +16,49 @@ func NewPgSubscriptionRepository(db *sql.DB) SubscriptionRepository {
 	return &pgSubscriptionRepository{db: db}
 }
 
-func (r *pgSubscriptionRepository) CreateSubscription(sub model.Subscription) error {
-	query := `
-		INSERT INTO subscriptions (user_id, subscription_level, till, since)
-		VALUES ($1, $2, $3, $4)`
-
-	err := r.db.QueryRow(query, sub.UserID, sub.SubscriptionLevel, sub.Till, sub.Since).Scan(&sub.UserID)
+func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error {
+	tx, err := r.db.Begin()
 	if err != nil {
-		return tracerr.Errorf("failed to create subscription: %w", err)
+		return tracerr.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer tx.Rollback()
+
+	// Check if subscription exists
+	var existingUserID uuid.UUID
+	checkQuery := `SELECT user_id FROM subscriptions WHERE user_id = $1`
+	err = tx.QueryRow(checkQuery, sub.UserID).Scan(&existingUserID)
+
+	switch tx.QueryRow(checkQuery, sub.UserID).Scan(&existingUserID) {
+	case nil:
+		// Subscription exists, perform an update
+		updateQuery := `
+			UPDATE subscriptions
+			SET subscription_level = $1, till = $2, since = $3
+			WHERE user_id = $4`
+
+		_, err = tx.Exec(updateQuery, sub.SubscriptionLevel, sub.Till, sub.Since, sub.UserID)
+		if err != nil {
+			return tracerr.Errorf("failed to update subscription for user ID %s: %w", sub.UserID, err)
+		}
+	case sql.ErrNoRows:
+		// Subscription does not exist, perform an insert
+		insertQuery := `
+			INSERT INTO subscriptions (user_id, subscription_level, till, since)
+			VALUES ($1, $2, $3, $4)`
+
+		_, err = tx.Exec(insertQuery, sub.UserID, sub.SubscriptionLevel, sub.Till, sub.Since)
+		if err != nil {
+			return tracerr.Errorf("failed to insert subscription: %w", err)
+		}
+	default:
+		// Other database error during check
+		return tracerr.Errorf("failed to check for existing subscription: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return tracerr.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
@@ -60,16 +94,16 @@ func (r *pgSubscriptionRepository) RemoveSubscription(userID uuid.UUID) error {
 
 	result, err := r.db.Exec(query, userID)
 	if err != nil {
-		return fmt.Errorf("failed to delete subscription for user ID %s: %w", userID, err)
+		return tracerr.Errorf("failed to delete subscription for user ID %s: %w", userID, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected after delete: %w", err)
+		return tracerr.Errorf("failed to get rows affected after delete: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("no subscription found to delete for user ID %s", userID)
+		return tracerr.Errorf("no subscription found to delete for user ID %s", userID)
 	}
 
 	return nil

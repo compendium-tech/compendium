@@ -6,6 +6,6 @@ use (
 	./common
 )
 
-replace github.com/seacite-tech/compendium/common v0.0.0 => ./common
+replace github.com/compendium-tech/compendium/common v0.0.0 => ./common
 
-replace github.com/seacite-tech/compendium/user-service v0.0.0 => ./user-service
+replace github.com/compendium-tech/compendium/user-service v0.0.0 => ./user-service

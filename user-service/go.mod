@@ -1,4 +1,4 @@
-module github.com/seacite-tech/compendium/user-service
+module github.com/compendium-tech/compendium/user-service
 
 go 1.24.5
 

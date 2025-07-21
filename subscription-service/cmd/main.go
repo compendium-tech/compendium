@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/adslmgrv/compendium/subscription-service/internal/app"
-	"github.com/adslmgrv/compendium/subscription-service/internal/config"
+	"github.com/compendium-tech/compendium/common/pkg/pg"
+	"github.com/compendium-tech/compendium/common/pkg/redis"
+	"github.com/compendium-tech/compendium/common/pkg/validate"
+	"github.com/compendium-tech/compendium/subscription-service/internal/app"
+	"github.com/compendium-tech/compendium/subscription-service/internal/config"
+	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/joho/godotenv"
-	"github.com/seacite-tech/compendium/common/pkg/pg"
-	"github.com/seacite-tech/compendium/common/pkg/redis"
-	"github.com/seacite-tech/compendium/common/pkg/validate"
-	"github.com/seacite-tech/compendium/user-service/pkg/auth"
 )
 
 func main() {

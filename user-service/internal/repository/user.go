@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
-	"github.com/seacite-tech/compendium/user-service/internal/model"
 )
 
 type UserRepository interface {
