@@ -8,8 +8,9 @@
     -   [Our Growth Vision](#our-growth-vision)
 -   **[Why Open Source? This is the Heart of It.](#why-open-source-this-is-the-heart-of-it)**
 -   **[Making changes](#making-changes)**
+-   **[System Architecture](#system-architecture)**
 -   **[Microservice Backend](#microservice-backend)**
-    -   [Setting Up Locally](#setting-up-locally)
+    -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
         -   [Logging](#logging)
         -   [Error Tracing](#error-tracing)
@@ -27,7 +28,7 @@
         -   [Refresh](#refresh)
         -   [Token Management and Security Note](#token-management-and-security-note)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
-    -   [Setting Up](#setting-up)
+    -   [Running Locally](#running-locally)
 
 -----
 
@@ -167,9 +168,28 @@ When filling out the PR description, use a concise, descriptive title. In the de
 
 Request reviews from appropriate team members and add relevant labels or assign to a milestone if necessary. Be prepared to receive feedback and make further changes based on code reviews; pushing new commits to your branch will automatically update the PR. Once the PR has been approved by the required reviewers and all checks pass, it can be merged into the main branch.
 
+# System Architecture
+
+<img width="80%" alt="architecture" src="https://github.com/user-attachments/assets/bd038fe6-f1ef-4631-bc3e-9ae8e8bf9e3c" />
+
+This section outlines the setup process for the various components of our system architecture. We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services to build a robust and scalable application.
+- **Python**: Primarily used for specialized microservice services, including interactions with the LLM API for the assistant service.
+- **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
+- **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. Vite's speed and Vue 3's reactive framework are key here.
+- **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data. 
+- **Redis**: Employed for high-speed data caching to manage authentication state and caching in some microservices.
+- [**Paddle**](https://paddle.com/): An external platform integrated for handling Subscription management and payment processing.
+- **Elasticsearch**: Utilized for the College database, specifically for its powerful search and analytics capabilities. This allows for efficient querying and retrieval of college-related information.
+- **Nginx**: Acts as a high-performance reverse proxy and load balancer.
+- **AWS S3, CloudFront**: Solution for static file storage and content delivery used in course microservice. 
+
+## Setup Guide
+
+TODO
+
 # Microservice backend
 
-## Setting up locally
+## Running locally
 
 ```bash
 git clone github.com/seacite-tech/compendium
@@ -413,7 +433,7 @@ A key point regarding the `csrfToken`: Even if the `csrfToken` is also included 
 
 # Monolithic SPA frontend
 
-## Setting Up
+## Running Locally
 
 ```
 git clone github.com/seacite-tech/compendium
