@@ -185,7 +185,38 @@ This section outlines the setup process for the various components of our system
 
 ## Setup Guide
 
-TODO
+### Paddle
+
+This section will guide you through setting up your Paddle sandbox environment and configuring the necessary subscription prices for the subscription-service.
+
+#### Create a Paddle Sandbox Account
+
+If you don't already have one, you'll need a Paddle sandbox account for development and testing.
+
+We need to create three specific subscription prices in your Paddle sandbox, which will represent our different subscription tiers.
+
+- **Navigate to Catalog**: In your Paddle sandbox dashboard, go to Catalog > Products.
+- **Create Products**:
+  - Click New Product.
+  - Create a product named "Student Subscription".
+  - Create a product named "Team Subscription".
+  - Create a product named "Community Subscription".
+  - Create Prices for Each Product.
+- **Configure Subscription Service**
+    The subscription service relies on environment variables to connect to Paddle and identify the correct products.
+    Navigate to the `subscription-service/` directory:
+    ```bash
+    cd subscription-service/
+    ```
+    
+    Add product IDs to `.env`: Open the `.env` file and add the following lines, replacing the placeholder values with the actual product IDs you copied from your Paddle sandbox.
+    ```env
+    PADDLE_STUDENT_SUBSCRIPTION_PRODUCT_ID=pro_...
+    PADDLE_TEAM_SUBSCRIPTION_PRODUCT_ID=pro_...
+    PADDLE_COMMUNITY_SUBSCRIPTION_PRODUCT_ID=pro_...
+    ```
+    
+    Your subscription service is now configured with the correct Paddle product IDs and ready for development and testing!
 
 # Microservice backend
 
