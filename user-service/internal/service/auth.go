@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/compendium-tech/compendium/common/pkg/log"
+	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
@@ -33,7 +34,8 @@ type authService struct {
 	userRepository         repository.UserRepository
 	mfaRepository          repository.MfaRepository
 	refreshTokenRepository repository.RefreshTokenRepository
-	emailSender            email.EmailSender
+	emailSender            emailDelivery.EmailSender
+	emailMessageBuilder    email.EmailMessageBuilder
 	tokenManager           auth.TokenManager
 	passwordHasher         hash.PasswordHasher
 }
@@ -44,7 +46,8 @@ func NewAuthService(
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
 	refreshTokenRepository repository.RefreshTokenRepository,
-	emailSender email.EmailSender,
+	emailSender emailDelivery.EmailSender,
+	emailMessageBuilder email.EmailMessageBuilder,
 	tokenManager auth.TokenManager,
 	passwordHasher hash.PasswordHasher) AuthService {
 	return &authService{
@@ -54,6 +57,7 @@ func NewAuthService(
 		mfaRepository:          mfaRepository,
 		refreshTokenRepository: refreshTokenRepository,
 		emailSender:            emailSender,
+		emailMessageBuilder:    emailMessageBuilder,
 		tokenManager:           tokenManager,
 		passwordHasher:         passwordHasher,
 	}
@@ -127,7 +131,13 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 
 	log.L(ctx).Infof("Sending sign-up MFA email to: %s", request.Email)
 
-	if err := s.emailSender.SendSignUpMfaEmail(request.Email, otp); err != nil {
+	emailMessage, err := s.emailMessageBuilder.BuildSignUpMfaEmailMessage(request.Email, otp)
+	if err != nil {
+		return err
+	}
+
+	err = s.emailSender.SendMessage(emailMessage)
+	if err != nil {
 		return err
 	}
 
@@ -248,7 +258,12 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 			return nil, err
 		}
 
-		err = s.emailSender.SendSignInMfaEmail(request.Email, otp)
+		emailMessage, err := s.emailMessageBuilder.BuildSignInMfaEmailMessage(request.Email, otp)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.emailSender.SendMessage(emailMessage)
 		if err != nil {
 			return nil, err
 		}
@@ -299,7 +314,13 @@ func (s *authService) InitPasswordReset(ctx context.Context, request domain.Init
 
 	log.L(ctx).Infof("Sending password reset MFA email to: %s", request.Email)
 
-	if err := s.emailSender.SendSignInMfaEmail(request.Email, otp); err != nil {
+	emailMessage, err := s.emailMessageBuilder.BuildPasswordResetMfaEmailMessage(request.Email, otp)
+	if err != nil {
+		return err
+	}
+
+	err = s.emailSender.SendMessage(emailMessage)
+	if err != nil {
 		return err
 	}
 

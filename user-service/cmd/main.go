@@ -7,6 +7,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
+	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -23,6 +24,7 @@ func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		fmt.Printf("Failed to load .env file, using environmental variables instead: %v\n", err)
+		return
 	}
 
 	cfg := config.LoadAppConfig()
@@ -42,20 +44,23 @@ func main() {
 	redisClient, err := redis.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
 	if err != nil {
 		fmt.Printf("Failed to connect to Redis, cause: %s", err)
+		return
 	}
 
-	smtpEmailSender, err := email.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
+	kafkaEmailSender := emailDelivery.NewKafkaEmailMessageProducer(cfg.EmailDeliveryKafkaBroker, cfg.EmailDeliveryKafkaTopic)
+	emailMessageBuilder, err := email.NewEmailMessageBuilder()
 	if err != nil {
-		fmt.Printf("Failed to initialize email service, cause: %s", err)
+		fmt.Printf("Failed to initialize email builder, cause: %s", err)
 		return
 	}
 
 	app.NewApp(app.Dependencies{
-		PgDb:           pgDB,
-		RedisClient:    redisClient,
-		Config:         cfg,
-		TokenManager:   tokenManager,
-		EmailSender:    smtpEmailSender,
-		PasswordHasher: hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
+		PgDb:                pgDB,
+		RedisClient:         redisClient,
+		Config:              cfg,
+		TokenManager:        tokenManager,
+		EmailSender:         kafkaEmailSender,
+		EmailMessageBuilder: emailMessageBuilder,
+		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}).Run()
 }

@@ -1,11 +1,8 @@
-package sender
+package email
 
 import (
-	"context"
 	"fmt"
 	"net/smtp"
-
-	"github.com/compendium-tech/compendium/email-delivery-service/pkg/domain"
 )
 
 type smtpEmailSender struct {
@@ -26,7 +23,7 @@ func NewSmtpEmailSender(host string, port uint16, username string, password stri
 	}
 }
 
-func (s *smtpEmailSender) SendMessage(_ctx context.Context, msg domain.EmailMessage) error {
+func (s *smtpEmailSender) SendMessage(msg EmailMessage) error {
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 
 	emailContent := []byte(

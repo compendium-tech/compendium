@@ -5,6 +5,7 @@ import (
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	v1 "github.com/compendium-tech/compendium/user-service/internal/controller/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -18,12 +19,13 @@ import (
 )
 
 type Dependencies struct {
-	Config         *config.AppConfig
-	PgDb           *sql.DB
-	RedisClient    *redis.Client
-	TokenManager   auth.TokenManager
-	EmailSender    email.EmailSender
-	PasswordHasher hash.PasswordHasher
+	Config              config.AppConfig
+	PgDb                *sql.DB
+	RedisClient         *redis.Client
+	TokenManager        auth.TokenManager
+	EmailSender         emailDelivery.EmailSender
+	EmailMessageBuilder email.EmailMessageBuilder
+	PasswordHasher      hash.PasswordHasher
 }
 
 func NewApp(deps Dependencies) *gin.Engine {
@@ -42,7 +44,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 	authService := service.NewAuthService(
 		authEmailLockRepository, deviceRepository,
 		userRepository, mfaRepository, refreshTokenRepository,
-		deps.EmailSender, deps.TokenManager, deps.PasswordHasher)
+		deps.EmailSender, deps.EmailMessageBuilder, deps.TokenManager, deps.PasswordHasher)
 	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()

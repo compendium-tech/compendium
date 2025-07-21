@@ -1,12 +1,9 @@
-package sender
+package email
 
 import (
 	"context"
 	"encoding/json"
 
-	"github.com/compendium-tech/compendium/common/pkg/log"
-
-	"github.com/compendium-tech/compendium/email-delivery-service/pkg/domain"
 	"github.com/segmentio/kafka-go"
 	"github.com/ztrue/tracerr"
 )
@@ -24,7 +21,7 @@ func NewKafkaEmailMessageProducer(broker, topic string) EmailSender {
 	}
 }
 
-func (kp *kafkaEmailMessageProducer) SendMessage(ctx context.Context, msg domain.EmailMessage) error {
+func (kp *kafkaEmailMessageProducer) SendMessage(msg EmailMessage) error {
 	messageBytes, err := json.Marshal(msg)
 
 	if err != nil {
@@ -36,14 +33,10 @@ func (kp *kafkaEmailMessageProducer) SendMessage(ctx context.Context, msg domain
 		Value: messageBytes,
 	}
 
-	log.L(ctx).Printf("Attempting to produce message for recipient: %s, Subject: %s", msg.To, msg.Subject)
-
 	err = kp.writer.WriteMessages(context.Background(), kafkaMsg)
 	if err != nil {
 		return tracerr.Errorf("failed to write message to Kafka: %w", err)
 	}
-
-	log.L(ctx).Printf("Produced message for recipient: %s, Subject: %s", msg.To, msg.Subject)
 
 	return nil
 }

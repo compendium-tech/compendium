@@ -10,6 +10,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
+	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -24,9 +25,10 @@ import (
 type APITestSuite struct {
 	suite.Suite
 	app.Dependencies
-	ctx             context.Context
-	app             *gin.Engine
-	mockEmailSender *email.MockEmailSender
+	ctx                     context.Context
+	app                     *gin.Engine
+	mockEmailMessageBuilder *email.MockEmailMessageBuilder
+	mockEmailSender         *emailDelivery.MockEmailSender
 }
 
 func TestMain(m *testing.M) {
@@ -105,15 +107,19 @@ func (s *APITestSuite) initDeps() {
 	}
 
 	s.ctx = ctx
-	s.mockEmailSender = new(email.MockEmailSender)
+	s.mockEmailSender = new(emailDelivery.MockEmailSender)
+	s.mockEmailMessageBuilder = new(email.MockEmailMessageBuilder)
+
 	s.Dependencies = app.Dependencies{
-		PgDb:           pgDB,
-		RedisClient:    redisClient,
-		Config:         cfg,
-		TokenManager:   tokenManager,
-		EmailSender:    s.mockEmailSender,
-		PasswordHasher: hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
+		PgDb:                pgDB,
+		RedisClient:         redisClient,
+		Config:              cfg,
+		TokenManager:        tokenManager,
+		EmailSender:         s.mockEmailSender,
+		EmailMessageBuilder: s.mockEmailMessageBuilder,
+		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
+
 	s.app = app.NewApp(s.Dependencies)
 }
 

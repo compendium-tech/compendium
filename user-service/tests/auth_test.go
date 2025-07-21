@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/google/uuid"
@@ -23,9 +24,10 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 	name, email, password := "John", "johndoe@test.com", "Qwerty123!!!"
 	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, email, password)
 
-	s.mockEmailSender.On("SendSignUpMfaEmail", email, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
-	})
+	}).Once()
+	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
@@ -47,7 +49,8 @@ func (s *APITestSuite) Test_SignUp_TooFrequently_ReturnsTooManySignupAttemptsErr
 	name, email, password := "John", "johndoe@test.com", "Qwerty123!!!"
 	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, email, password)
 
-	s.mockEmailSender.On("SendSignUpMfaEmail", email, mock.Anything).Return(nil)
+	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Once()
+	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
@@ -127,8 +130,10 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 
 	resp := httptest.NewRecorder()
 	s.app.ServeHTTP(resp, req)
+
 	respBody := resp.Result()
-	var responseBody map[string]interface{}
+
+	var responseBody map[string]any
 	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 
@@ -247,7 +252,8 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	s.app.ServeHTTP(resp, req)
 
 	respBody := resp.Result()
-	var responseBody map[string]interface{}
+
+	var responseBody map[string]any
 	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 
@@ -290,9 +296,10 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	})
 	r.NoError(err, "Failed to create new user")
 
-	s.mockEmailSender.On("SendSignInMfaEmail", email, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("BuildSignInMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
-	})
+	}).Once()
+	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
 
 	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
 
@@ -305,7 +312,8 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	s.app.ServeHTTP(resp, req)
 
 	respBody := resp.Result()
-	var responseBody map[string]interface{}
+
+	var responseBody map[string]any
 	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 

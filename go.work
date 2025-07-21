@@ -1,6 +1,7 @@
 go 1.24.5
 
 use (
+	./email-delivery-service
 	./subscription-service
 	./user-service
 	./common

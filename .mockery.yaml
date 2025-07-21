@@ -4,6 +4,9 @@ packages:
         interfaces:
             AuthService:
             UserService:
-    github.com/compendium-tech/compendium/user-service/internal/email:
+    github.com/compendium-tech/compendium/email-delivery-service/pkg/email:
         interfaces:
             EmailSender:
+    github.com/compendium-tech/compendium/user-service/internal/email:
+        interfaces:
+            EmailMessageBuilder:

@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/compendium-tech/compendium/email-delivery-service/internal/config"
-	"github.com/compendium-tech/compendium/email-delivery-service/pkg/domain"
-	"github.com/compendium-tech/compendium/email-delivery-service/pkg/sender"
+	"github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/joho/godotenv"
 	kafka "github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -22,13 +21,13 @@ func main() {
 	}
 
 	cfg := config.LoadAppConfig()
-	smtpSender := sender.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
+	smtpSender := email.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
 	consumeAndSendEmails(ctx, cfg, smtpSender)
 }
 
 func consumeAndSendEmails(
 	ctx context.Context,
-	cfg config.AppConfig, sender sender.EmailSender) {
+	cfg config.AppConfig, sender email.EmailSender) {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{cfg.KafkaBroker},
 		Topic:    cfg.KafkaTopic,
@@ -51,7 +50,7 @@ func consumeAndSendEmails(
 		logrus.Printf("Received message from Kafka - Topic: %s, Partition: %d, Offset: %d, Key: %s",
 			m.Topic, m.Partition, m.Offset, string(m.Key))
 
-		var emailMsg domain.EmailMessage
+		var emailMsg email.EmailMessage
 
 		if err := json.Unmarshal(m.Value, &emailMsg); err != nil {
 			logrus.Printf("Error unmarshaling email message: %v, Message value: %s", err, string(m.Value))
@@ -59,7 +58,7 @@ func consumeAndSendEmails(
 			continue
 		}
 
-		if err := sender.SendMessage(ctx, emailMsg); err != nil {
+		if err := sender.SendMessage(emailMsg); err != nil {
 			logrus.Errorf("Error sending email to %s: %v", emailMsg.To, err)
 		} else {
 			logrus.Printf("Email sent successfully to %s, Subject: %s", emailMsg.To, emailMsg.Subject)
