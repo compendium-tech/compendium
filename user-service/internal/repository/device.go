@@ -9,5 +9,7 @@ import (
 
 type DeviceRepository interface {
 	CreateDevice(ctx context.Context, device model.Device) error
-	DeviceExists(userId uuid.UUID, userAgent string, ipAddress string) (bool, error)
+	DeviceExists(ctx context.Context, userId uuid.UUID, userAgent string, ipAddress string) (bool, error)
+	GetDevicesByUserId(ctx context.Context, userId uuid.UUID) ([]model.Device, error)
+	RemoveAllDevicesByUserId(ctx context.Context, userId uuid.UUID) error
 }

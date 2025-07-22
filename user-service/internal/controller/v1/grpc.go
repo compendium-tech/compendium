@@ -4,8 +4,8 @@ import (
 	"context"
 
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	pb "github.com/compendium-tech/compendium/user-service/internal/proto/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
-	pb "github.com/compendium-tech/compendium/user-service/pkg/proto/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"

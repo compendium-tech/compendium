@@ -149,7 +149,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.Nil(code)
 
-	isDeviceKnownNow, err := repository.NewPgDeviceRepository(s.PgDb).DeviceExists(userId, userAgent, ipAddress)
+	isDeviceKnownNow, err := repository.NewPgDeviceRepository(s.PgDb).DeviceExists(s.ctx, userId, userAgent, ipAddress)
 	r.NoError(err, "Failed to check if device was created in db")
 	r.True(isDeviceKnownNow)
 }

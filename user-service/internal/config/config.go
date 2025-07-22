@@ -31,6 +31,9 @@ type AppConfig struct {
 	CsrfTokenHashSalt        string
 	EmailDeliveryKafkaBroker string
 	EmailDeliveryKafkaTopic  string
+	GeoIp2AccountId          string
+	GeoIp2LicenseKey         string
+	GeoIp2Host               string
 }
 
 func LoadAppConfig() AppConfig {
@@ -44,6 +47,9 @@ func LoadAppConfig() AppConfig {
 		CsrfTokenHashSalt:        os.Getenv("CSRF_TOKEN_HASH_SALT"),
 		EmailDeliveryKafkaBroker: os.Getenv("EMAIL_DELIVERY_KAFKA_BROKER"),
 		EmailDeliveryKafkaTopic:  os.Getenv("EMAIL_DELIVERY_KAFKA_TOPIC"),
+		GeoIp2AccountId:          os.Getenv("GEOIP2_ACCOUNT_ID"),
+		GeoIp2LicenseKey:         os.Getenv("GEOIP2_LICENSE_KEY"),
+		GeoIp2Host:               os.Getenv("GEOIP2_HOST"),
 	}
 
 	env := os.Getenv("ENVIRONMENT")

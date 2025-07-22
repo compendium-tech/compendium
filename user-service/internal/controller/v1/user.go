@@ -3,11 +3,11 @@ package v1
 import (
 	"net/http"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
-	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/gin-gonic/gin"
 )
 

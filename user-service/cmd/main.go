@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
@@ -11,8 +12,9 @@ import (
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
+	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
-	"github.com/compendium-tech/compendium/user-service/pkg/auth"
+	"github.com/compendium-tech/compendium/user-service/internal/ua"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -54,6 +56,9 @@ func main() {
 		return
 	}
 
+	geoIp := geoip.NewGeoIp2Client(cfg.GeoIp2AccountId, cfg.GeoIp2LicenseKey, cfg.GeoIp2Host)
+	userAgentParser := ua.NewUserAgentParser()
+
 	deps := app.Dependencies{
 		PgDb:                pgDB,
 		RedisClient:         redisClient,
@@ -61,6 +66,8 @@ func main() {
 		TokenManager:        tokenManager,
 		EmailSender:         kafkaEmailSender,
 		EmailMessageBuilder: emailMessageBuilder,
+		GeoIp:               geoIp,
+		UserAgentParser:     userAgentParser,
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 

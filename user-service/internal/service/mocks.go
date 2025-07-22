@@ -95,6 +95,68 @@ func (_c *MockAuthService_FinishPasswordReset_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
+// GetDevicesForAuthenticatedUser provides a mock function for the type MockAuthService
+func (_mock *MockAuthService) GetDevicesForAuthenticatedUser(ctx context.Context) ([]domain.Device, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDevicesForAuthenticatedUser")
+	}
+
+	var r0 []domain.Device
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain.Device, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain.Device); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Device)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockAuthService_GetDevicesForAuthenticatedUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDevicesForAuthenticatedUser'
+type MockAuthService_GetDevicesForAuthenticatedUser_Call struct {
+	*mock.Call
+}
+
+// GetDevicesForAuthenticatedUser is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockAuthService_Expecter) GetDevicesForAuthenticatedUser(ctx interface{}) *MockAuthService_GetDevicesForAuthenticatedUser_Call {
+	return &MockAuthService_GetDevicesForAuthenticatedUser_Call{Call: _e.mock.On("GetDevicesForAuthenticatedUser", ctx)}
+}
+
+func (_c *MockAuthService_GetDevicesForAuthenticatedUser_Call) Run(run func(ctx context.Context)) *MockAuthService_GetDevicesForAuthenticatedUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockAuthService_GetDevicesForAuthenticatedUser_Call) Return(devices []domain.Device, err error) *MockAuthService_GetDevicesForAuthenticatedUser_Call {
+	_c.Call.Return(devices, err)
+	return _c
+}
+
+func (_c *MockAuthService_GetDevicesForAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context) ([]domain.Device, error)) *MockAuthService_GetDevicesForAuthenticatedUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InitPasswordReset provides a mock function for the type MockAuthService
 func (_mock *MockAuthService) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error {
 	ret := _mock.Called(ctx, request)
@@ -205,6 +267,63 @@ func (_c *MockAuthService_Logout_Call) Return(err error) *MockAuthService_Logout
 }
 
 func (_c *MockAuthService_Logout_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) error) *MockAuthService_Logout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LogoutFromAllDevices provides a mock function for the type MockAuthService
+func (_mock *MockAuthService) LogoutFromAllDevices(ctx context.Context, refreshToken string) error {
+	ret := _mock.Called(ctx, refreshToken)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LogoutFromAllDevices")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = returnFunc(ctx, refreshToken)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockAuthService_LogoutFromAllDevices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogoutFromAllDevices'
+type MockAuthService_LogoutFromAllDevices_Call struct {
+	*mock.Call
+}
+
+// LogoutFromAllDevices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - refreshToken string
+func (_e *MockAuthService_Expecter) LogoutFromAllDevices(ctx interface{}, refreshToken interface{}) *MockAuthService_LogoutFromAllDevices_Call {
+	return &MockAuthService_LogoutFromAllDevices_Call{Call: _e.mock.On("LogoutFromAllDevices", ctx, refreshToken)}
+}
+
+func (_c *MockAuthService_LogoutFromAllDevices_Call) Run(run func(ctx context.Context, refreshToken string)) *MockAuthService_LogoutFromAllDevices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockAuthService_LogoutFromAllDevices_Call) Return(err error) *MockAuthService_LogoutFromAllDevices_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockAuthService_LogoutFromAllDevices_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) error) *MockAuthService_LogoutFromAllDevices_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -495,6 +614,74 @@ type MockUserService_Expecter struct {
 
 func (_m *MockUserService) EXPECT() *MockUserService_Expecter {
 	return &MockUserService_Expecter{mock: &_m.Mock}
+}
+
+// FindAccountByEmail provides a mock function for the type MockUserService
+func (_mock *MockUserService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindAccountByEmail")
+	}
+
+	var r0 *domain.AccountResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*domain.AccountResponse, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *domain.AccountResponse); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.AccountResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserService_FindAccountByEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindAccountByEmail'
+type MockUserService_FindAccountByEmail_Call struct {
+	*mock.Call
+}
+
+// FindAccountByEmail is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockUserService_Expecter) FindAccountByEmail(ctx interface{}, email interface{}) *MockUserService_FindAccountByEmail_Call {
+	return &MockUserService_FindAccountByEmail_Call{Call: _e.mock.On("FindAccountByEmail", ctx, email)}
+}
+
+func (_c *MockUserService_FindAccountByEmail_Call) Run(run func(ctx context.Context, email string)) *MockUserService_FindAccountByEmail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockUserService_FindAccountByEmail_Call) Return(accountResponse *domain.AccountResponse, err error) *MockUserService_FindAccountByEmail_Call {
+	_c.Call.Return(accountResponse, err)
+	return _c
+}
+
+func (_c *MockUserService_FindAccountByEmail_Call) RunAndReturn(run func(ctx context.Context, email string) (*domain.AccountResponse, error)) *MockUserService_FindAccountByEmail_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetAccount provides a mock function for the type MockUserService

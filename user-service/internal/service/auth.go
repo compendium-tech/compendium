@@ -6,15 +6,17 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	log "github.com/compendium-tech/compendium/common/pkg/log"
 	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
-	"github.com/compendium-tech/compendium/user-service/pkg/auth"
+	"github.com/compendium-tech/compendium/user-service/internal/ua"
 	"github.com/google/uuid"
 )
 
@@ -26,6 +28,8 @@ type AuthService interface {
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
 	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
+	GetDevicesForAuthenticatedUser(ctx context.Context) ([]domain.Device, error)
+	LogoutFromAllDevices(ctx context.Context, refreshToken string) error
 }
 
 type authService struct {
@@ -36,6 +40,8 @@ type authService struct {
 	refreshTokenRepository repository.RefreshTokenRepository
 	emailSender            emailDelivery.EmailSender
 	emailMessageBuilder    email.EmailMessageBuilder
+	geoIp                  geoip.GeoIp
+	userAgentParser        ua.UserAgentParser
 	tokenManager           auth.TokenManager
 	passwordHasher         hash.PasswordHasher
 }
@@ -48,6 +54,8 @@ func NewAuthService(
 	refreshTokenRepository repository.RefreshTokenRepository,
 	emailSender emailDelivery.EmailSender,
 	emailMessageBuilder email.EmailMessageBuilder,
+	geoIp geoip.GeoIp,
+	userAgentParser ua.UserAgentParser,
 	tokenManager auth.TokenManager,
 	passwordHasher hash.PasswordHasher) AuthService {
 	return &authService{
@@ -58,6 +66,8 @@ func NewAuthService(
 		refreshTokenRepository: refreshTokenRepository,
 		emailSender:            emailSender,
 		emailMessageBuilder:    emailMessageBuilder,
+		geoIp:                  geoIp,
+		userAgentParser:        userAgentParser,
 		tokenManager:           tokenManager,
 		passwordHasher:         passwordHasher,
 	}
@@ -242,7 +252,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
-	deviceIsKnown, err := s.deviceRepository.DeviceExists(user.Id, request.UserAgent, request.IpAddress)
+	deviceIsKnown, err := s.deviceRepository.DeviceExists(ctx, user.Id, request.UserAgent, request.IpAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -451,6 +461,90 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	log.L(ctx).Infof("Session %s was invalidated successfully", refreshToken)
+
+	return nil
+}
+
+func (s *authService) GetDevicesForAuthenticatedUser(ctx context.Context) ([]domain.Device, error) {
+	log.L(ctx).Info("Fetching devices for authenticated user")
+
+	userId, err := auth.GetUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	devices, err := s.deviceRepository.GetDevicesByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Infof("Found %d devices for user %s", len(devices), userId)
+
+	devicesResponse := make([]domain.Device, len(devices))
+	for i, device := range devices {
+		location := ""
+		location, err := s.geoIp.GetLocation(device.IpAddress)
+		if err != nil {
+			log.L(ctx).Warnf("Failed to get location for device %s by ip %s: %v", device.Id, device.IpAddress, err)
+		}
+
+		deviceInfo := s.userAgentParser.ParseUserAgent(device.UserAgent)
+
+		devicesResponse[i] = domain.Device{
+			Id:        device.Id,
+			Name:      deviceInfo.Name,
+			Os:        deviceInfo.Os,
+			Device:    deviceInfo.Device,
+			Location:  location,
+			UserAgent: device.UserAgent,
+			IpAddress: device.IpAddress,
+			CreatedAt: device.CreatedAt,
+		}
+	}
+
+	return devicesResponse, nil
+}
+
+func (s *authService) LogoutFromAllDevices(ctx context.Context, refreshToken string) error {
+	log.L(ctx).Info("Logging out from all devices for authenticated user")
+
+	userId, isReused, err := s.refreshTokenRepository.TryRemoveRefreshTokenByToken(ctx, refreshToken)
+	if err != nil {
+		return err
+	}
+
+	if userId == uuid.Nil {
+		log.L(ctx).Errorf("Invalid refresh token (%s) was used", refreshToken)
+
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	if isReused {
+		log.L(ctx).Warnf("Refresh Token Reuse Detected! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", userId, refreshToken)
+
+		err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId)
+		if err != nil {
+			return err
+		}
+
+		return appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
+	}
+
+	log.L(ctx).Infof("Removing all refresh tokens for user %s", userId)
+
+	err = s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	log.L(ctx).Infof("Removing all devices for user %s", userId)
+
+	err = s.deviceRepository.RemoveAllDevicesByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	log.L(ctx).Infof("All devices logged out successfully for user %s", userId)
 
 	return nil
 }

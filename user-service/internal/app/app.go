@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
 	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	v1 "github.com/compendium-tech/compendium/user-service/internal/controller/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
+	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
+	pbv1 "github.com/compendium-tech/compendium/user-service/internal/proto/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
-	"github.com/compendium-tech/compendium/user-service/pkg/auth"
-	pbv1 "github.com/compendium-tech/compendium/user-service/pkg/proto/v1"
+	"github.com/compendium-tech/compendium/user-service/internal/ua"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -47,6 +49,8 @@ type Dependencies struct {
 	EmailSender         emailDelivery.EmailSender
 	EmailMessageBuilder email.EmailMessageBuilder
 	PasswordHasher      hash.PasswordHasher
+	GeoIp               geoip.GeoIp
+	UserAgentParser     ua.UserAgentParser
 }
 
 func NewGinApp(deps Dependencies) *gin.Engine {
@@ -65,7 +69,9 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 	authService := service.NewAuthService(
 		authEmailLockRepository, deviceRepository,
 		userRepository, mfaRepository, refreshTokenRepository,
-		deps.EmailSender, deps.EmailMessageBuilder, deps.TokenManager, deps.PasswordHasher)
+		deps.EmailSender, deps.EmailMessageBuilder,
+		deps.GeoIp, deps.UserAgentParser,
+		deps.TokenManager, deps.PasswordHasher)
 	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()

@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -28,35 +26,28 @@ func (a AuthMiddleware) Handle(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	auth.SetUserId(&ctx, userId)
+	SetUserId(&ctx, userId)
 	ctx = context.WithValue(ctx, isCsrfKey, isCsrfTokenValid)
 
 	c.Request = c.Request.WithContext(ctx)
 	c.Next()
 }
 
-var RequireAuth = appErr.HandleAppErr(requireAuth)
-var RequireCsrf = appErr.HandleAppErr(requireCsrf)
-
-func requireAuth(c *gin.Context) error {
-	_, err := auth.GetUserId(c.Request.Context())
+func RequireAuth(c *gin.Context) {
+	_, err := GetUserId(c.Request.Context())
 
 	if err != nil {
 		log.L(c.Request.Context()).Warnf("Failed to require auth, check the previous logs to reveal the reason")
-		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+		c.AbortWithError(401, fmt.Errorf("invalid session"))
 	}
-
-	return nil
 }
 
-func requireCsrf(c *gin.Context) error {
+func RequireCsrf(c *gin.Context) {
 	isCsrfPresent, ok := c.Request.Context().Value(isCsrfKey).(bool)
 
 	if !ok || !isCsrfPresent {
-		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+		c.AbortWithError(401, fmt.Errorf("invalid session"))
 	}
-
-	return nil
 }
 
 func (a AuthMiddleware) parseAccessTokenCookie(c *gin.Context) (uuid.UUID, bool) {

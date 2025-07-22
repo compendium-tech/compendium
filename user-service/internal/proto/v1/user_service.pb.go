@@ -194,7 +194,7 @@ const file_proto_user_service_proto_rawDesc = "" +
 	"\x1aFindAccountByEmailResponse\x122\n" +
 	"\aaccount\x18\x01 \x01(\v2\x18.user_service.v1.AccountR\aaccount2|\n" +
 	"\vUserService\x12m\n" +
-	"\x12FindAccountByEmail\x12*.user_service.v1.FindAccountByEmailRequest\x1a+.user_service.v1.FindAccountByEmailResponseB\x0eZ\fpkg/proto/v1b\x06proto3"
+	"\x12FindAccountByEmail\x12*.user_service.v1.FindAccountByEmailRequest\x1a+.user_service.v1.FindAccountByEmailResponseB\x13Z\x11internal/proto/v1b\x06proto3"
 
 var (
 	file_proto_user_service_proto_rawDescOnce sync.Once

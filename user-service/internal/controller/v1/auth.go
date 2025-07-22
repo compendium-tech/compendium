@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/httphelp"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
@@ -34,6 +35,13 @@ func (a AuthController) MakeRoutes(e *gin.Engine) {
 		v1.POST("/sessions", appErr.HandleAppErr(a.createSession))
 		v1.PUT("/password", appErr.HandleAppErr(a.resetPassword))
 		v1.DELETE("/session", appErr.HandleAppErr(a.logout))
+		v1.DELETE("/sessions", appErr.HandleAppErr(a.logoutFromAllDevices))
+
+		authenticated := v1.Group("/")
+		{
+			authenticated.Use(auth.RequireAuth)
+			authenticated.GET("/devices", appErr.HandleAppErr(a.getDevices))
+		}
 	}
 }
 
@@ -221,6 +229,31 @@ func (a *AuthController) logout(c *gin.Context) error {
 	}
 
 	c.Status(http.StatusOK)
+	return nil
+}
+
+func (a *AuthController) logoutFromAllDevices(c *gin.Context) error {
+	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
+	if err != nil {
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	err = a.authService.LogoutFromAllDevices(c.Request.Context(), refreshTokenCookie.Value)
+	if err != nil {
+		return err
+	}
+
+	c.Status(http.StatusOK)
+	return nil
+}
+
+func (a *AuthController) getDevices(c *gin.Context) error {
+	response, err := a.authService.GetDevicesForAuthenticatedUser(c.Request.Context())
+	if err != nil {
+		return err
+	}
+
+	c.JSON(http.StatusOK, response)
 	return nil
 }
 
