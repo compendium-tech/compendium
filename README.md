@@ -12,6 +12,8 @@
     -   [Setup guide](#setup-guide)
         -   [Paddle](#paddle)
         -   [Kafka](#kafka)
+        -   [Mockery](#mockery)
+        -   [Protobuf](#protobuf)
 -   **[Microservice Backend](#microservice-backend)**
     -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
@@ -301,6 +303,36 @@ One of these:
   ```bash
   kafka-topics --create --topic private.emaildelivery.emails --bootstrap-server localhost:9092
   ```
+
+### Mockery
+
+To install Mockery use:
+
+```bash
+go install github.com/vektra/mockery/v3@v3.5.1
+```
+
+Execute this command in repository's root folder to regenerate mocks generated for Go interfaces:
+```bash
+mockery
+```
+
+### Protobuf
+
+You can install protobuf [here](https://github.com/protocolbuffers/protobuf/releases). To install protobuf plugin for Go use:
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+```
+
+To regenerate interfaces made from proto files, run these commands in repository's root folder:
+
+```bash
+export PATH="$PATH:$(go env GOPATH)"/bin
+
+cd user-service/
+protoc --go_out=. --go-grpc_out=. proto/user_service.proto
+```
 
 # Microservice backend
 
