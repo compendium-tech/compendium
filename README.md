@@ -309,8 +309,12 @@ One of these:
 ```bash
 git clone github.com/compendium-tech/compendium
 
+# Email delivery service
+cd ./email-delivery-service
+go run cmd/main.go # run kafka consumer
+
 # User service
-cd ./user-service
+cd ../user-service
 go test ./...      # test
 go run cmd/main.go # run server
 
