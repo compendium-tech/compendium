@@ -18,9 +18,13 @@ func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		fmt.Printf("Failed to load .env file, using environmental variables instead: %v\n", err)
+		return
 	}
 
 	cfg := config.LoadAppConfig()
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetReportCaller(true)
+
 	smtpSender := email.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
 	consumeAndSendEmails(ctx, cfg, smtpSender)
 }
@@ -37,6 +41,8 @@ func consumeAndSendEmails(
 		MaxWait:  1 * time.Second,
 	})
 	defer reader.Close()
+
+	logrus.Printf("Receiving messages from Kafka - Topic: %s, Broker: %s", cfg.KafkaTopic, cfg.KafkaBroker)
 
 	for {
 		m, err := reader.FetchMessage(ctx)
