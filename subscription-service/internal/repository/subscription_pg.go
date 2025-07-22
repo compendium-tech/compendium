@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 
+	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
@@ -25,12 +26,16 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 	defer tx.Rollback()
 
 	// Check if subscription exists
-	var existingUserID uuid.UUID
-	checkQuery := `SELECT user_id FROM subscriptions WHERE user_id = $1`
-	err = tx.QueryRow(checkQuery, sub.UserID).Scan(&existingUserID)
+	var existingSubscription model.Subscription
+	checkQuery := `SELECT * FROM subscriptions WHERE user_id = $1`
 
-	switch tx.QueryRow(checkQuery, sub.UserID).Scan(&existingUserID) {
+	switch tx.QueryRow(checkQuery, sub.UserID).Scan(&existingSubscription) {
 	case nil:
+		if sub.SubscriptionLevel.Priority() < existingSubscription.SubscriptionLevel.Priority() {
+			// If the new subscription level is lower than the existing one, do not update
+			return appErr.Errorf(appErr.LowPrioritySubscriptionLevel, "cannot update subscription for user ID %s: new level is lower than existing", sub.UserID)
+		}
+
 		// Subscription exists, perform an update
 		updateQuery := `
 			UPDATE subscriptions
@@ -66,8 +71,7 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 
 func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*model.Subscription, error) {
 	query := `
-		SELECT user_id, subscription_level, till, since
-		FROM subscriptions
+		SELECT * FROM subscriptions
 		WHERE user_id = $1`
 
 	sub := &model.Subscription{}

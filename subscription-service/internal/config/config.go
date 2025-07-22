@@ -23,7 +23,7 @@ type AppConfig struct {
 	JwtSingingKey       string
 	CsrfTokenHashSalt   string
 	PaddleWebhookSecret string
-	PaddlePriceIds      PaddlePriceIds
+	PaddleProductIds    PaddleProductIds
 }
 
 func LoadAppConfig() *AppConfig {
@@ -39,10 +39,10 @@ func LoadAppConfig() *AppConfig {
 		JwtSingingKey:       "",
 		CsrfTokenHashSalt:   "",
 		PaddleWebhookSecret: "",
-		PaddlePriceIds: PaddlePriceIds{
-			StudentSubscriptionPriceId:   "",
-			TeamSubscriptionPriceId:      "",
-			CommunitySubscriptionPriceId: "",
+		PaddleProductIds: PaddleProductIds{
+			StudentSubscriptionProductId:   "",
+			TeamSubscriptionProductId:      "",
+			CommunitySubscriptionProductId: "",
 		},
 	}
 
@@ -60,10 +60,10 @@ func LoadAppConfig() *AppConfig {
 	appConfig.JwtSingingKey = os.Getenv("JWT_SIGNING_KEY")
 	appConfig.CsrfTokenHashSalt = os.Getenv("CSRF_TOKEN_HASH_SALT")
 	appConfig.PaddleWebhookSecret = os.Getenv("PADDLE_WEBHOOK_SECRET")
-	appConfig.PaddlePriceIds = PaddlePriceIds{
-		StudentSubscriptionPriceId:   os.Getenv("PADDLE_STUDENT_SUBSCRIPTION_PRICE_ID"),
-		TeamSubscriptionPriceId:      os.Getenv("PADDLE_TEAM_SUBSCRIPTION_PRICE_ID"),
-		CommunitySubscriptionPriceId: os.Getenv("PADDLE_COMMUNITY_SUBSCRIPTION_PRICE_ID"),
+	appConfig.PaddleProductIds = PaddleProductIds{
+		StudentSubscriptionProductId:   os.Getenv("PADDLE_STUDENT_SUBSCRIPTION_PRICE_ID"),
+		TeamSubscriptionProductId:      os.Getenv("PADDLE_TEAM_SUBSCRIPTION_PRICE_ID"),
+		CommunitySubscriptionProductId: os.Getenv("PADDLE_COMMUNITY_SUBSCRIPTION_PRICE_ID"),
 	}
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {

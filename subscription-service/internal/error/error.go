@@ -10,6 +10,7 @@ const (
 
 	// 100
 	InvalidWebhookSignature = iota + 99
+	LowPrioritySubscriptionLevel
 )
 
 type AppErrorKind int

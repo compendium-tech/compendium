@@ -41,7 +41,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 
 	controller.NewPaddleWebhookController(
 		subscriptionService,
-		deps.Config.PaddlePriceIds,
+		deps.Config.PaddleProductIds,
 		*paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
 
 	return r

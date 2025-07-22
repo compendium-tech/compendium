@@ -23,13 +23,13 @@ const dateTimeLayout = time.RFC3339Nano
 
 type PaddleWebhookController struct {
 	subscriptionService   service.SubscriptionService
-	paddlePriceIds        config.PaddlePriceIds
+	paddleProductIds      config.PaddleProductIds
 	paddleWebhookVerifier paddle.WebhookVerifier
 }
 
 func NewPaddleWebhookController(
 	subscriptionService service.SubscriptionService,
-	paddlePriceIds config.PaddlePriceIds,
+	paddleProductIds config.PaddleProductIds,
 	paddleWebhookVerifier paddle.WebhookVerifier) *PaddleWebhookController {
 	return &PaddleWebhookController{
 		subscriptionService:   subscriptionService,
@@ -109,12 +109,12 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 
 	var subscriptionLevel model.SubscriptionLevel
 
-	switch item.Price.ID {
-	case p.paddlePriceIds.StudentSubscriptionPriceId:
+	switch item.Product.ID {
+	case p.paddleProductIds.StudentSubscriptionProductId:
 		subscriptionLevel = model.SubscriptionLevelStudent
-	case p.paddlePriceIds.TeamSubscriptionPriceId:
+	case p.paddleProductIds.TeamSubscriptionProductId:
 		subscriptionLevel = model.SubscriptionLevelTeam
-	case p.paddlePriceIds.CommunitySubscriptionPriceId:
+	case p.paddleProductIds.CommunitySubscriptionProductId:
 		subscriptionLevel = model.SubscriptionLevelCommunity
 	default:
 		return appErr.Errorf(appErr.RequestValidationError, "Unknown price ID")
