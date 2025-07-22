@@ -54,7 +54,7 @@ func main() {
 		return
 	}
 
-	app.NewApp(app.Dependencies{
+	deps := app.Dependencies{
 		PgDb:                pgDB,
 		RedisClient:         redisClient,
 		Config:              cfg,
@@ -62,5 +62,11 @@ func main() {
 		EmailSender:         kafkaEmailSender,
 		EmailMessageBuilder: emailMessageBuilder,
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
-	}).Run()
+	}
+
+	if cfg.Mode == config.ModeHttp {
+		app.NewGinApp(deps).Run()
+	} else {
+		app.NewGrpcApp(deps).Run()
+	}
 }

@@ -120,7 +120,7 @@ func (s *APITestSuite) initDeps() {
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 
-	s.app = app.NewApp(s.Dependencies)
+	s.app = app.NewGinApp(s.Dependencies)
 }
 
 func (s *APITestSuite) getPgMigrationsDir() string {

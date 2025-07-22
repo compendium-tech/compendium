@@ -2,6 +2,8 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
+	"net"
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
@@ -13,10 +15,29 @@ import (
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/compendium-tech/compendium/user-service/pkg/auth"
+	pbv1 "github.com/compendium-tech/compendium/user-service/pkg/proto/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
+
+type GrpcApp struct {
+	server *grpc.Server
+	port   uint16
+}
+
+func (g *GrpcApp) Run() error {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", g.port))
+
+	if err != nil {
+		return fmt.Errorf("failed to listen: %v", err)
+	}
+
+	logrus.Infof("Starting gRPC server on :%d", g.port)
+	return g.server.Serve(lis)
+}
 
 type Dependencies struct {
 	Config              config.AppConfig
@@ -28,7 +49,7 @@ type Dependencies struct {
 	PasswordHasher      hash.PasswordHasher
 }
 
-func NewApp(deps Dependencies) *gin.Engine {
+func NewGinApp(deps Dependencies) *gin.Engine {
 	logrus.SetFormatter(&log.LogFormatter{
 		Program:     "user-service",
 		Environment: deps.Config.Environment,
@@ -57,4 +78,21 @@ func NewApp(deps Dependencies) *gin.Engine {
 	v1.NewUserController(userService).MakeRoutes(r)
 
 	return r
+}
+
+func NewGrpcApp(deps Dependencies) *GrpcApp {
+	logrus.SetFormatter(&log.LogFormatter{
+		Program:     "user-service",
+		Environment: deps.Config.Environment,
+	})
+	logrus.SetReportCaller(true)
+
+	userRepository := repository.NewPgUserRepository(deps.PgDb)
+	userService := service.NewUserService(userRepository)
+
+	grpcServer := grpc.NewServer()
+	pbv1.RegisterUserServiceServer(grpcServer, v1.NewUserServiceServer(userService))
+	reflection.Register(grpcServer)
+
+	return &GrpcApp{server: grpcServer, port: deps.Config.GrpcPort}
 }

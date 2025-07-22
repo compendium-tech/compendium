@@ -12,6 +12,7 @@ import (
 
 type UserService interface {
 	GetAccount(ctx context.Context) (*domain.AccountResponse, error)
+	FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error)
 	UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
 }
 
@@ -46,6 +47,30 @@ func (u *userService) GetAccount(ctx context.Context) (*domain.AccountResponse, 
 	}
 
 	log.L(ctx).Info("Account details fetched successfully")
+
+	return &domain.AccountResponse{
+		Id:        user.Id,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
+}
+
+func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
+	log.L(ctx).Info("Finding user account by email")
+
+	user, err := u.userRepository.FindByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		log.L(ctx).Warn("User account not found for the provided email")
+
+		return nil, appErr.Errorf(appErr.UserNotFoundError, "User not found")
+	}
+
+	log.L(ctx).Info("User account found successfully")
 
 	return &domain.AccountResponse{
 		Id:        user.Id,

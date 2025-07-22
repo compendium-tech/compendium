@@ -11,8 +11,15 @@ const (
 	EnvironmentProd string = "prod"
 )
 
+const (
+	ModeHttp string = "HTTP"
+	ModeGrpc string = "GRPC"
+)
+
 type AppConfig struct {
+	Mode                     string
 	Environment              string
+	GrpcPort                 uint16
 	PgHost                   string
 	PgPort                   uint16
 	PgUsername               string
@@ -40,9 +47,36 @@ func LoadAppConfig() AppConfig {
 	}
 
 	env := os.Getenv("ENVIRONMENT")
-
-	if env == "dev" {
+	switch env {
+	case "dev":
 		appConfig.Environment = EnvironmentDev
+	case "prod":
+		appConfig.Environment = EnvironmentProd
+	default:
+		log.Printf("Unknown `environment` variable: %s, defaulting to dev", env)
+		appConfig.Environment = EnvironmentDev
+	}
+
+	mode := os.Getenv("MODE")
+	switch mode {
+	case "http":
+		appConfig.Mode = ModeHttp
+	case "grpc":
+		appConfig.Mode = ModeGrpc
+	default:
+		log.Printf("Unknown `mode` value: %s, defaulting to http", mode)
+		appConfig.Mode = ModeHttp
+	}
+
+	if port := os.Getenv("GRPC_PORT"); port != "" {
+		var grpcPort uint16
+		_, err := fmt.Sscan(port, &grpcPort)
+
+		if err == nil {
+			appConfig.GrpcPort = grpcPort
+		} else {
+			log.Printf("Failed to parse GRPC port: %s", port)
+		}
 	}
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {
