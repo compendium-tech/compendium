@@ -6,7 +6,7 @@
           <div class="w-13 h-13 rounded-full flex items-center justify-center">
             <img src="/icon.svg" />
           </div>
-          <span class="ml-3 text-xl font-semibold">compendium</span>
+          <span class="ml-1 text-xl font-semibold">compendium</span>
           <span class="text-xl font-bold text-primary-600">.</span>
         </div>
       </RouterLink>

@@ -222,10 +222,7 @@ const handleSubmit = async (): Promise<void> => {
       return
     }
 
-    authStore.setSession(
-      response.accessTokenExpiry,
-      email.value
-    )
+    authStore.setSession(response.accessTokenExpiry)
 
     setTimeout(() => {
       router.push("/dashboard")
@@ -249,10 +246,7 @@ const verifyMfa = async (): Promise<void> => {
   try {
     const response = await authService.verifyMfaSignIn(email.value, otp.value)
 
-    authStore.setSession(
-      response.accessTokenExpiry,
-      email.value
-    )
+    authStore.setSession(response.accessTokenExpiry)
     setTimeout(() => {
       router.push("/dashboard")
     }, 1500)

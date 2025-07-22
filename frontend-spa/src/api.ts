@@ -8,33 +8,37 @@ import axios, {
 import Cookies from "js-cookie"
 import { useAuthStore } from "./stores/auth"
 
-const API_BASE_URL = "http://localhost:8080/api/v1"
+const API_BASE_URL = "http://localhost:1000/api/v1"
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 })
 
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const csrfToken: string | undefined = Cookies.get("csrfToken")
-    if (csrfToken) {
-      config.headers.set("X-Csrf-Token", csrfToken)
-    }
-    return config
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error)
-  }
-)
+export enum ApiErrorKind {
+  InternalServerError = 0,
+  RequestValidationError = 1,
+  InvalidCredentialsError = 2,
+  EmailTakenError = 3,
+  UserNotFoundError = 4,
+  TooManyRequestsError = 5,
+  MfaNotRequestedError = 6,
+  InvalidMfaOtpError = 7,
+  InvalidSessionError = 8,
+}
 
-/**
- * Parses an AxiosError and throws a custom ApiError.
- * This centralizes error handling for API responses.
- * @param error The AxiosError to parse.
- * @throws ApiError A custom error containing kind and message.
- */
-function parseAndThrowAxiosError(error: any): never {
+export class ApiError extends Error {
+  kind: ApiErrorKind
+
+  constructor(kind: ApiErrorKind, message: string) {
+    super(message)
+    this.name = "ApiError"
+    this.kind = kind
+    Object.setPrototypeOf(this, ApiError.prototype)
+  }
+}
+
+function parseAndRejectAxiosError(error: any): Promise<never> {
   if (error.response) {
     const { data } = error.response
 
@@ -44,25 +48,33 @@ function parseAndThrowAxiosError(error: any): never {
       "errorKind" in data &&
       "errorMessage" in data
     ) {
-      throw new ApiError(
-        (data as any).errorKind as ApiErrorKind,
-        (data as any).errorMessage as string
+      return Promise.reject(
+        new ApiError(
+          (data as any).errorKind as ApiErrorKind,
+          (data as any).errorMessage as string
+        )
       )
     } else {
-      throw new ApiError(
-        ApiErrorKind.InternalServerError,
-        "An unexpected error occurred."
+      return Promise.reject(
+        new ApiError(
+          ApiErrorKind.InternalServerError,
+          "An unexpected error occurred."
+        )
       )
     }
   } else if (error.request) {
-    throw new ApiError(
-      ApiErrorKind.InternalServerError,
-      "No response received from server. Please check your network connection."
+    return Promise.reject(
+      new ApiError(
+        ApiErrorKind.InternalServerError,
+        "No response received from server. Please check your network connection."
+      )
     )
   } else {
-    throw new ApiError(
-      ApiErrorKind.InternalServerError,
-      "An unexpected error occurred."
+    return Promise.reject(
+      new ApiError(
+        ApiErrorKind.InternalServerError,
+        "An unexpected error occurred."
+      )
     )
   }
 }
@@ -92,14 +104,13 @@ interface AuthService {
   refresh: () => Promise<SessionResponse>
 }
 
-// Implementation of the authentication service
 export const authService: AuthService = {
   signUp: async (name, email, password) => {
     try {
       const response = await apiClient.post("/users", { name, email, password })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   verifyMfaSignUp: async (email, otp) => {
@@ -110,7 +121,7 @@ export const authService: AuthService = {
       })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   signInPassword: async (email, password) => {
@@ -121,7 +132,7 @@ export const authService: AuthService = {
       })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   verifyMfaSignIn: async (email, otp) => {
@@ -132,7 +143,7 @@ export const authService: AuthService = {
       })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   initiatePasswordReset: async (email) => {
@@ -140,7 +151,7 @@ export const authService: AuthService = {
       const response = await apiClient.put("/password?flow=init", { email })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   confirmPasswordReset: async (email, otp, newPassword) => {
@@ -152,7 +163,7 @@ export const authService: AuthService = {
       })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   refresh: async () => {
@@ -160,7 +171,7 @@ export const authService: AuthService = {
       const response = await apiClient.post("/sessions?flow=refresh")
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
 }
@@ -176,7 +187,7 @@ export const userService: UserService = {
       const response = await apiClient.get("/account")
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
   updateName: async (name) => {
@@ -184,111 +195,75 @@ export const userService: UserService = {
       const response = await apiClient.put("/account", { name })
       return response.data
     } catch (error) {
-      parseAndThrowAxiosError(error)
+      return parseAndRejectAxiosError(error)
     }
   },
 }
 
-interface RetryAxiosRequestConfig extends AxiosRequestConfig {
-  _retry?: boolean
-}
+let isRefreshing = false
 
-interface FailedRequestPromise {
-  resolve: (value: AxiosResponse | PromiseLike<AxiosResponse>) => void
-  reject: (reason?: any) => void
-  originalRequest: RetryAxiosRequestConfig
-}
+apiClient.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const csrfToken: string | undefined = Cookies.get("csrfToken")
+    if (csrfToken) {
+      config.headers.set("X-Csrf-Token", csrfToken)
+    }
 
-let failedQueue: FailedRequestPromise[] = []
+    const authStore = useAuthStore()
+    const now = new Date()
+    const expiryThreshold = new Date(now.getTime() + 5 * 1000)
 
-/**
- * Processes the queue of failed requests after a token refresh.
- * @param error An ApiError if the refresh failed, or null if successful.
- */
-const processQueue = (error: ApiError | null): void => {
-  failedQueue.forEach(async (prom) => {
-    if (error) {
-      prom.reject(error)
-    } else {
+    const isAuthPath = window.location.pathname.startsWith("/auth/")
+
+    if (
+      authStore.accessTokenExpiry &&
+      authStore.accessTokenExpiry < expiryThreshold &&
+      !isRefreshing &&
+      !isAuthPath
+    ) {
+      isRefreshing = true
       try {
-        const response = await apiClient(prom.originalRequest)
-        prom.resolve(response)
-      } catch (err) {
-        prom.reject(err)
+        console.log(
+          "Access token nearing expiry, attempting to refresh proactively..."
+        )
+        const refreshResponse = await authService.refresh()
+        authStore.setSession(refreshResponse.accessTokenExpiry)
+        console.log("Access token refreshed proactively.")
+      } catch (refreshError) {
+        console.error("Proactive token refresh failed:", refreshError)
+        authStore.clearSession()
+        location.href = "/auth/signin"
+        return Promise.reject(
+          new Error("Session expired. Please sign in again.")
+        )
+      } finally {
+        isRefreshing = false
       }
     }
-  })
-
-  failedQueue = []
-}
+    return config
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error)
+  }
+)
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    // If the request is to an auth path, don't try to refresh
-    if (window.location.pathname.startsWith("/auth/")) {
+    const authStore = useAuthStore()
+
+    if (
+      error.response?.status === 401 &&
+      !window.location.pathname.startsWith("/auth/")
+    ) {
+      console.log(
+        "Received 401 on non-auth path, clearing session and redirecting."
+      )
+      authStore.clearSession()
+      location.href = "/auth/signin"
       return Promise.reject(error)
     }
 
-    const originalRequest = error.config as RetryAxiosRequestConfig
-    const authStore = useAuthStore()
-
-    // Check if it's a 401 Unauthorized error and hasn't been retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      // If a token refresh is already in progress, queue the current request
-      if (authStore.isRefreshingToken) {
-        return new Promise<AxiosResponse>((resolve, reject) => {
-          failedQueue.push({
-            resolve,
-            reject,
-            originalRequest,
-          })
-        })
-      }
-
-      authStore.setIsRefreshingToken(true)
-
-      try {
-        const refreshResponse = await authService.refresh()
-
-        authStore.setSession(refreshResponse.accessTokenExpiry, authStore.email)
-
-        processQueue(null)
-
-        return apiClient(originalRequest)
-      } catch (refreshError: any) {
-        processQueue(refreshError)
-        authStore.clearSession()
-        location.href = "/auth/signin"
-        return Promise.reject(refreshError)
-      } finally {
-        authStore.setIsRefreshingToken(false)
-      }
-    }
+    return Promise.reject(error)
   }
 )
-
-export enum ApiErrorKind {
-  InternalServerError = 0,
-  RequestValidationError = 1,
-  InvalidCredentialsError = 2,
-  EmailTakenError = 3,
-  UserNotFoundError = 4,
-  TooManyRequestsError = 5,
-  MfaNotRequestedError = 6,
-  InvalidMfaOtpError = 7,
-  InvalidSessionError = 8,
-}
-
-export class ApiError extends Error {
-  kind: ApiErrorKind
-
-  constructor(kind: ApiErrorKind, message: string) {
-    super(message)
-    this.name = "ApiError"
-    this.kind = kind
-    Object.setPrototypeOf(this, ApiError.prototype)
-  }
-}

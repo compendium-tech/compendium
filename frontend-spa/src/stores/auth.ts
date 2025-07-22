@@ -5,14 +5,12 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     isAuthenticated: false,
     accessTokenExpiry: null,
-    email: null,
     isRefreshingToken: false,
   }),
   actions: {
-    setSession(accessTokenExpiry: string, email: string) {
+    setSession(accessTokenExpiry: Date) {
       this.isAuthenticated = true
       this.accessTokenExpiry = accessTokenExpiry
-      this.email = email
     },
 
     setIsRefreshingToken(isRefreshingToken: boolean) {
@@ -22,7 +20,6 @@ export const useAuthStore = defineStore("auth", {
     clearSession() {
       this.isAuthenticated = false
       this.accessTokenExpiry = null
-      this.email = null
     },
 
     async refresh() {
@@ -33,10 +30,7 @@ export const useAuthStore = defineStore("auth", {
       this.isRefreshingToken = true
       try {
         const response = await authService.refresh()
-        this.setSession(
-          response.data.accessTokenExpiry,
-          this.email || response.data.email
-        )
+        this.setSession(response.accessTokenExpiry)
         this.isRefreshingToken = false
         return true
       } catch (error) {
@@ -50,6 +44,6 @@ export const useAuthStore = defineStore("auth", {
   persist: {
     key: "authState",
     storage: localStorage,
-    paths: ["isAuthenticated", "accessTokenExpiry", "email"],
+    pick: ["isAuthenticated", "accessTokenExpiry"],
   },
 })
