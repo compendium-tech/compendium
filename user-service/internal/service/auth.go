@@ -407,51 +407,51 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
 	log.L(ctx).Infof("Refreshing session %s", request.RefreshToken)
 
-	userId, isReused, err := s.refreshTokenRepository.FindRefreshToken(ctx, request.RefreshToken)
+	token, isReused, err := s.refreshTokenRepository.GetRefreshToken(ctx, request.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
 
-	if userId == uuid.Nil {
+	if token == nil {
 		log.L(ctx).Errorf("Invalid refresh token (%s) was used", request.RefreshToken)
 
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
 	if isReused {
-		log.L(ctx).Warnf("Refresh Token Reuse Detected! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", userId, request.RefreshToken)
+		log.L(ctx).Warnf("Refresh Token Reuse Detected! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", token.UserId, request.RefreshToken)
 
-		if err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId); err != nil {
-			log.L(ctx).Errorf("Failed to remove all refresh tokens for user %s after reuse detection: %v", userId, err)
+		if err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, token.UserId); err != nil {
+			log.L(ctx).Errorf("Failed to remove all refresh tokens for user %s after reuse detection: %v", token.UserId, err)
 			return nil, err
 		}
 
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
 	}
 
-	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", userId), time.Minute, 1)
+	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.SessionID), time.Minute, 1)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if isRateLimited {
-		log.L(ctx).Warnf("Refresh token rate limit exceeded for user %s", userId)
+		log.L(ctx).Warnf("Refresh token rate limit exceeded for user %s", token.UserId)
 
 		return nil, appErr.Errorf(appErr.TooManyRequestsError, "Too many refresh attempts. Please try again later.")
 	}
 
-	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, request.RefreshToken, userId)
+	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, request.RefreshToken, token.UserId)
 	if err != nil {
 		return nil, err
 	}
 
-	session, err := s.createSession(ctx, userId, request.UserAgent, request.IpAddress)
+	session, err := s.createSession(ctx, token.UserId, request.UserAgent, request.IpAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Infof("Session %s refreshed successfully (%s) for user %s", request.RefreshToken, session.RefreshToken, userId)
+	log.L(ctx).Infof("Session %s refreshed successfully (%s) for user %s", request.RefreshToken, session.RefreshToken, token.UserId)
 
 	return session, nil
 }
@@ -459,21 +459,21 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	log.L(ctx).Infof("Invalidating session %s", refreshToken)
 
-	userId, isReused, err := s.refreshTokenRepository.FindRefreshToken(ctx, refreshToken)
+	token, isReused, err := s.refreshTokenRepository.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return err
 	}
 
-	if userId == uuid.Nil {
+	if token == nil {
 		log.L(ctx).Errorf("Invalid refresh token (%s) was used for logout (not found)", refreshToken)
 
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
 	if isReused {
-		log.L(ctx).Warnf("Refresh Token Reuse Detected during logout! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", userId, refreshToken)
+		log.L(ctx).Warnf("Refresh Token Reuse Detected during logout! User %s attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", token.UserId, refreshToken)
 
-		err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId)
+		err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, token.UserId)
 		if err != nil {
 			return err
 		}
@@ -481,12 +481,12 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 		return appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
 	}
 
-	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, refreshToken, userId)
+	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, refreshToken, token.UserId)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("Session %s was invalidated successfully for user %s", refreshToken, userId)
+	log.L(ctx).Infof("Session %s was invalidated successfully for user %s", refreshToken, token.UserId)
 
 	return nil
 }
@@ -534,31 +534,31 @@ func (s *authService) GetDevicesForAuthenticatedUser(ctx context.Context) ([]dom
 func (s *authService) LogoutFromAllDevices(ctx context.Context, refreshToken string) error {
 	log.L(ctx).Info("Logging out from all devices for authenticated user")
 
-	userId, _, err := s.refreshTokenRepository.FindRefreshToken(ctx, refreshToken)
+	token, _, err := s.refreshTokenRepository.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return err
 	}
 
-	if userId == uuid.Nil {
+	if token == nil {
 		log.L(ctx).Errorf("Invalid refresh token (%s) was used for all-device logout (not found)", refreshToken)
 		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
 	}
 
-	log.L(ctx).Infof("Removing all refresh tokens for user %s", userId)
+	log.L(ctx).Infof("Removing all refresh tokens for user %s", token.UserId)
 
-	err = s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, userId)
+	err = s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, token.UserId)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("Removing all devices for user %s", userId)
+	log.L(ctx).Infof("Removing all devices for user %s", token.UserId)
 
-	err = s.deviceRepository.RemoveAllDevicesByUserId(ctx, userId)
+	err = s.deviceRepository.RemoveAllDevicesByUserId(ctx, token.UserId)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("All devices logged out successfully for user %s", userId)
+	log.L(ctx).Infof("All devices logged out successfully for user %s", token.UserId)
 
 	return nil
 }
@@ -599,9 +599,10 @@ func (s *authService) createSession(ctx context.Context, userId uuid.UUID, userA
 	log.L(ctx).Infof("Adding refresh token to repository for user %s", userId)
 
 	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
-		UserId: userId,
-		Token:  refreshToken,
-		Expiry: refreshTokenExpiry,
+		UserId:    userId,
+		Token:     refreshToken,
+		Expiry:    refreshTokenExpiry,
+		SessionID: uuid.New(),
 	})
 	if err != nil {
 		return nil, err

@@ -9,7 +9,7 @@ import (
 
 type RefreshTokenRepository interface {
 	AddRefreshToken(ctx context.Context, token model.RefreshToken) error
-	FindRefreshToken(ctx context.Context, token string) (userId uuid.UUID, isReused bool, err error)
+	GetRefreshToken(ctx context.Context, token string) (model *model.RefreshToken, isReused bool, err error)
 	RemoveRefreshToken(ctx context.Context, token string, userId uuid.UUID) (err error)
 	RemoveAllRefreshTokensForUser(ctx context.Context, userId uuid.UUID) error
 }
