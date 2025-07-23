@@ -12,10 +12,10 @@ import (
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
 	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
+	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
 )
 
@@ -23,17 +23,24 @@ const dateTimeLayout = time.RFC3339Nano
 
 type PaddleWebhookController struct {
 	subscriptionService   service.SubscriptionService
+	paddleClient          paddle.SDK
 	paddleProductIDs      config.PaddleProductIDs
 	paddleWebhookVerifier paddle.WebhookVerifier
+	userService           interop.UserService
 }
 
 func NewPaddleWebhookController(
 	subscriptionService service.SubscriptionService,
 	paddleProductIDs config.PaddleProductIDs,
-	paddleWebhookVerifier paddle.WebhookVerifier) *PaddleWebhookController {
+	paddleClient paddle.SDK,
+	paddleWebhookVerifier paddle.WebhookVerifier,
+	userService interop.UserService) *PaddleWebhookController {
 	return &PaddleWebhookController{
 		subscriptionService:   subscriptionService,
+		paddleClient:          paddleClient,
+		paddleProductIDs:      paddleProductIDs,
 		paddleWebhookVerifier: paddleWebhookVerifier,
+		userService:           userService,
 	}
 }
 
@@ -90,11 +97,17 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
 	}
 
-	userIDString := event.Data.CustomerID
-
-	userID, err := uuid.Parse(userIDString)
+	// TODO: Move this to a business logic layer
+	customer, err := p.paddleClient.GetCustomer(c.Request.Context(), &paddle.GetCustomerRequest{
+		CustomerID: event.Data.CustomerID,
+	})
 	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "Customer id should be valid UUID")
+		return err
+	}
+
+	account, err := p.userService.FindAccountByEmail(c.Request.Context(), customer.Email)
+	if err != nil {
+		return err
 	}
 
 	if len(event.Data.Items) == 0 {
@@ -121,7 +134,7 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 	}
 
 	return p.subscriptionService.PutSubscription(domain.PutSubscriptionRequest{
-		UserID:            userID,
+		UserID:            account.ID,
 		SubscriptionLevel: subscriptionLevel,
 		Till:              till,
 		Since:             since,

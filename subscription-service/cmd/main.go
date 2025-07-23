@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PaddleHQ/paddle-go-sdk/v4"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/subscription-service/internal/app"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
+	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/joho/godotenv"
 )
 
@@ -39,12 +41,27 @@ func main() {
 	redisClient, err := redis.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
 	if err != nil {
 		fmt.Printf("Failed to connect to Redis, cause: %s", err)
+		return
+	}
+
+	userService, err := interop.NewGrpcUserServiceClient(cfg.GrpcUserServiceTarget)
+	if err != nil {
+		fmt.Printf("Failed to initialize user service, cause: %s", err)
+		return
+	}
+
+	paddleApiClient, err := paddle.New(cfg.PaddleApiKey)
+	if err != nil {
+		fmt.Printf("Failed to initialize Paddle API client, cause: %s", err)
+		return
 	}
 
 	app.NewApp(app.Dependencies{
-		PgDB:         pgDB,
-		RedisClient:  redisClient,
-		Config:       cfg,
-		TokenManager: tokenManager,
+		PgDB:            pgDB,
+		RedisClient:     redisClient,
+		Config:          cfg,
+		TokenManager:    tokenManager,
+		UserService:     userService,
+		PaddleApiClient: *paddleApiClient,
 	}).Run()
 }

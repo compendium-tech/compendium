@@ -12,18 +12,20 @@ const (
 )
 
 type AppConfig struct {
-	Environment         string
-	PgHost              string
-	PgPort              uint16
-	PgUsername          string
-	PgPassword          string
-	PgDatabaseName      string
-	RedisHost           string
-	RedisPort           uint16
-	JwtSingingKey       string
-	CsrfTokenHashSalt   string
-	PaddleWebhookSecret string
-	PaddleProductIDs    PaddleProductIDs
+	Environment           string
+	PgHost                string
+	PgPort                uint16
+	PgUsername            string
+	PgPassword            string
+	PgDatabaseName        string
+	RedisHost             string
+	RedisPort             uint16
+	JwtSingingKey         string
+	CsrfTokenHashSalt     string
+	PaddleWebhookSecret   string
+	PaddleProductIDs      PaddleProductIDs
+	PaddleApiKey          string
+	GrpcUserServiceTarget string
 }
 
 func LoadAppConfig() *AppConfig {
@@ -44,6 +46,8 @@ func LoadAppConfig() *AppConfig {
 			TeamSubscriptionProductID:      "",
 			CommunitySubscriptionProductID: "",
 		},
+		PaddleApiKey:          "",
+		GrpcUserServiceTarget: "localhost:2000",
 	}
 
 	env := os.Getenv("ENVIRONMENT")
@@ -65,6 +69,8 @@ func LoadAppConfig() *AppConfig {
 		TeamSubscriptionProductID:      os.Getenv("PADDLE_TEAM_SUBSCRIPTION_PRICE_ID"),
 		CommunitySubscriptionProductID: os.Getenv("PADDLE_COMMUNITY_SUBSCRIPTION_PRICE_ID"),
 	}
+	appConfig.PaddleApiKey = os.Getenv("PADDLE_API_KEY")
+	appConfig.GrpcUserServiceTarget = os.Getenv("GRPC_USER_SERVICE_TARGET")
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {
 		var pgPort uint16

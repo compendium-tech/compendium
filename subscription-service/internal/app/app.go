@@ -9,6 +9,7 @@ import (
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/controller"
+	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/gin-gonic/gin"
@@ -17,10 +18,12 @@ import (
 )
 
 type Dependencies struct {
-	Config       *config.AppConfig
-	PgDB         *sql.DB
-	RedisClient  *redis.Client
-	TokenManager auth.TokenManager
+	Config          *config.AppConfig
+	PgDB            *sql.DB
+	RedisClient     *redis.Client
+	TokenManager    auth.TokenManager
+	UserService     interop.UserService
+	PaddleApiClient paddle.SDK
 }
 
 func NewApp(deps Dependencies) *gin.Engine {
@@ -42,7 +45,9 @@ func NewApp(deps Dependencies) *gin.Engine {
 	controller.NewPaddleWebhookController(
 		subscriptionService,
 		deps.Config.PaddleProductIDs,
-		*paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
+		deps.PaddleApiClient,
+		*paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret),
+		deps.UserService).MakeRoutes(r)
 
 	return r
 }
