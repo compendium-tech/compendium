@@ -11,7 +11,7 @@ type SignUpRequest struct {
 type SignInRequest struct {
 	Email     string
 	Password  string
-	IpAddress string
+	IPAddress string
 	UserAgent string
 }
 
@@ -50,7 +50,7 @@ type SignInResponseBody struct {
 type SubmitMfaOtpRequest struct {
 	Email     string
 	Otp       string
-	IpAddress string
+	IPAddress string
 	UserAgent string
 }
 
@@ -82,7 +82,7 @@ type SessionResponseBody struct {
 type RefreshTokenRequest struct {
 	RefreshToken string
 	UserAgent    string
-	IpAddress    string
+	IPAddress    string
 }
 
 type RefreshTokenResponse struct {

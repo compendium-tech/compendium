@@ -23,13 +23,13 @@ const dateTimeLayout = time.RFC3339Nano
 
 type PaddleWebhookController struct {
 	subscriptionService   service.SubscriptionService
-	paddleProductIds      config.PaddleProductIds
+	paddleProductIDs      config.PaddleProductIDs
 	paddleWebhookVerifier paddle.WebhookVerifier
 }
 
 func NewPaddleWebhookController(
 	subscriptionService service.SubscriptionService,
-	paddleProductIds config.PaddleProductIds,
+	paddleProductIDs config.PaddleProductIDs,
 	paddleWebhookVerifier paddle.WebhookVerifier) *PaddleWebhookController {
 	return &PaddleWebhookController{
 		subscriptionService:   subscriptionService,
@@ -90,9 +90,9 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
 	}
 
-	userIdString := event.Data.CustomerID
+	userIDString := event.Data.CustomerID
 
-	userId, err := uuid.Parse(userIdString)
+	userID, err := uuid.Parse(userIDString)
 	if err != nil {
 		return appErr.Errorf(appErr.RequestValidationError, "Customer id should be valid UUID")
 	}
@@ -110,18 +110,18 @@ func (p *PaddleWebhookController) handleSubscriptionCreated(c *gin.Context) erro
 	var subscriptionLevel model.SubscriptionLevel
 
 	switch item.Product.ID {
-	case p.paddleProductIds.StudentSubscriptionProductId:
+	case p.paddleProductIDs.StudentSubscriptionProductID:
 		subscriptionLevel = model.SubscriptionLevelStudent
-	case p.paddleProductIds.TeamSubscriptionProductId:
+	case p.paddleProductIDs.TeamSubscriptionProductID:
 		subscriptionLevel = model.SubscriptionLevelTeam
-	case p.paddleProductIds.CommunitySubscriptionProductId:
+	case p.paddleProductIDs.CommunitySubscriptionProductID:
 		subscriptionLevel = model.SubscriptionLevelCommunity
 	default:
 		return appErr.Errorf(appErr.RequestValidationError, "Unknown price ID")
 	}
 
 	return p.subscriptionService.PutSubscription(domain.PutSubscriptionRequest{
-		UserID:            userId,
+		UserID:            userID,
 		SubscriptionLevel: subscriptionLevel,
 		Till:              till,
 		Since:             since,

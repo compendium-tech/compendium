@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/subscription-service/internal/app"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
-	"github.com/compendium-tech/compendium/user-service/pkg/auth"
 	"github.com/joho/godotenv"
 )
 
@@ -42,7 +42,7 @@ func main() {
 	}
 
 	app.NewApp(app.Dependencies{
-		PgDb:         pgDB,
+		PgDB:         pgDB,
 		RedisClient:  redisClient,
 		Config:       cfg,
 		TokenManager: tokenManager,

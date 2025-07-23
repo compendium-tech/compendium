@@ -14,14 +14,14 @@ type AppConfig struct {
 	SmtpFrom     string
 	KafkaBroker  string
 	KafkaTopic   string
-	KafkaGroupId string
+	KafkaGroupID string
 }
 
 func LoadAppConfig() AppConfig {
 	appConfig := AppConfig{
 		KafkaBroker:  os.Getenv("KAFKA_BROKER"),
 		KafkaTopic:   os.Getenv("KAFKA_TOPIC"),
-		KafkaGroupId: os.Getenv("KAFKA_GROUP_ID"),
+		KafkaGroupID: os.Getenv("KAFKA_GROUP_ID"),
 		SmtpHost:     os.Getenv("SMTP_HOST"),
 		SmtpUsername: os.Getenv("SMTP_USERNAME"),
 		SmtpPassword: os.Getenv("SMTP_PASSWORD"),

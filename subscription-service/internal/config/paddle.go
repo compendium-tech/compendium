@@ -1,7 +1,7 @@
 package config
 
-type PaddleProductIds struct {
-	StudentSubscriptionProductId   string
-	TeamSubscriptionProductId      string
-	CommunitySubscriptionProductId string
+type PaddleProductIDs struct {
+	StudentSubscriptionProductID   string
+	TeamSubscriptionProductID      string
+	CommunitySubscriptionProductID string
 }

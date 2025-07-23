@@ -12,7 +12,7 @@ packages:
             UserAgentParser:
     github.com/compendium-tech/compendium/user-service/internal/geoip:
         interfaces:
-            GeoIp:
+            GeoIP:
     github.com/compendium-tech/compendium/email-delivery-service/pkg/email:
         interfaces:
             EmailSender:

@@ -94,7 +94,7 @@ func (a *AuthController) submitMfaOtp(c *gin.Context) error {
 	request := domain.SubmitMfaOtpRequest{
 		Email:     body.Email,
 		Otp:       body.Otp,
-		IpAddress: httphelp.GetClientIP(c),
+		IPAddress: httphelp.GetClientIP(c),
 		UserAgent: httphelp.GetUserAgent(c),
 	}
 
@@ -123,7 +123,7 @@ func (a *AuthController) signIn(c *gin.Context) error {
 	request := domain.SignInRequest{
 		Email:     body.Email,
 		Password:  body.Password,
-		IpAddress: httphelp.GetClientIP(c),
+		IPAddress: httphelp.GetClientIP(c),
 		UserAgent: httphelp.GetUserAgent(c),
 	}
 
@@ -153,7 +153,7 @@ func (a *AuthController) refresh(c *gin.Context) error {
 
 	response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
 		RefreshToken: refreshTokenCookie.Value,
-		IpAddress:    httphelp.GetClientIP(c),
+		IPAddress:    httphelp.GetClientIP(c),
 		UserAgent:    httphelp.GetUserAgent(c),
 	})
 	if err != nil {

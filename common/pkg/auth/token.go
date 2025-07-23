@@ -12,7 +12,7 @@ import (
 )
 
 type TokenManager interface {
-	NewAccessToken(userId uuid.UUID, csrfToken string, expiresAt time.Time) (string, error)
+	NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) (string, error)
 	ParseAccessToken(token string) (*JwtTokenClaims, error)
 	NewCsrfToken() (string, error)
 	NewRefreshToken() (string, error)
@@ -45,11 +45,11 @@ func (c JwtTokenClaims) Valid() error {
 	}.Valid()
 }
 
-func (m *JwtBasedTokenManager) NewAccessToken(userId uuid.UUID, csrfToken string, expiresAt time.Time) (string, error) {
+func (m *JwtBasedTokenManager) NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, JwtTokenClaims{
 		Issuer:    "user-service",
 		ExpiresAt: expiresAt.Unix(),
-		Subject:   userId,
+		Subject:   userID,
 		CsrfToken: csrfToken,
 	})
 

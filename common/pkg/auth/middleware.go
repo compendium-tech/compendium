@@ -20,13 +20,13 @@ type AuthMiddleware struct {
 }
 
 func (a AuthMiddleware) Handle(c *gin.Context) {
-	userId, isCsrfTokenValid := a.parseAccessTokenCookie(c)
-	if userId == uuid.Nil {
+	userID, isCsrfTokenValid := a.parseAccessTokenCookie(c)
+	if userID == uuid.Nil {
 		return
 	}
 
 	ctx := c.Request.Context()
-	SetUserId(&ctx, userId)
+	SetUserID(&ctx, userID)
 	ctx = context.WithValue(ctx, isCsrfKey, isCsrfTokenValid)
 
 	c.Request = c.Request.WithContext(ctx)
@@ -34,7 +34,7 @@ func (a AuthMiddleware) Handle(c *gin.Context) {
 }
 
 func RequireAuth(c *gin.Context) {
-	_, err := GetUserId(c.Request.Context())
+	_, err := GetUserID(c.Request.Context())
 
 	if err != nil {
 		log.L(c.Request.Context()).Warnf("Failed to require auth, check the previous logs to reveal the reason")

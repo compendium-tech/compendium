@@ -7,18 +7,18 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-type _userIdKey struct{}
+type _userIDKey struct{}
 
-var userIdKey = _userIdKey{}
+var userIDKey = _userIDKey{}
 
-func GetUserId(ctx context.Context) (uuid.UUID, error) {
-	if userId, ok := ctx.Value(userIdKey).(uuid.UUID); ok {
-		return userId, nil
+func GetUserID(ctx context.Context) (uuid.UUID, error) {
+	if userID, ok := ctx.Value(userIDKey).(uuid.UUID); ok {
+		return userID, nil
 	} else {
 		return uuid.Nil, tracerr.New("Authentication middleware didn't set user id to UUID value, perhaps it wasn't enabled?")
 	}
 }
 
-func SetUserId(ctx *context.Context, userId uuid.UUID) {
-	*ctx = context.WithValue(*ctx, userIdKey, userId)
+func SetUserID(ctx *context.Context, userID uuid.UUID) {
+	*ctx = context.WithValue(*ctx, userIDKey, userID)
 }

@@ -7,9 +7,9 @@ import (
 )
 
 type Device struct {
-	Id        uuid.UUID
-	UserId    uuid.UUID
+	ID        uuid.UUID
+	UserID    uuid.UUID
 	UserAgent string
-	IpAddress string
+	IPAddress string
 	CreatedAt time.Time
 }

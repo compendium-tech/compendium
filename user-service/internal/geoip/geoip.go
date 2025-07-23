@@ -1,5 +1,5 @@
 package geoip
 
-type GeoIp interface {
+type GeoIP interface {
 	GetLocation(ip string) (string, error)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type UserRepository interface {
-	FindById(ctx context.Context, id uuid.UUID) (*model.User, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	UpdateName(ctx context.Context, id uuid.UUID, name string) (*model.User, error)
 	UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error

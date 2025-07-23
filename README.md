@@ -169,12 +169,12 @@ This section outlines the setup process for the various components of our system
 - **Python**: Primarily used for specialized microservice services, including interactions with the LLM API for the assistant service.
 - **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
 - **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. Vite's speed and Vue 3's reactive framework are key here.
-- **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data. 
+- **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data.
 - **Redis**: Employed for high-speed data caching to manage authentication state and caching in some microservices.
 - [**Paddle**](https://paddle.com/): An external platform integrated for handling Subscription management and payment processing.
 - **Elasticsearch**: Utilized for the College database, specifically for its powerful search and analytics capabilities. This allows for efficient querying and retrieval of college-related information.
 - **Nginx**: Acts as a high-performance reverse proxy and load balancer.
-- **AWS S3, CloudFront**: Solution for static file storage and content delivery used in course microservice. 
+- **AWS S3, CloudFront**: Solution for static file storage and content delivery used in course microservice.
 
 ## Setup Guide
 
@@ -199,14 +199,14 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
     ```bash
     cd subscription-service/
     ```
-    
+
     Add product IDs to `.env`: Open the `.env` file and add the following lines, replacing the placeholder values with the actual product IDs you copied from your Paddle sandbox.
     ```env
     PADDLE_STUDENT_SUBSCRIPTION_PRODUCT_ID=pro_...
     PADDLE_TEAM_SUBSCRIPTION_PRODUCT_ID=pro_...
     PADDLE_COMMUNITY_SUBSCRIPTION_PRODUCT_ID=pro_...
     ```
-    
+
     Your subscription service is now configured with the correct Paddle product IDs and ready for development and testing!
 
 ### Kafka
@@ -284,7 +284,7 @@ One of these:
   ```bash
   kafka-server-start /usr/local/etc/kafka/server.properties
   ```
-  
+
   This starts the Kafka server on the default port (9092).
 
 - **Create a Kafka Topic**
@@ -348,7 +348,7 @@ go run cmd/main.go # run server
 
 ### Logging
 
-To ensure comprehensive logging with contextual information such as `requestId` and `userId`, we recommend enabling `common.pkg.middleware.LoggerMiddleware` globally. This middleware will instantiate and populate a reusable logger within `context.Context`, accessible via `common.pkg.log.L(ctx)`. This allows for consistent and enriched logging throughout the application.
+To ensure comprehensive logging with contextual information such as `requestID` and `userID`, we recommend enabling `common.pkg.middleware.LoggerMiddleware` globally. This middleware will instantiate and populate a reusable logger within `context.Context`, accessible via `common.pkg.log.L(ctx)`. This allows for consistent and enriched logging throughout the application.
 
 ```go
 if university == nil {

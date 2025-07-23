@@ -30,7 +30,7 @@ func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Devi
 
 	// Check the number of devices for the user
 	var deviceCount int
-	err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM devices WHERE user_id = $1", device.UserId).Scan(&deviceCount)
+	err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM devices WHERE user_id = $1", device.UserID).Scan(&deviceCount)
 	if err != nil {
 		return tracerr.Errorf("failed to query device count: %w", err)
 	}
@@ -42,7 +42,7 @@ func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Devi
 			`DELETE FROM devices WHERE id = (
 				SELECT id FROM devices WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1
 			)`,
-			device.UserId,
+			device.UserID,
 		)
 
 		if err != nil {
@@ -55,7 +55,7 @@ func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Devi
 		ctx,
 		`INSERT INTO devices (id, user_id, user_agent, ip_address, created_at)
 		VALUES ($1, $2, $3, $4, $5)`,
-		device.Id, device.UserId, device.UserAgent, device.IpAddress, device.CreatedAt,
+		device.ID, device.UserID, device.UserAgent, device.IPAddress, device.CreatedAt,
 	)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
@@ -69,12 +69,12 @@ func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Devi
 	return tx.Commit()
 }
 
-func (r *pgDeviceRepository) DeviceExists(ctx context.Context, userId uuid.UUID, userAgent string, ipAddress string) (bool, error) {
+func (r *pgDeviceRepository) DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(
 		ctx,
 		`SELECT EXISTS(SELECT 1 FROM devices WHERE user_id = $1 AND user_agent = $2 AND ip_address = $3)`,
-		userId, userAgent, ipAddress,
+		userID, userAgent, ipAddress,
 	).Scan(&exists)
 
 	if err != nil {
@@ -84,13 +84,13 @@ func (r *pgDeviceRepository) DeviceExists(ctx context.Context, userId uuid.UUID,
 	return exists, nil
 }
 
-func (r *pgDeviceRepository) GetDevicesByUserId(ctx context.Context, userId uuid.UUID) ([]model.Device, error) {
+func (r *pgDeviceRepository) GetDevicesByUserID(ctx context.Context, userID uuid.UUID) ([]model.Device, error) {
 	var devices []model.Device
 
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT * FROM devices WHERE user_id = $1 ORDER BY created_at DESC`,
-		userId,
+		userID,
 	)
 	if err != nil {
 		return nil, tracerr.Wrap(err)
@@ -99,7 +99,7 @@ func (r *pgDeviceRepository) GetDevicesByUserId(ctx context.Context, userId uuid
 
 	for rows.Next() {
 		var device model.Device
-		if err := rows.Scan(&device.Id, &device.UserId, &device.UserAgent, &device.IpAddress, &device.CreatedAt); err != nil {
+		if err := rows.Scan(&device.ID, &device.UserID, &device.UserAgent, &device.IPAddress, &device.CreatedAt); err != nil {
 			return nil, tracerr.Wrap(err)
 		}
 
@@ -113,11 +113,11 @@ func (r *pgDeviceRepository) GetDevicesByUserId(ctx context.Context, userId uuid
 	return devices, nil
 }
 
-func (r *pgDeviceRepository) RemoveAllDevicesByUserId(ctx context.Context, userId uuid.UUID) error {
+func (r *pgDeviceRepository) RemoveAllDevicesByUserID(ctx context.Context, userID uuid.UUID) error {
 	_, err := r.db.ExecContext(
 		ctx,
 		`DELETE FROM devices WHERE user_id = $1`,
-		userId,
+		userID,
 	)
 	if err != nil {
 		return tracerr.Wrap(err)

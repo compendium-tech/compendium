@@ -29,13 +29,13 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 func (u *userService) GetAccount(ctx context.Context) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Getting authenticated user account details")
 
-	userId, err := auth.GetUserId(ctx)
+	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	log.L(ctx).Info("Fetching authenticated user account details in database")
-	user, err := u.userRepository.FindById(ctx, userId)
+	user, err := u.userRepository.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (u *userService) GetAccount(ctx context.Context) (*domain.AccountResponse, 
 	log.L(ctx).Info("Account details fetched successfully")
 
 	return &domain.AccountResponse{
-		Id:        user.Id,
+		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
@@ -73,7 +73,7 @@ func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*do
 	log.L(ctx).Info("User account found successfully")
 
 	return &domain.AccountResponse{
-		Id:        user.Id,
+		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
@@ -83,13 +83,13 @@ func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*do
 func (u *userService) UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Updating authenticated user account details")
 
-	userId, err := auth.GetUserId(ctx)
+	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	log.L(ctx).Info("Updating authenticated user account details in database")
-	user, err := u.userRepository.UpdateName(ctx, userId, request.Name)
+	user, err := u.userRepository.UpdateName(ctx, userID, request.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (u *userService) UpdateAccount(ctx context.Context, request domain.UpdateAc
 	log.L(ctx).Info("Account details updated successfully")
 
 	return &domain.AccountResponse{
-		Id:        user.Id,
+		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,

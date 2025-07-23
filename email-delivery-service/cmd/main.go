@@ -35,7 +35,7 @@ func consumeAndSendEmails(
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{cfg.KafkaBroker},
 		Topic:    cfg.KafkaTopic,
-		GroupID:  cfg.KafkaGroupId,
+		GroupID:  cfg.KafkaGroupID,
 		MinBytes: 10e3,
 		MaxBytes: 10e6,
 		MaxWait:  1 * time.Second,

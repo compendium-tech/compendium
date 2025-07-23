@@ -5,17 +5,17 @@ import (
 	"github.com/pborman/uuid"
 )
 
-type RequestIdMiddleware struct {
+type RequestIDMiddleware struct {
 	AllowToSet bool
 }
 
-func (r RequestIdMiddleware) Handle(c *gin.Context) {
-	requestId := uuid.New()
+func (r RequestIDMiddleware) Handle(c *gin.Context) {
+	requestID := uuid.New()
 
 	if r.AllowToSet {
-		requestId = c.Request.Header.Get("Set-Request-Id")
+		requestID = c.Request.Header.Get("Set-Request-ID")
 	}
 
-	c.Writer.Header().Set("Request-Id", requestId)
+	c.Writer.Header().Set("Request-ID", requestID)
 	c.Next()
 }

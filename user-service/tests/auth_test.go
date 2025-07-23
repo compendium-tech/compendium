@@ -104,11 +104,11 @@ func (s *APITestSuite) Test_SignUp_WithInvalidBody_ReturnsError() {
 func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	r := s.Require()
 
-	userId, email, otp := uuid.New(), "johndoe@test.com", "123456"
+	userID, email, otp := uuid.New(), "johndoe@test.com", "123456"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	err := repository.NewPgUserRepository(s.PgDb).CreateUser(s.ctx, model.User{
-		Id:              userId,
+	err := repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+		ID:              userID,
 		Name:            "John",
 		Email:           email,
 		IsEmailVerified: false,
@@ -126,7 +126,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Real-Ip", ipAddress)
+	req.Header.Set("X-Real-IP", ipAddress)
 
 	resp := httptest.NewRecorder()
 	s.app.ServeHTTP(resp, req)
@@ -149,7 +149,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.Nil(code)
 
-	isDeviceKnownNow, err := repository.NewPgDeviceRepository(s.PgDb).DeviceExists(s.ctx, userId, userAgent, ipAddress)
+	isDeviceKnownNow, err := repository.NewPgDeviceRepository(s.PgDB).DeviceExists(s.ctx, userID, userAgent, ipAddress)
 	r.NoError(err, "Failed to check if device was created in db")
 	r.True(isDeviceKnownNow)
 }
@@ -158,8 +158,8 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 	r := s.Require()
 
 	email, otp, otp2 := "johndoe@test.com", "123456", "234567"
-	err := repository.NewPgUserRepository(s.PgDb).CreateUser(s.ctx, model.User{
-		Id:              uuid.New(),
+	err := repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+		ID:              uuid.New(),
 		Name:            "John",
 		Email:           email,
 		IsEmailVerified: false,
@@ -214,14 +214,14 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidBody_ReturnsError() {
 func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewSession() {
 	r := s.Require()
 
-	userId, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
+	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
 	passwordHash, err := s.Dependencies.PasswordHasher.HashPassword(password)
 	r.NoError(err, "Failed to obtain password hash")
 
-	err = repository.NewPgUserRepository(s.PgDb).CreateUser(s.ctx, model.User{
-		Id:              userId,
+	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+		ID:              userID,
 		Name:            "John",
 		Email:           email,
 		IsEmailVerified: true,
@@ -231,10 +231,10 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	})
 	r.NoError(err, "Failed to create new user")
 
-	err = repository.NewPgDeviceRepository(s.PgDb).CreateDevice(s.ctx, model.Device{
-		Id:        uuid.New(),
-		UserId:    userId,
-		IpAddress: ipAddress,
+	err = repository.NewPgDeviceRepository(s.PgDB).CreateDevice(s.ctx, model.Device{
+		ID:        uuid.New(),
+		UserID:    userID,
+		IPAddress: ipAddress,
 		UserAgent: userAgent,
 	})
 	r.NoError(err, "Failed to save new device in db")
@@ -246,7 +246,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Real-Ip", ipAddress)
+	req.Header.Set("X-Real-IP", ipAddress)
 
 	resp := httptest.NewRecorder()
 	s.app.ServeHTTP(resp, req)
@@ -279,14 +279,14 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	r := s.Require()
 
-	userId, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
+	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
 	passwordHash, err := s.Dependencies.PasswordHasher.HashPassword(password)
 	r.NoError(err, "Failed to obtain password hash")
 
-	err = repository.NewPgUserRepository(s.PgDb).CreateUser(s.ctx, model.User{
-		Id:              userId,
+	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+		ID:              userID,
 		Name:            "John",
 		Email:           email,
 		IsEmailVerified: true,
@@ -306,7 +306,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("X-Real-Ip", ipAddress)
+	req.Header.Set("X-Real-IP", ipAddress)
 
 	resp := httptest.NewRecorder()
 	s.app.ServeHTTP(resp, req)

@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	Id              uuid.UUID
+	ID              uuid.UUID
 	Name            string
 	Email           string
 	IsEmailVerified bool

@@ -20,24 +20,24 @@ type LoggerMiddleware struct {
 func (l LoggerMiddleware) Handle(c *gin.Context) {
 	start := time.Now()
 
-	userUuid, _ := auth.GetUserId(c)
+	userUuid, _ := auth.GetUserID(c)
 
-	var userId string
+	var userID string
 
 	if userUuid == uuid.Nil {
-		userId = "unauthenticated"
+		userID = "unauthenticated"
 	} else {
-		userId = userUuid.String()
+		userID = userUuid.String()
 	}
 
 	entry := logrus.WithFields(logrus.Fields{
-		"clientIp":  httphelp.GetClientIP(c),
-		"userId":    userId,
+		"clientIP":  httphelp.GetClientIP(c),
+		"userID":    userID,
 		"method":    c.Request.Method,
 		"path":      c.Request.RequestURI,
 		"status":    c.Writer.Status(),
 		"referrer":  c.Request.Referer(),
-		"requestId": c.Writer.Header().Get("Request-Id"),
+		"requestID": c.Writer.Header().Get("Request-ID"),
 	})
 
 	if l.LogProcessedRequests {

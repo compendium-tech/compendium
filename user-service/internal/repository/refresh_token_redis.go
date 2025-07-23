@@ -18,9 +18,9 @@ const (
 	maxTokensPerUser       = 5
 	revokedTokenTTL        = 3 * 24 * time.Hour
 	tokenHashField         = "token"
-	userIdHashField        = "userId"
+	userIDHashField        = "userID"
 	expiryHashField        = "expiry"
-	sessionIdHashField     = "sessionId"
+	sessionIDHashField     = "sessionID"
 )
 
 type redisRefreshTokenRepository struct {
@@ -37,8 +37,8 @@ func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	tokenKey := refreshTokenKeyPrefix + token.Token
 	tokenDetails := map[string]interface{}{
 		tokenHashField:     token.Token,
-		userIdHashField:    token.UserId.String(),
-		sessionIdHashField: token.SessionID.String(),
+		userIDHashField:    token.UserID.String(),
+		sessionIDHashField: token.SessionID.String(),
 		expiryHashField:    token.Expiry.Unix(),
 	}
 
@@ -47,7 +47,7 @@ func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	pipe.HSet(ctx, tokenKey, tokenDetails)
 	pipe.ExpireAt(ctx, tokenKey, token.Expiry)
 
-	userTokensKey := userTokensKeyPrefix + token.UserId.String()
+	userTokensKey := userTokensKeyPrefix + token.UserID.String()
 	pipe.ZAdd(ctx, userTokensKey, redis.Z{
 		Score:  float64(time.Now().Unix()),
 		Member: token.Token,
@@ -74,14 +74,14 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 		return nil, false, redis.Nil
 	}
 
-	userId, err := uuid.Parse(details[userIdHashField])
+	userID, err := uuid.Parse(details[userIDHashField])
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse userId: %w", err)
+		return nil, false, fmt.Errorf("failed to parse userID: %w", err)
 	}
 
-	sessionId, err := uuid.Parse(details[sessionIdHashField])
+	sessionID, err := uuid.Parse(details[sessionIDHashField])
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse sessionId: %w", err)
+		return nil, false, fmt.Errorf("failed to parse sessionID: %w", err)
 	}
 
 	expiryUnix, err := strconv.ParseInt(details[expiryHashField], 10, 64)
@@ -95,9 +95,9 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 	}
 
 	refreshToken := model.RefreshToken{
-		UserId:    userId,
+		UserID:    userID,
 		Token:     details[tokenHashField],
-		SessionID: sessionId,
+		SessionID: sessionID,
 		Expiry:    time.Unix(expiryUnix, 0),
 	}
 
@@ -112,9 +112,9 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 	return &refreshToken, isRevoked, nil
 }
 
-func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, tokenString string, userId uuid.UUID) error {
+func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, tokenString string, userID uuid.UUID) error {
 	tokenKey := refreshTokenKeyPrefix + tokenString
-	userTokensKey := userTokensKeyPrefix + userId.String()
+	userTokensKey := userTokensKeyPrefix + userID.String()
 	revokedKey := revokedTokensKeyPrefix + tokenString
 
 	pipe := r.client.TxPipeline()
@@ -132,12 +132,12 @@ func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, to
 	return nil
 }
 
-func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userId uuid.UUID) error {
-	userTokensKey := userTokensKeyPrefix + userId.String()
+func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error {
+	userTokensKey := userTokensKeyPrefix + userID.String()
 
 	tokens, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
 	if err != nil {
-		return fmt.Errorf("failed to get all tokens for user %s: %w", userId.String(), err)
+		return fmt.Errorf("failed to get all tokens for user %s: %w", userID.String(), err)
 	}
 
 	if len(tokens) == 0 {
@@ -155,7 +155,7 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to remove all refresh tokens for user %s: %w", userId.String(), err)
+		return fmt.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err)
 	}
 	return nil
 }

@@ -44,13 +44,13 @@ func (g *GrpcApp) Run() error {
 
 type Dependencies struct {
 	Config              config.AppConfig
-	PgDb                *sql.DB
+	PgDB                *sql.DB
 	RedisClient         *redis.Client
 	TokenManager        auth.TokenManager
 	EmailSender         emailDelivery.EmailSender
 	EmailMessageBuilder email.EmailMessageBuilder
 	PasswordHasher      hash.PasswordHasher
-	GeoIp               geoip.GeoIp
+	GeoIP               geoip.GeoIP
 	UserAgentParser     ua.UserAgentParser
 }
 
@@ -63,8 +63,8 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 
 	ratelimiter := ratelimit.NewRedisRateLimiter(deps.RedisClient)
 	authEmailLockRepository := repository.NewRedisAuthLockRepository(deps.RedisClient)
-	deviceRepository := repository.NewPgDeviceRepository(deps.PgDb)
-	userRepository := repository.NewPgUserRepository(deps.PgDb)
+	deviceRepository := repository.NewPgDeviceRepository(deps.PgDB)
+	userRepository := repository.NewPgUserRepository(deps.PgDB)
 	mfaRepository := repository.NewRedisMfaRepository(deps.RedisClient)
 	refreshTokenRepository := repository.NewRedisRefreshTokenRepository(deps.RedisClient)
 
@@ -72,12 +72,12 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 		authEmailLockRepository, deviceRepository,
 		userRepository, mfaRepository, refreshTokenRepository,
 		deps.EmailSender, deps.EmailMessageBuilder,
-		deps.GeoIp, deps.UserAgentParser,
+		deps.GeoIP, deps.UserAgentParser,
 		deps.TokenManager, deps.PasswordHasher, ratelimiter)
 	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()
-	r.Use(commonMiddleware.RequestIdMiddleware{AllowToSet: false}.Handle)
+	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
 	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 	r.Use(commonMiddleware.DefaultCors().Handle)
@@ -95,7 +95,7 @@ func NewGrpcApp(deps Dependencies) *GrpcApp {
 	})
 	logrus.SetReportCaller(true)
 
-	userRepository := repository.NewPgUserRepository(deps.PgDb)
+	userRepository := repository.NewPgUserRepository(deps.PgDB)
 	userService := service.NewUserService(userRepository)
 
 	grpcServer := grpc.NewServer()

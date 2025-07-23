@@ -6,16 +6,16 @@ import (
 	"github.com/iamvladw/GeoIP2-go/cmd/geoip2"
 )
 
-type geoIp2Client struct {
+type geoIP2Client struct {
 	api *geoip2.Api
 }
 
-func NewGeoIp2Client(accountId, licenseKey, host string) GeoIp {
-	api := geoip2.New(accountId, licenseKey, host)
-	return &geoIp2Client{api: api}
+func NewGeoIP2Client(accountID, licenseKey, host string) GeoIP {
+	api := geoip2.New(accountID, licenseKey, host)
+	return &geoIP2Client{api: api}
 }
 
-func (g *geoIp2Client) GetLocation(ip string) (string, error) {
+func (g *geoIP2Client) GetLocation(ip string) (string, error) {
 	city, err := g.api.City(ip)
 	if err != nil {
 		return "", err

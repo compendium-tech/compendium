@@ -23,7 +23,7 @@ func NewPgUserRepository(db *sql.DB) UserRepository {
 	}
 }
 
-func (r *pgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *pgUserRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
@@ -33,7 +33,7 @@ func (r *pgUserRepository) FindById(ctx context.Context, id uuid.UUID) (*model.U
 	row := r.db.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.IsEmailVerified,
@@ -62,7 +62,7 @@ func (r *pgUserRepository) FindByEmail(ctx context.Context, email string) (*mode
 	row := r.db.QueryRowContext(ctx, query, email)
 
 	err := row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.IsEmailVerified,
@@ -115,7 +115,7 @@ func (r *pgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name st
 	row := r.db.QueryRowContext(ctx, query, name, id)
 
 	err := row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.IsEmailVerified,
@@ -187,7 +187,7 @@ func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User) erro
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		user.Id,
+		user.ID,
 		user.Name,
 		user.Email,
 		user.IsEmailVerified,

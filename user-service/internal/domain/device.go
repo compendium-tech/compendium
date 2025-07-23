@@ -7,12 +7,12 @@ import (
 )
 
 type Device struct {
-	Id        uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Os        string    `json:"os"`
 	Device    string    `json:"device"`
 	Location  string    `json:"location"`
 	UserAgent string    `json:"user_agent"`
-	IpAddress string    `json:"ip_address"`
+	IPAddress string    `json:"ip_address"`
 	CreatedAt time.Time `json:"created_at"`
 }

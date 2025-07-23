@@ -56,17 +56,17 @@ func main() {
 		return
 	}
 
-	geoIp := geoip.NewGeoIp2Client(cfg.GeoIp2AccountId, cfg.GeoIp2LicenseKey, cfg.GeoIp2Host)
+	geoIP := geoip.NewGeoIP2Client(cfg.GeoIP2AccountID, cfg.GeoIP2LicenseKey, cfg.GeoIP2Host)
 	userAgentParser := ua.NewUserAgentParser()
 
 	deps := app.Dependencies{
-		PgDb:                pgDB,
+		PgDB:                pgDB,
 		RedisClient:         redisClient,
 		Config:              cfg,
 		TokenManager:        tokenManager,
 		EmailSender:         kafkaEmailSender,
 		EmailMessageBuilder: emailMessageBuilder,
-		GeoIp:               geoIp,
+		GeoIP:               geoIP,
 		UserAgentParser:     userAgentParser,
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}

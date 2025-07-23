@@ -31,7 +31,7 @@ type APITestSuite struct {
 	app                     *gin.Engine
 	mockEmailMessageBuilder *email.MockEmailMessageBuilder
 	mockEmailSender         *emailDelivery.MockEmailSender
-	mockGeoIp               *geoip.MockGeoIp
+	mockGeoIP               *geoip.MockGeoIP
 	mockUserAgentParser     *ua.MockUserAgentParser
 }
 
@@ -51,19 +51,19 @@ func TestAPISuite(t *testing.T) {
 func (s *APITestSuite) SetupTest() {
 	s.initDeps()
 
-	if err := pg.RunUpPgMigrations(s.ctx, s.PgDb, s.getPgMigrationsDir()); err != nil {
+	if err := pg.RunUpPgMigrations(s.ctx, s.PgDB, s.getPgMigrationsDir()); err != nil {
 		s.FailNow("Failed to run up postgres migrations", err)
 	}
 }
 
 func (s *APITestSuite) TearDownTest() {
-	if err := pg.RunDownPgMigrations(s.ctx, s.PgDb, s.getPgMigrationsDir()); err != nil {
+	if err := pg.RunDownPgMigrations(s.ctx, s.PgDB, s.getPgMigrationsDir()); err != nil {
 		s.FailNow("Failed to run down postgres migrations", err)
 	}
 
-	if s.PgDb != nil {
+	if s.PgDB != nil {
 		s.T().Log("Closing PostgreSQL connection...")
-		if err := s.PgDb.Close(); err != nil {
+		if err := s.PgDB.Close(); err != nil {
 			s.T().Errorf("Error closing PostgreSQL connection: %v", err)
 		}
 	}
@@ -113,17 +113,17 @@ func (s *APITestSuite) initDeps() {
 	s.ctx = ctx
 	s.mockEmailSender = new(emailDelivery.MockEmailSender)
 	s.mockEmailMessageBuilder = new(email.MockEmailMessageBuilder)
-	s.mockGeoIp = new(geoip.MockGeoIp)
+	s.mockGeoIP = new(geoip.MockGeoIP)
 	s.mockUserAgentParser = new(ua.MockUserAgentParser)
 
 	s.Dependencies = app.Dependencies{
-		PgDb:                pgDB,
+		PgDB:                pgDB,
 		RedisClient:         redisClient,
 		Config:              cfg,
 		TokenManager:        tokenManager,
 		EmailSender:         s.mockEmailSender,
 		EmailMessageBuilder: s.mockEmailMessageBuilder,
-		GeoIp:               s.mockGeoIp,
+		GeoIP:               s.mockGeoIP,
 		UserAgentParser:     s.mockUserAgentParser,
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}

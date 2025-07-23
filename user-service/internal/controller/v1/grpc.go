@@ -37,7 +37,7 @@ func (s *UserServiceServer) FindAccountByEmail(ctx context.Context, req *pb.Find
 	}
 
 	return &pb.FindAccountByEmailResponse{Account: &pb.Account{
-		Id:        user.Id.String(),
+		ID:        user.ID.String(),
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: timestamppb.New(user.CreatedAt),
