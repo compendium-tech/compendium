@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/ztrue/tracerr"
 )
 
@@ -28,34 +30,44 @@ func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub mode
 
 	// Check if subscription exists
 	var existingSubscription model.Subscription
-	checkQuery := `SELECT * FROM subscriptions WHERE user_id = $1`
+	checkQuery := `SELECT * FROM subscriptions WHERE backed_by = $1`
 
-	switch tx.QueryRowContext(ctx, checkQuery, sub.UserID).Scan(&existingSubscription) {
+	switch tx.QueryRowContext(ctx, checkQuery, sub.BackedBy).Scan(&existingSubscription) {
 	case nil:
 		if sub.Level.Priority() < existingSubscription.Level.Priority() {
 			// If the new subscription level is lower than the existing one, do not update
-			return appErr.Errorf(appErr.LowPrioritySubscriptionLevelError, "cannot update subscription for user ID %s: new level is lower than existing", sub.UserID)
+			return appErr.Errorf(appErr.LowPrioritySubscriptionLevelError, "cannot update subscription for user ID %s: new level is lower than existing", sub.BackedBy)
 		}
 
 		// Subscription exists, perform an update
 		updateQuery := `
 			UPDATE subscriptions
 			SET subscription_level = $1, till = $2, since = $3
-			WHERE user_id = $4`
+			WHERE backed_by = $4`
 
-		_, err = tx.ExecContext(ctx, updateQuery, sub.Level, sub.Till, sub.Since, sub.UserID)
+		_, err = tx.ExecContext(ctx, updateQuery, sub.Level, sub.Till, sub.Since, sub.BackedBy)
 		if err != nil {
-			return tracerr.Errorf("failed to update subscription for user ID %s: %w", sub.UserID, err)
+			return tracerr.Errorf("failed to update subscription for user ID %s: %w", sub.BackedBy, err)
 		}
 	case sql.ErrNoRows:
 		// Subscription does not exist, perform an insert
 		insertQuery := `
-			INSERT INTO subscriptions (user_id, subscription_level, till, since)
+			INSERT INTO subscriptions (backed_by, subscription_level, till, since)
 			VALUES ($1, $2, $3, $4)`
 
-		_, err = tx.ExecContext(ctx, insertQuery, sub.UserID, sub.Level, sub.Till, sub.Since)
+		_, err = tx.ExecContext(ctx, insertQuery, sub.BackedBy, sub.Level, sub.Till, sub.Since)
 		if err != nil {
 			return tracerr.Errorf("failed to insert subscription: %w", err)
+		}
+
+		// Insert into subscription_members table
+		insertMemberQuery := `
+			INSERT INTO subscription_members (subscription_id, user_id, since)
+			VALUES ($1, $2, $3)`
+
+		_, err = tx.ExecContext(ctx, insertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
+		if err != nil {
+			return tracerr.Errorf("failed to insert subscription member: %w", err)
 		}
 	default:
 		// Other database error during check
@@ -70,28 +82,133 @@ func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub mode
 	return nil
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionByUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) GetSubscriptionByMemberUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
 	query := `
-		SELECT user_id, subscription_id, subscription_level, till, since FROM subscriptions
-		WHERE user_id = $1`
+		SELECT s.id, s.backed_by, s.subscription_level, s.till, s.since
+		FROM subscriptions s
+		INNER JOIN subscription_members sm ON s.id = sm.subscription_id
+		WHERE sm.user_id = $1`
+	var sub model.Subscription
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Level, &sub.Till, &sub.Since)
 
-	sub := &model.Subscription{}
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(
-		&sub.ID,
-		&sub.UserID,
-		&sub.Level,
-		&sub.Till,
-		&sub.Since,
-	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 
-		return nil, tracerr.Errorf("failed to get subscription by user ID %s: %w", userID, err)
+		return nil, tracerr.Errorf("failed to get subscription for user ID %s: %w", userID, err)
 	}
 
-	return sub, nil
+	return &sub, nil
+}
+
+func (r *pgSubscriptionRepository) GetSubscriptionByPayerUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+	query := `
+		SELECT id, backed_by, subscription_level, till, since
+		FROM subscriptions
+		WHERE backed_by = $1`
+
+	var sub model.Subscription
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Level, &sub.Till, &sub.Since)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, tracerr.Errorf("failed to get subscription for user ID %s: %w", userID, err)
+	}
+
+	return &sub, nil
+}
+
+func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, subscriptionID string) ([]model.SubscriptionMember, error) {
+	query := `
+		SELECT user_id, since
+		FROM subscription_members
+		WHERE subscription_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, subscriptionID)
+	if err != nil {
+		return nil, tracerr.Errorf("failed to get subscription members for ID %s: %w", subscriptionID, err)
+	}
+	defer rows.Close()
+
+	var members []model.SubscriptionMember
+	for rows.Next() {
+		var member model.SubscriptionMember
+		if err := rows.Scan(&member.UserID, &member.Since); err != nil {
+			return nil, tracerr.Errorf("failed to scan subscription member: %w", err)
+		}
+
+		member.SubscriptionID = subscriptionID
+		members = append(members, member)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, tracerr.Errorf("error occurred while iterating over subscription members: %w", err)
+	}
+
+	return members, nil
+}
+
+func (r *pgSubscriptionRepository) AddSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
+	query := `
+		INSERT INTO subscription_members (subscription_id, user_id, since)
+		VALUES ($1, $2, $3)`
+
+	_, err := r.db.ExecContext(ctx, query, member.SubscriptionID, member.UserID, member.Since)
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			return appErr.Errorf(appErr.AlreadySubscribedError, "you are already member of subscription: %s", member.SubscriptionID)
+		}
+
+		return tracerr.Errorf("failed to add subscription member: %w", err)
+	}
+
+	return nil
+}
+
+func (r *pgSubscriptionRepository) RemoveSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
+	query := `
+		DELETE FROM subscription_members
+		WHERE subscription_id = $1 AND user_id = $2`
+	result, err := r.db.ExecContext(ctx, query, member.SubscriptionID, member.UserID)
+	if err != nil {
+		return tracerr.Errorf("failed to delete subscription member: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return tracerr.Errorf("failed to get rows affected after delete: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return tracerr.Errorf("no subscription member found to delete for user ID %s in subscription %s", member.UserID, member.SubscriptionID)
+	}
+
+	return nil
+}
+
+func (r *pgSubscriptionRepository) RemoveSubscriptionMemberBySubscriptionAndUserID(ctx context.Context, subscriptionID string, userID uuid.UUID) error {
+	query := `
+		DELETE FROM subscription_members
+		WHERE subscription_id = $1 AND user_id = $2`
+
+	result, err := r.db.ExecContext(ctx, query, subscriptionID, userID)
+	if err != nil {
+		return tracerr.Errorf("failed to delete subscription member for user ID %s in subscription %s: %w", userID, subscriptionID, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return tracerr.Errorf("failed to get rows affected after delete: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return tracerr.Errorf("no subscription member found to delete for user ID %s in subscription %s", userID, subscriptionID)
+	}
+
+	return nil
 }
 
 func (r *pgSubscriptionRepository) RemoveSubscription(ctx context.Context, id string) error {

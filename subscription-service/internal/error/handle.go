@@ -43,6 +43,8 @@ func (k AppErrorKind) httpStatus() int {
 	switch k {
 	case SubscriptionIsRequiredError:
 		return http.StatusPaymentRequired
+	case PayerPermissionRequired:
+		return http.StatusForbidden
 	default:
 		return http.StatusBadRequest
 	}

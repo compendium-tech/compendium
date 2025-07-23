@@ -4,6 +4,12 @@ import (
 	"time"
 
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
+	"github.com/google/uuid"
+)
+
+const (
+	SubscriptionRolePayer  SubscriptionRole = "payer"
+	SubscriptionRoleMember SubscriptionRole = "member"
 )
 
 type PutSubscriptionRequest struct {
@@ -20,13 +26,25 @@ type SubscriptionItem struct {
 	Quantity  int
 }
 
+type SubscriptionRole string
+
 type Subscription struct {
-	Level model.SubscriptionLevel `json:"level"`
-	Since time.Time               `json:"since"`
-	Till  time.Time               `json:"till"`
+	Role    SubscriptionRole        `json:"role"`
+	Level   model.SubscriptionLevel `json:"level"`
+	Since   time.Time               `json:"since"`
+	Till    time.Time               `json:"till"`
+	Members []SubscriptionMember    `json:"members,omitempty"`
 }
 
 type SubscriptionResponse struct {
 	IsActive      bool `json:"isActive"`
 	*Subscription `json:"subscription,omitempty"`
+}
+
+type SubscriptionMember struct {
+	UserID          uuid.UUID        `json:"userId"`
+	Name            string           `json:"name"`
+	Email           string           `json:"email,omitempty"`
+	Role            SubscriptionRole `json:"role,omitempty"`
+	IsAccountActive bool             `json:"isAccountActive,omitempty"`
 }

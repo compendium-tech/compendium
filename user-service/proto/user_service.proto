@@ -13,11 +13,10 @@ message Account {
   google.protobuf.Timestamp created_at = 4;
 }
 
+message GetAccountRequest { string id = 1; }
 message FindAccountByEmailRequest { string email = 1; }
 
-message FindAccountByEmailResponse { Account account = 1; }
-
 service UserService {
-  rpc FindAccountByEmail(FindAccountByEmailRequest)
-      returns (FindAccountByEmailResponse);
+  rpc GetAccount(GetAccountRequest) returns (Account);
+  rpc FindAccountByEmail(FindAccountByEmailRequest) returns (Account);
 }

@@ -34,7 +34,7 @@ func (u UserController) MakeRoutes(e *gin.Engine) {
 }
 
 func (u *UserController) getAccount(c *gin.Context) error {
-	response, err := u.userService.GetAccount(c.Request.Context())
+	response, err := u.userService.GetAccountAsAuthenticatedUser(c.Request.Context())
 
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (u *UserController) updateAccount(c *gin.Context) error {
 		return err
 	}
 
-	response, err := u.userService.UpdateAccount(c.Request.Context(), request)
+	response, err := u.userService.UpdateAccountAsAuthenticatedUser(c.Request.Context(), request)
 
 	if err != nil {
 		return err

@@ -8,12 +8,15 @@ import (
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
+	"github.com/google/uuid"
 )
 
 type UserService interface {
-	GetAccount(ctx context.Context) (*domain.AccountResponse, error)
+	GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error)
 	FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error)
-	UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
+
+	GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error)
+	UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
 }
 
 type userService struct {
@@ -26,7 +29,31 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 	}
 }
 
-func (u *userService) GetAccount(ctx context.Context) (*domain.AccountResponse, error) {
+func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error) {
+	log.L(ctx).Info("Getting user account details by ID")
+
+	user, err := u.userRepository.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		log.L(ctx).Warn("User account not found for the provided ID")
+
+		return nil, appErr.Errorf(appErr.UserNotFoundError, "User not found")
+	}
+
+	log.L(ctx).Info("User account details fetched successfully")
+
+	return &domain.AccountResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
+}
+
+func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Getting authenticated user account details")
 
 	userID, err := auth.GetUserID(ctx)
@@ -80,7 +107,7 @@ func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*do
 	}, nil
 }
 
-func (u *userService) UpdateAccount(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
+func (u *userService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Updating authenticated user account details")
 
 	userID, err := auth.GetUserID(ctx)

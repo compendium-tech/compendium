@@ -17,6 +17,7 @@ type userServiceGrpcClient struct {
 }
 
 type UserService interface {
+	GetAccount(ctx context.Context, id uuid.UUID) (*domain.Account, error)
 	FindAccountByEmail(ctx context.Context, email string) (*domain.Account, error)
 }
 
@@ -34,6 +35,30 @@ func NewGrpcUserServiceClient(target string) (UserService, error) {
 	}, nil
 }
 
+func (u *userServiceGrpcClient) GetAccount(ctx context.Context, id uuid.UUID) (*domain.Account, error) {
+	req := &pb.GetAccountRequest{
+		Id: id.String(),
+	}
+
+	resp, err := u.client.GetAccount(ctx, req)
+	if err != nil {
+		return nil, tracerr.Errorf("failed to get account: %w", err)
+	}
+
+	accountID, err := uuid.Parse(resp.Id)
+	if err != nil {
+		return nil, tracerr.Errorf("invalid account ID format: %w", err)
+	}
+
+	account := &domain.Account{
+		ID:    accountID,
+		Name:  resp.Name,
+		Email: resp.Email,
+	}
+
+	return account, nil
+}
+
 func (u *userServiceGrpcClient) FindAccountByEmail(ctx context.Context, email string) (*domain.Account, error) {
 	req := &pb.FindAccountByEmailRequest{
 		Email: email,
@@ -44,15 +69,15 @@ func (u *userServiceGrpcClient) FindAccountByEmail(ctx context.Context, email st
 		return nil, tracerr.Errorf("failed to get account: %w", err)
 	}
 
-	id, err := uuid.Parse(resp.Account.ID)
+	id, err := uuid.Parse(resp.Id)
 	if err != nil {
 		return nil, tracerr.Errorf("invalid account ID format: %w", err)
 	}
 
 	account := &domain.Account{
 		ID:    id,
-		Name:  resp.Account.Name,
-		Email: resp.Account.Email,
+		Name:  resp.Name,
+		Email: resp.Email,
 	}
 
 	return account, nil

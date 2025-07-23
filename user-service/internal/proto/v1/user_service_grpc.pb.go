@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	UserService_GetAccount_FullMethodName         = "/user_service.v1.UserService/GetAccount"
 	UserService_FindAccountByEmail_FullMethodName = "/user_service.v1.UserService/FindAccountByEmail"
 )
 
@@ -26,7 +27,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
-	FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*FindAccountByEmailResponse, error)
+	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*Account, error)
 }
 
 type userServiceClient struct {
@@ -37,9 +39,19 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*FindAccountByEmailResponse, error) {
+func (c *userServiceClient) GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FindAccountByEmailResponse)
+	out := new(Account)
+	err := c.cc.Invoke(ctx, UserService_GetAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*Account, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Account)
 	err := c.cc.Invoke(ctx, UserService_FindAccountByEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +63,8 @@ func (c *userServiceClient) FindAccountByEmail(ctx context.Context, in *FindAcco
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
-	FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*FindAccountByEmailResponse, error)
+	GetAccount(context.Context, *GetAccountRequest) (*Account, error)
+	FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*Account, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -62,7 +75,10 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
-func (UnimplementedUserServiceServer) FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*FindAccountByEmailResponse, error) {
+func (UnimplementedUserServiceServer) GetAccount(context.Context, *GetAccountRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
+}
+func (UnimplementedUserServiceServer) FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindAccountByEmail not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
@@ -84,6 +100,24 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&UserService_ServiceDesc, srv)
+}
+
+func _UserService_GetAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetAccount(ctx, req.(*GetAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_FindAccountByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -111,6 +145,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "user_service.v1.UserService",
 	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetAccount",
+			Handler:    _UserService_GetAccount_Handler,
+		},
 		{
 			MethodName: "FindAccountByEmail",
 			Handler:    _UserService_FindAccountByEmail_Handler,
