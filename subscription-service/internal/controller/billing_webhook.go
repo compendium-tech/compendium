@@ -65,6 +65,8 @@ func (p *BillingWebhookController) Handle(c *gin.Context) error {
 	switch webhook.EventType {
 	case paddlenotification.EventTypeNameSubscriptionCreated:
 		p.handleSubscriptionCreated(c)
+	case paddlenotification.EventTypeNameSubscriptionCanceled:
+		p.handleSubscriptionCanceled(c)
 	}
 
 	return nil
@@ -110,6 +112,15 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context) err
 		Till:           till,
 		Since:          since,
 	})
+}
+
+func (p *BillingWebhookController) handleSubscriptionCanceled(c *gin.Context) error {
+	var event paddlenotification.SubscriptionCanceled
+	if err := unmarshal(c.Request, &event); err != nil {
+		return err
+	}
+
+	return p.subscriptionService.CancelSubscription(c.Request.Context(), event.Data.ID)
 }
 
 func unmarshal(r *http.Request, v any) error {

@@ -31,8 +31,10 @@ func (pb *paddleBilling) GetCustomer(ctx context.Context, customerID string) (Cu
 }
 
 func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) error {
+	immediately := paddle.EffectiveFromImmediately
 	_, err := pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
 		SubscriptionID: subscriptionID,
+		EffectiveFrom:  &immediately,
 	})
 	if err != nil {
 		return err

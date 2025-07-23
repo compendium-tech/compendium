@@ -76,8 +76,8 @@ func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*m
 
 	sub := &model.Subscription{}
 	err := r.db.QueryRow(query, userID).Scan(
+		&sub.ID,
 		&sub.UserID,
-		&sub.SubscriptionID,
 		&sub.SubscriptionLevel,
 		&sub.Till,
 		&sub.Since,
@@ -93,14 +93,14 @@ func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*m
 	return sub, nil
 }
 
-func (r *pgSubscriptionRepository) RemoveSubscription(userID uuid.UUID) error {
+func (r *pgSubscriptionRepository) RemoveSubscription(id string) error {
 	query := `
 		DELETE FROM subscriptions
-		WHERE user_id = $1`
+		WHERE id = $1`
 
-	result, err := r.db.Exec(query, userID)
+	result, err := r.db.Exec(query, id)
 	if err != nil {
-		return tracerr.Errorf("failed to delete subscription for user ID %s: %w", userID, err)
+		return tracerr.Errorf("failed to delete subscription%s: %w", id, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -109,7 +109,7 @@ func (r *pgSubscriptionRepository) RemoveSubscription(userID uuid.UUID) error {
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no subscription found to delete for user ID %s", userID)
+		return tracerr.Errorf("no subscription found to delete %s", id)
 	}
 
 	return nil

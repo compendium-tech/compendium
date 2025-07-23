@@ -8,5 +8,5 @@ import (
 type SubscriptionRepository interface {
 	PutSubscription(sub model.Subscription) error
 	GetSubscriptionByUserID(userID uuid.UUID) (*model.Subscription, error)
-	RemoveSubscription(userID uuid.UUID) error
+	RemoveSubscription(id string) error
 }

@@ -15,6 +15,7 @@ import (
 
 type SubscriptionService interface {
 	PutSubscription(ctx context.Context, request domain.PutSubscriptionRequest) error
+	CancelSubscription(ctx context.Context, subscriptionID string) error
 }
 
 type subscriptionService struct {
@@ -83,7 +84,7 @@ func (s *subscriptionService) PutSubscription(ctx context.Context, request domai
 	}
 
 	if subscription != nil {
-		err := s.billingAPI.CancelSubscription(ctx, subscription.SubscriptionID)
+		err := s.billingAPI.CancelSubscription(ctx, subscription.ID)
 
 		if err != nil {
 			log.L(ctx).Errorf("Failed to cancel existing subscription for user %s: %v", account.ID, err)
@@ -113,10 +114,14 @@ func (s *subscriptionService) PutSubscription(ctx context.Context, request domai
 	}
 
 	return s.subscriptionRepository.PutSubscription(model.Subscription{
+		ID:                request.SubscriptionID,
 		UserID:            account.ID,
-		SubscriptionID:    request.SubscriptionID,
 		SubscriptionLevel: subscriptionLevel,
 		Till:              request.Till,
 		Since:             request.Since,
 	})
+}
+
+func (s *subscriptionService) CancelSubscription(ctx context.Context, subscriptionID string) error {
+	return s.subscriptionRepository.RemoveSubscription(subscriptionID)
 }
