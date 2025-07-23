@@ -320,6 +320,9 @@ export PATH="$PATH:$(go env GOPATH)"/bin
 
 cd user-service/
 protoc --go_out=. --go-grpc_out=. proto/user_service.proto
+
+cd ../subscription-service/
+protoc --go_out=. --go-grpc_out=. proto/user_service.proto
 ```
 
 # Microservice backend
