@@ -65,8 +65,8 @@ func (p *BillingWebhookController) Handle(c *gin.Context) error {
 	switch webhook.EventType {
 	case paddlenotification.EventTypeNameSubscriptionCreated:
 		p.handleSubscriptionCreated(c)
-	case paddlenotification.EventTypeNameSubscriptionCanceled:
-		p.handleSubscriptionCanceled(c)
+	case paddlenotification.EventTypeNameSubscriptionUpdated:
+		p.handleSubscriptionUpdate(c)
 	}
 
 	return nil
@@ -114,13 +114,51 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context) err
 	})
 }
 
-func (p *BillingWebhookController) handleSubscriptionCanceled(c *gin.Context) error {
-	var event paddlenotification.SubscriptionCanceled
+func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context) error {
+	var event paddlenotification.SubscriptionUpdated
 	if err := unmarshal(c.Request, &event); err != nil {
 		return err
 	}
 
-	return p.subscriptionService.CancelSubscription(c.Request.Context(), event.Data.ID)
+	switch event.Data.Status {
+	case paddlenotification.SubscriptionStatusPastDue:
+		return p.subscriptionService.CancelSubscription(c.Request.Context(), event.Data.ID)
+	}
+
+	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+	}
+
+	till, err := time.Parse(dateTimeLayout, *event.Data.NextBilledAt)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+	}
+
+	if len(event.Data.Items) == 0 {
+		return appErr.Errorf(appErr.RequestValidationError, "User didn't subscribe to anything")
+	}
+
+	if len(event.Data.Items) > 1 {
+		return appErr.Errorf(appErr.RequestValidationError, "User shouldn't be able to purchase more than 1 item")
+	}
+
+	items := make([]domain.SubscriptionItem, len(event.Data.Items))
+	for i, item := range event.Data.Items {
+		items[i] = domain.SubscriptionItem{
+			Quantity:  item.Quantity,
+			PriceID:   item.Price.ID,
+			ProductID: item.Product.ID,
+		}
+	}
+
+	return p.subscriptionService.PutSubscription(c.Request.Context(), domain.PutSubscriptionRequest{
+		CustomerID:     event.Data.CustomerID,
+		SubscriptionID: event.Data.ID,
+		Till:           till,
+		Since:          since,
+		Items:          items,
+	})
 }
 
 func unmarshal(r *http.Request, v any) error {
