@@ -14,6 +14,7 @@ const (
 	MfaNotRequestedError
 	InvalidMfaOtpError
 	InvalidSessionError
+	SessionNotFoundError
 )
 
 const ()

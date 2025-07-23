@@ -12,15 +12,15 @@ import (
 
 const maxDevicesPerUser = 10
 
-type pgDeviceRepository struct {
+type pgTrustedDeviceRepository struct {
 	db *sql.DB
 }
 
-func NewPgDeviceRepository(db *sql.DB) DeviceRepository {
-	return &pgDeviceRepository{db: db}
+func NewPgTrustedDeviceRepository(db *sql.DB) TrustedDeviceRepository {
+	return &pgTrustedDeviceRepository{db: db}
 }
 
-func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Device) (finalErr error) {
+func (r *pgTrustedDeviceRepository) CreateDevice(ctx context.Context, device model.TrustedDevice) (finalErr error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return tracerr.Errorf("failed to begin transaction: %w", err)
@@ -69,7 +69,7 @@ func (r *pgDeviceRepository) CreateDevice(ctx context.Context, device model.Devi
 	return tx.Commit()
 }
 
-func (r *pgDeviceRepository) DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error) {
+func (r *pgTrustedDeviceRepository) DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(
 		ctx,
@@ -82,46 +82,4 @@ func (r *pgDeviceRepository) DeviceExists(ctx context.Context, userID uuid.UUID,
 	}
 
 	return exists, nil
-}
-
-func (r *pgDeviceRepository) GetDevicesByUserID(ctx context.Context, userID uuid.UUID) ([]model.Device, error) {
-	var devices []model.Device
-
-	rows, err := r.db.QueryContext(
-		ctx,
-		`SELECT * FROM devices WHERE user_id = $1 ORDER BY created_at DESC`,
-		userID,
-	)
-	if err != nil {
-		return nil, tracerr.Wrap(err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var device model.Device
-		if err := rows.Scan(&device.ID, &device.UserID, &device.UserAgent, &device.IPAddress, &device.CreatedAt); err != nil {
-			return nil, tracerr.Wrap(err)
-		}
-
-		devices = append(devices, device)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
-	}
-
-	return devices, nil
-}
-
-func (r *pgDeviceRepository) RemoveAllDevicesByUserID(ctx context.Context, userID uuid.UUID) error {
-	_, err := r.db.ExecContext(
-		ctx,
-		`DELETE FROM devices WHERE user_id = $1`,
-		userID,
-	)
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	return nil
 }

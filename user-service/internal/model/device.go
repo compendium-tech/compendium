@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Device struct {
+type TrustedDevice struct {
 	ID        uuid.UUID
 	UserID    uuid.UUID
 	UserAgent string

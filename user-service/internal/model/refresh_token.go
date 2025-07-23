@@ -6,9 +6,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type Session struct {
+	ID        uuid.UUID
+	UserAgent string
+	IPAddress string
+	CreatedAt time.Time
+}
+
 type RefreshToken struct {
-	UserID    uuid.UUID
-	Token     string
-	SessionID uuid.UUID
-	Expiry    time.Time
+	UserID   uuid.UUID
+	Token    string
+	ExpireAt time.Time
+	Session  Session
 }

@@ -10,6 +10,7 @@ import (
 	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const (
@@ -35,12 +36,12 @@ func (a AuthController) MakeRoutes(e *gin.Engine) {
 		v1.POST("/sessions", appErr.HandleAppErr(a.createSession))
 		v1.PUT("/password", appErr.HandleAppErr(a.resetPassword))
 		v1.DELETE("/session", appErr.HandleAppErr(a.logout))
-		v1.DELETE("/sessions", appErr.HandleAppErr(a.logoutFromAllDevices))
 
 		authenticated := v1.Group("/")
 		{
 			authenticated.Use(auth.RequireAuth)
-			authenticated.GET("/devices", appErr.HandleAppErr(a.getDevices))
+			authenticated.GET("/sessions", appErr.HandleAppErr(a.getSessions))
+			authenticated.DELETE("/sessions/:id", appErr.HandleAppErr(a.removeSession))
 		}
 	}
 }
@@ -231,28 +232,38 @@ func (a *AuthController) logout(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) logoutFromAllDevices(c *gin.Context) error {
-	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
-	if err != nil {
-		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
-	}
-
-	err = a.authService.LogoutFromAllDevices(c.Request.Context(), refreshTokenCookie.Value)
-	if err != nil {
-		return err
-	}
-
-	c.Status(http.StatusOK)
-	return nil
-}
-
-func (a *AuthController) getDevices(c *gin.Context) error {
-	response, err := a.authService.GetDevicesForAuthenticatedUser(c.Request.Context())
+func (a *AuthController) getSessions(c *gin.Context) error {
+	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context())
 	if err != nil {
 		return err
 	}
 
 	c.JSON(http.StatusOK, response)
+	return nil
+}
+
+func (a *AuthController) removeSession(c *gin.Context) error {
+	sessionIdString := c.Param("id")
+	if sessionIdString == "" {
+		return appErr.Errorf(appErr.RequestValidationError, "Session ID is required")
+	}
+
+	sessionId, err := uuid.Parse(sessionIdString)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "Session ID must be a valid UUID")
+	}
+
+	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
+	if err != nil {
+		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	err = a.authService.RemoveSessionByID(c.Request.Context(), sessionId, refreshTokenCookie.Value)
+	if err != nil {
+		return err
+	}
+
+	c.Status(http.StatusNoContent)
 	return nil
 }
 

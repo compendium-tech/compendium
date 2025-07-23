@@ -63,7 +63,7 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 
 	ratelimiter := ratelimit.NewRedisRateLimiter(deps.RedisClient)
 	authEmailLockRepository := repository.NewRedisAuthLockRepository(deps.RedisClient)
-	deviceRepository := repository.NewPgDeviceRepository(deps.PgDB)
+	deviceRepository := repository.NewPgTrustedDeviceRepository(deps.PgDB)
 	userRepository := repository.NewPgUserRepository(deps.PgDB)
 	mfaRepository := repository.NewRedisMfaRepository(deps.RedisClient)
 	refreshTokenRepository := repository.NewRedisRefreshTokenRepository(deps.RedisClient)

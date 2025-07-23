@@ -7,9 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type DeviceRepository interface {
-	CreateDevice(ctx context.Context, device model.Device) error
+type TrustedDeviceRepository interface {
+	CreateDevice(ctx context.Context, device model.TrustedDevice) error
 	DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error)
-	GetDevicesByUserID(ctx context.Context, userID uuid.UUID) ([]model.Device, error)
-	RemoveAllDevicesByUserID(ctx context.Context, userID uuid.UUID) error
 }

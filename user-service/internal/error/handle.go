@@ -53,6 +53,8 @@ func (k AppErrorKind) httpStatus() int {
 		return http.StatusNotFound
 	case EmailTakenError:
 		return http.StatusConflict
+	case SessionNotFoundError:
+		return http.StatusNotFound
 	default:
 		return http.StatusBadRequest
 	}

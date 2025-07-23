@@ -29,28 +29,28 @@ type AuthService interface {
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
 	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
-	GetDevicesForAuthenticatedUser(ctx context.Context) ([]domain.Device, error)
-	LogoutFromAllDevices(ctx context.Context, refreshToken string) error
+	GetSessionsForAuthenticatedUser(ctx context.Context) ([]domain.Session, error)
+	RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, currentRefreshToken string) error
 }
 
 type authService struct {
-	authLockRepository     repository.AuthLockRepository
-	deviceRepository       repository.DeviceRepository
-	userRepository         repository.UserRepository
-	mfaRepository          repository.MfaRepository
-	refreshTokenRepository repository.RefreshTokenRepository
-	emailSender            emailDelivery.EmailSender
-	emailMessageBuilder    email.EmailMessageBuilder
-	geoIP                  geoip.GeoIP
-	userAgentParser        ua.UserAgentParser
-	tokenManager           auth.TokenManager
-	passwordHasher         hash.PasswordHasher
-	ratelimiter            ratelimit.RateLimiter
+	authLockRepository      repository.AuthLockRepository
+	trustedDeviceRepository repository.TrustedDeviceRepository
+	userRepository          repository.UserRepository
+	mfaRepository           repository.MfaRepository
+	refreshTokenRepository  repository.RefreshTokenRepository
+	emailSender             emailDelivery.EmailSender
+	emailMessageBuilder     email.EmailMessageBuilder
+	geoIP                   geoip.GeoIP
+	userAgentParser         ua.UserAgentParser
+	tokenManager            auth.TokenManager
+	passwordHasher          hash.PasswordHasher
+	ratelimiter             ratelimit.RateLimiter
 }
 
 func NewAuthService(
 	authEmailLockRepository repository.AuthLockRepository,
-	deviceRepository repository.DeviceRepository,
+	trustedDeviceRepository repository.TrustedDeviceRepository,
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
 	refreshTokenRepository repository.RefreshTokenRepository,
@@ -62,18 +62,18 @@ func NewAuthService(
 	passwordHasher hash.PasswordHasher,
 	ratelimiter ratelimit.RateLimiter) AuthService {
 	return &authService{
-		authLockRepository:     authEmailLockRepository,
-		deviceRepository:       deviceRepository,
-		userRepository:         userRepository,
-		mfaRepository:          mfaRepository,
-		refreshTokenRepository: refreshTokenRepository,
-		emailSender:            emailSender,
-		emailMessageBuilder:    emailMessageBuilder,
-		geoIP:                  geoIP,
-		userAgentParser:        userAgentParser,
-		tokenManager:           tokenManager,
-		passwordHasher:         passwordHasher,
-		ratelimiter:            ratelimiter,
+		authLockRepository:      authEmailLockRepository,
+		trustedDeviceRepository: trustedDeviceRepository,
+		userRepository:          userRepository,
+		mfaRepository:           mfaRepository,
+		refreshTokenRepository:  refreshTokenRepository,
+		emailSender:             emailSender,
+		emailMessageBuilder:     emailMessageBuilder,
+		geoIP:                   geoIP,
+		userAgentParser:         userAgentParser,
+		tokenManager:            tokenManager,
+		passwordHasher:          passwordHasher,
+		ratelimiter:             ratelimiter,
 	}
 }
 
@@ -256,7 +256,8 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 		return nil, appErr.Errorf(appErr.InvalidCredentialsError, "Invalid credentials")
 	}
 
-	deviceIsKnown, err := s.deviceRepository.DeviceExists(ctx, user.ID, request.UserAgent, request.IPAddress)
+	// Device check for MFA requirement
+	deviceIsKnown, err := s.trustedDeviceRepository.DeviceExists(ctx, user.ID, request.UserAgent, request.IPAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +430,7 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 		return nil, appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
 	}
 
-	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.SessionID), time.Minute, 1)
+	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.Session.ID), time.Minute, 1)
 
 	if err != nil {
 		return nil, err
@@ -491,74 +492,82 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func (s *authService) GetDevicesForAuthenticatedUser(ctx context.Context) ([]domain.Device, error) {
-	log.L(ctx).Info("Fetching devices for authenticated user")
+func (s *authService) GetSessionsForAuthenticatedUser(ctx context.Context) ([]domain.Session, error) {
+	log.L(ctx).Info("Fetching sessions for authenticated user")
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	devices, err := s.deviceRepository.GetDevicesByUserID(ctx, userID)
+	refreshTokens, err := s.refreshTokenRepository.GetAllRefreshTokensForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Infof("Found %d devices for user %s", len(devices), userID)
-
-	devicesResponse := make([]domain.Device, len(devices))
-	for i, device := range devices {
+	sessionsResponse := make([]domain.Session, len(refreshTokens))
+	for i, token := range refreshTokens {
 		location := ""
-		location, err := s.geoIP.GetLocation(device.IPAddress)
+		location, err := s.geoIP.GetLocation(token.Session.IPAddress)
 		if err != nil {
-			log.L(ctx).Warnf("Failed to get location for device %s by ip %s: %v", device.ID, device.IPAddress, err)
+			log.L(ctx).Warnf("Failed to get location for session %s by ip %s: %v", token.Session.ID, token.Session.IPAddress, err)
 		}
 
-		deviceInfo := s.userAgentParser.ParseUserAgent(device.UserAgent)
+		deviceInfo := s.userAgentParser.ParseUserAgent(token.Session.UserAgent)
 
-		devicesResponse[i] = domain.Device{
-			ID:        device.ID,
+		sessionsResponse[i] = domain.Session{
+			ID:        token.Session.ID,
 			Name:      deviceInfo.Name,
 			Os:        deviceInfo.Os,
 			Device:    deviceInfo.Device,
 			Location:  location,
-			UserAgent: device.UserAgent,
-			IPAddress: device.IPAddress,
-			CreatedAt: device.CreatedAt,
+			UserAgent: token.Session.UserAgent,
+			IPAddress: token.Session.IPAddress,
+			CreatedAt: token.Session.CreatedAt,
 		}
 	}
 
-	return devicesResponse, nil
+	log.L(ctx).Infof("Found %d sessions for user %s", len(sessionsResponse), userID)
+
+	return sessionsResponse, nil
 }
 
-func (s *authService) LogoutFromAllDevices(ctx context.Context, refreshToken string) error {
-	log.L(ctx).Info("Logging out from all devices for authenticated user")
+func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, currentRefreshToken string) error {
+	log.L(ctx).Infof("Removing session %s for authenticated user", sessionID)
 
-	token, _, err := s.refreshTokenRepository.GetRefreshToken(ctx, refreshToken)
+	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return err
 	}
 
-	if token == nil {
-		log.L(ctx).Errorf("Invalid refresh token (%s) was used for all-device logout (not found)", refreshToken)
-		return appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
-	}
-
-	log.L(ctx).Infof("Removing all refresh tokens for user %s", token.UserID)
-
-	err = s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, token.UserID)
+	// Get the refresh token details for the session to be removed
+	tokenToRemove, _, err := s.refreshTokenRepository.GetRefreshTokenBySessionID(ctx, sessionID)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("Removing all devices for user %s", token.UserID)
+	if tokenToRemove == nil {
+		log.L(ctx).Errorf("Attempted to remove non-existent session ID: %s", sessionID)
+		return appErr.Errorf(appErr.InvalidSessionError, "Session not found")
+	}
 
-	err = s.deviceRepository.RemoveAllDevicesByUserID(ctx, token.UserID)
+	if tokenToRemove.UserID != userID {
+		log.L(ctx).Errorf("User %s attempted to remove session %s which does not belong to them", userID, sessionID)
+		return appErr.Errorf(appErr.InvalidSessionError, "You are not authorized to remove this session")
+	}
+
+	// Prevent user from removing their current session
+	if tokenToRemove.Token == currentRefreshToken {
+		log.L(ctx).Warnf("User %s attempted to remove their currently active session %s", userID, sessionID)
+		return appErr.Errorf(appErr.SessionNotFoundError, "Cannot remove your current active session")
+	}
+
+	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, tokenToRemove.Token, userID)
 	if err != nil {
 		return err
 	}
 
-	log.L(ctx).Infof("All devices logged out successfully for user %s", token.UserID)
+	log.L(ctx).Infof("Session %s removed successfully for user %s", sessionID, userID)
 
 	return nil
 }
@@ -571,9 +580,15 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
+	accessTokenExpiry := time.Now().Add(15 * time.Minute)
+	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiry)
+	if err != nil {
+		return nil, err
+	}
+
 	log.L(ctx).Infof("Creating new device entry for user %s", userID)
 
-	err = s.deviceRepository.CreateDevice(ctx, model.Device{
+	err = s.trustedDeviceRepository.CreateDevice(ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		UserAgent: userAgent,
@@ -584,31 +599,28 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
-	accessTokenExpiry := time.Now().Add(15 * time.Minute)
-	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiry)
-	if err != nil {
-		return nil, err
-	}
-
 	refreshTokenExpiry := time.Now().Add(20 * 24 * time.Hour)
-	refreshToken, err := s.tokenManager.NewRefreshToken()
-	if err != nil {
-		return nil, err
-	}
+	refreshToken := uuid.New().String()
+	sessionID := uuid.New()
 
-	log.L(ctx).Infof("Adding refresh token to repository for user %s", userID)
+	log.L(ctx).Infof("Adding refresh token to repository for user %s with session ID %s", userID, sessionID)
 
 	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
-		UserID:    userID,
-		Token:     refreshToken,
-		Expiry:    refreshTokenExpiry,
-		SessionID: uuid.New(),
+		UserID:   userID,
+		Token:    refreshToken,
+		ExpireAt: refreshTokenExpiry,
+		Session: model.Session{
+			ID:        sessionID,
+			UserAgent: userAgent,
+			IPAddress: ipAddress,
+			CreatedAt: time.Now().UTC(),
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Infof("Session created successfully for user %s", userID)
+	log.L(ctx).Infof("Session created successfully for user %s with refresh token %s", userID, refreshToken)
 
 	return &domain.SessionResponse{
 		CsrfToken:          csrfToken,

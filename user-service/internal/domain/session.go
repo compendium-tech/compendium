@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Device struct {
+type Session struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Os        string    `json:"os"`

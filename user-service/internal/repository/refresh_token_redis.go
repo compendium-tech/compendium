@@ -12,15 +12,19 @@ import (
 )
 
 const (
-	refreshTokenKeyPrefix  = "refresh_token:"
-	userTokensKeyPrefix    = "user:refresh_tokens_idx:"
-	revokedTokensKeyPrefix = "revoked_token:"
-	maxTokensPerUser       = 5
-	revokedTokenTTL        = 3 * 24 * time.Hour
-	tokenHashField         = "token"
-	userIDHashField        = "userID"
-	expiryHashField        = "expiry"
-	sessionIDHashField     = "sessionID"
+	refreshTokenKeyPrefix        = "refresh_token:"
+	userTokensKeyPrefix          = "user:refresh_tokens_idx:"
+	revokedTokensKeyPrefix       = "revoked_token:"
+	sessionRefreshTokenKeyPrefix = "session_refresh_token:"
+	maxTokensPerUser             = 5
+	revokedTokenTTL              = 3 * 24 * time.Hour
+	tokenHashField               = "token"
+	userIDHashField              = "userID"
+	expireAtHashField            = "expireAt"
+	sessionIDHashField           = "sessionID"
+	userAgentHashField           = "userAgent"
+	ipAddressHashField           = "ipAddress"
+	sessionCreatedAtHashField    = "sessionCreatedAt"
 )
 
 type redisRefreshTokenRepository struct {
@@ -35,17 +39,24 @@ func NewRedisRefreshTokenRepository(client *redis.Client) RefreshTokenRepository
 
 func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token model.RefreshToken) error {
 	tokenKey := refreshTokenKeyPrefix + token.Token
-	tokenDetails := map[string]interface{}{
-		tokenHashField:     token.Token,
-		userIDHashField:    token.UserID.String(),
-		sessionIDHashField: token.SessionID.String(),
-		expiryHashField:    token.Expiry.Unix(),
+	sessionRefreshTokenKey := sessionRefreshTokenKeyPrefix + token.Session.ID.String()
+	tokenDetails := map[string]any{
+		tokenHashField:            token.Token,
+		userIDHashField:           token.UserID.String(),
+		sessionIDHashField:        token.Session.ID.String(),
+		expireAtHashField:         token.ExpireAt.Unix(),
+		userAgentHashField:        token.Session.UserAgent,
+		ipAddressHashField:        token.Session.IPAddress,
+		sessionCreatedAtHashField: token.Session.CreatedAt.Unix(),
 	}
 
 	pipe := r.client.TxPipeline()
 
+	pipe.SetArgs(ctx, sessionRefreshTokenKey, token.Token, redis.SetArgs{
+		ExpireAt: token.ExpireAt,
+	})
 	pipe.HSet(ctx, tokenKey, tokenDetails)
-	pipe.ExpireAt(ctx, tokenKey, token.Expiry)
+	pipe.ExpireAt(ctx, tokenKey, token.ExpireAt)
 
 	userTokensKey := userTokensKeyPrefix + token.UserID.String()
 	pipe.ZAdd(ctx, userTokensKey, redis.Z{
@@ -71,34 +82,12 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 	}
 
 	if len(details) == 0 {
-		return nil, false, redis.Nil
-	}
-
-	userID, err := uuid.Parse(details[userIDHashField])
-	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse userID: %w", err)
-	}
-
-	sessionID, err := uuid.Parse(details[sessionIDHashField])
-	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse sessionID: %w", err)
-	}
-
-	expiryUnix, err := strconv.ParseInt(details[expiryHashField], 10, 64)
-	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse expiry: %w", err)
-	}
-
-	// Check if the token has expired
-	if time.Now().After(time.Unix(expiryUnix, 0)) {
 		return nil, false, nil
 	}
 
-	refreshToken := model.RefreshToken{
-		UserID:    userID,
-		Token:     details[tokenHashField],
-		SessionID: sessionID,
-		Expiry:    time.Unix(expiryUnix, 0),
+	refreshToken, parseErr := r.parseRefreshTokenDetails(details)
+	if parseErr != nil {
+		return nil, false, parseErr
 	}
 
 	revokedKey := revokedTokensKeyPrefix + tokenString
@@ -109,7 +98,19 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 
 	isRevoked := revokedStatus > 0
 
-	return &refreshToken, isRevoked, nil
+	return refreshToken, isRevoked, nil
+}
+
+func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool, error) {
+	tokenString, err := r.client.Get(ctx, sessionRefreshTokenKeyPrefix+sessionID.String()).Result()
+	if err == redis.Nil {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get token string by session ID: %w", err)
+	}
+
+	return r.GetRefreshToken(ctx, tokenString)
 }
 
 func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, tokenString string, userID uuid.UUID) error {
@@ -117,15 +118,23 @@ func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, to
 	userTokensKey := userTokensKeyPrefix + userID.String()
 	revokedKey := revokedTokensKeyPrefix + tokenString
 
+	details, err := r.client.HGetAll(ctx, tokenKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to get refresh token details before removal: %w", err)
+	}
+	sessionIDStr := details[sessionIDHashField]
+
 	pipe := r.client.TxPipeline()
 
 	pipe.Del(ctx, tokenKey)
-
 	pipe.ZRem(ctx, userTokensKey, tokenString)
-
 	pipe.Set(ctx, revokedKey, "true", revokedTokenTTL)
 
-	_, err := pipe.Exec(ctx)
+	if sessionIDStr != "" {
+		pipe.Del(ctx, fmt.Sprintf("session_id_to_token:%s", sessionIDStr)) // Remove reverse lookup
+	}
+
+	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to remove refresh token: %w", err)
 	}
@@ -146,9 +155,17 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 
 	pipe := r.client.TxPipeline()
 
-	for _, token := range tokens {
-		pipe.Del(ctx, refreshTokenKeyPrefix+token)
-		pipe.Set(ctx, revokedTokensKeyPrefix+token, "true", revokedTokenTTL)
+	for _, tokenString := range tokens {
+		tokenKey := refreshTokenKeyPrefix + tokenString
+		details, err := r.client.HGetAll(ctx, tokenKey).Result()
+		if err == nil && len(details) > 0 {
+			sessionIDStr := details[sessionIDHashField]
+			pipe.Del(ctx, tokenKey)
+			pipe.Set(ctx, revokedTokensKeyPrefix+tokenString, "true", revokedTokenTTL)
+			if sessionIDStr != "" {
+				pipe.Del(ctx, fmt.Sprintf("session_id_to_token:%s", sessionIDStr)) // Remove reverse lookup
+			}
+		}
 	}
 
 	pipe.Del(ctx, userTokensKey)
@@ -158,4 +175,71 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 		return fmt.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err)
 	}
 	return nil
+}
+
+func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) ([]model.RefreshToken, error) {
+	userTokensKey := userTokensKeyPrefix + userID.String()
+	tokenStrings, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get refresh token strings for user %s: %w", userID.String(), err)
+	}
+
+	var refreshTokens []model.RefreshToken
+	for _, tokenString := range tokenStrings {
+		tokenKey := refreshTokenKeyPrefix + tokenString
+		details, err := r.client.HGetAll(ctx, tokenKey).Result()
+		if err != nil {
+			fmt.Printf("Warning: Failed to get details for token %s: %v\n", tokenString, err)
+			continue
+		}
+		if len(details) == 0 {
+			continue
+		}
+
+		refreshToken, parseErr := r.parseRefreshTokenDetails(details)
+		if parseErr != nil {
+			fmt.Printf("Warning: Failed to parse details for token %s: %v\n", tokenString, parseErr)
+			continue
+		}
+
+		if time.Now().Before(refreshToken.ExpireAt) {
+			refreshTokens = append(refreshTokens, *refreshToken)
+		}
+	}
+
+	return refreshTokens, nil
+}
+
+func (r *redisRefreshTokenRepository) parseRefreshTokenDetails(details map[string]string) (*model.RefreshToken, error) {
+	userID, err := uuid.Parse(details[userIDHashField])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse userID: %w", err)
+	}
+
+	sessionID, err := uuid.Parse(details[sessionIDHashField])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse sessionID: %w", err)
+	}
+
+	expireAtUnix, err := strconv.ParseInt(details[expireAtHashField], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse expireAt: %w", err)
+	}
+
+	createdAtUnix, err := strconv.ParseInt(details[sessionCreatedAtHashField], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse createdAt: %w", err)
+	}
+
+	return &model.RefreshToken{
+		UserID:   userID,
+		Token:    details[tokenHashField],
+		ExpireAt: time.Unix(expireAtUnix, 0),
+		Session: model.Session{
+			ID:        sessionID,
+			UserAgent: details[userAgentHashField],
+			IPAddress: details[ipAddressHashField],
+			CreatedAt: time.Unix(createdAtUnix, 0),
+		},
+	}, nil
 }
