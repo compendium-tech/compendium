@@ -63,7 +63,6 @@ func (a *AuthController) signUp(c *gin.Context) error {
 	}
 
 	c.Status(http.StatusCreated)
-
 	return nil
 }
 
