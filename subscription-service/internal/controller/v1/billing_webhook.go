@@ -1,4 +1,4 @@
-package controller
+package v1
 
 import (
 	"encoding/json"
@@ -34,7 +34,7 @@ func NewBillingWebhookController(
 }
 
 func (p *BillingWebhookController) MakeRoutes(e *gin.Engine) {
-	e.POST("/billingEvents", appErr.HandleAppErr(p.Handle))
+	e.POST("/v1/billingEvents", appErr.HandleAppErr(p.handle))
 }
 
 type event struct {
@@ -42,7 +42,7 @@ type event struct {
 	EventType paddlenotification.EventTypeName `json:"event_type"`
 }
 
-func (p *BillingWebhookController) Handle(c *gin.Context) error {
+func (p *BillingWebhookController) handle(c *gin.Context) error {
 	ok, err := p.webhookVerifier.Verify(c.Request)
 
 	if err != nil && (errors.Is(err, paddle.ErrMissingSignature) || errors.Is(err, paddle.ErrInvalidSignatureFormat)) {
@@ -122,7 +122,7 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context) erro
 
 	switch event.Data.Status {
 	case paddlenotification.SubscriptionStatusPastDue:
-		return p.subscriptionService.CancelSubscription(c.Request.Context(), event.Data.ID)
+		return p.subscriptionService.RemoveSubscription(c.Request.Context(), event.Data.ID)
 	}
 
 	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)

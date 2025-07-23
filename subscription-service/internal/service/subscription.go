@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
@@ -14,8 +15,10 @@ import (
 )
 
 type SubscriptionService interface {
+	GetSubscriptionForAuthenticatedUser(ctx context.Context) (*domain.SubscriptionResponse, error)
+	CancelSubscriptionForAuthenticatedUser(ctx context.Context) error
 	PutSubscription(ctx context.Context, request domain.PutSubscriptionRequest) error
-	CancelSubscription(ctx context.Context, subscriptionID string) error
+	RemoveSubscription(ctx context.Context, subscriptionID string) error
 }
 
 type subscriptionService struct {
@@ -39,6 +42,53 @@ func NewSubscriptionService(
 		billingLockRepository:  billingLockRepository,
 		subscriptionRepository: subscriptionRepository,
 	}
+}
+
+func (s *subscriptionService) GetSubscriptionForAuthenticatedUser(ctx context.Context) (*domain.SubscriptionResponse, error) {
+	userId, err := auth.GetUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	subscription, err := s.subscriptionRepository.GetSubscriptionByUserID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if subscription == nil {
+		return &domain.SubscriptionResponse{
+			IsActive:     false,
+			Subscription: nil,
+		}, nil
+	}
+
+	return &domain.SubscriptionResponse{
+		IsActive: true,
+		Subscription: &domain.Subscription{
+			Level: subscription.Level,
+			Till:  subscription.Till,
+			Since: subscription.Since,
+		},
+	}, nil
+}
+
+func (s *subscriptionService) CancelSubscriptionForAuthenticatedUser(ctx context.Context) error {
+	userId, err := auth.GetUserID(ctx)
+	if err != nil {
+		return err
+	}
+
+	subscription, err := s.subscriptionRepository.GetSubscriptionByUserID(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	if subscription == nil {
+		return appErr.Errorf(appErr.SubscriptionIsRequiredError, "No subscription found for user %s", userId)
+	}
+
+	// Subscription will be removed from DB after webhook will be processed.
+	return s.billingAPI.CancelSubscription(ctx, subscription.ID)
 }
 
 func (s *subscriptionService) PutSubscription(ctx context.Context, request domain.PutSubscriptionRequest) (finalErr error) {
@@ -78,7 +128,7 @@ func (s *subscriptionService) PutSubscription(ctx context.Context, request domai
 
 	item := request.Items[0]
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByUserID(account.ID)
+	subscription, err := s.subscriptionRepository.GetSubscriptionByUserID(ctx, account.ID)
 	if err != nil {
 		return err
 	}
@@ -113,15 +163,15 @@ func (s *subscriptionService) PutSubscription(ctx context.Context, request domai
 		}
 	}
 
-	return s.subscriptionRepository.PutSubscription(model.Subscription{
-		ID:                request.SubscriptionID,
-		UserID:            account.ID,
-		SubscriptionLevel: subscriptionLevel,
-		Till:              request.Till,
-		Since:             request.Since,
+	return s.subscriptionRepository.PutSubscription(ctx, model.Subscription{
+		ID:     request.SubscriptionID,
+		UserID: account.ID,
+		Level:  subscriptionLevel,
+		Till:   request.Till,
+		Since:  request.Since,
 	})
 }
 
-func (s *subscriptionService) CancelSubscription(ctx context.Context, subscriptionID string) error {
-	return s.subscriptionRepository.RemoveSubscription(subscriptionID)
+func (s *subscriptionService) RemoveSubscription(ctx context.Context, subscriptionID string) error {
+	return s.subscriptionRepository.RemoveSubscription(ctx, subscriptionID)
 }

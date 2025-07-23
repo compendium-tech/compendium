@@ -40,5 +40,10 @@ func HandleAppErr(f func(c *gin.Context) error) func(c *gin.Context) {
 }
 
 func (k AppErrorKind) httpStatus() int {
-	return http.StatusBadRequest
+	switch k {
+	case SubscriptionIsRequiredError:
+		return http.StatusPaymentRequired
+	default:
+		return http.StatusBadRequest
+	}
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 
 	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
@@ -17,7 +18,7 @@ func NewPgSubscriptionRepository(db *sql.DB) SubscriptionRepository {
 	return &pgSubscriptionRepository{db: db}
 }
 
-func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error {
+func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub model.Subscription) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return tracerr.Errorf("failed to begin transaction: %w", err)
@@ -29,9 +30,9 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 	var existingSubscription model.Subscription
 	checkQuery := `SELECT * FROM subscriptions WHERE user_id = $1`
 
-	switch tx.QueryRow(checkQuery, sub.UserID).Scan(&existingSubscription) {
+	switch tx.QueryRowContext(ctx, checkQuery, sub.UserID).Scan(&existingSubscription) {
 	case nil:
-		if sub.SubscriptionLevel.Priority() < existingSubscription.SubscriptionLevel.Priority() {
+		if sub.Level.Priority() < existingSubscription.Level.Priority() {
 			// If the new subscription level is lower than the existing one, do not update
 			return appErr.Errorf(appErr.LowPrioritySubscriptionLevelError, "cannot update subscription for user ID %s: new level is lower than existing", sub.UserID)
 		}
@@ -42,7 +43,7 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 			SET subscription_level = $1, till = $2, since = $3
 			WHERE user_id = $4`
 
-		_, err = tx.Exec(updateQuery, sub.SubscriptionLevel, sub.Till, sub.Since, sub.UserID)
+		_, err = tx.ExecContext(ctx, updateQuery, sub.Level, sub.Till, sub.Since, sub.UserID)
 		if err != nil {
 			return tracerr.Errorf("failed to update subscription for user ID %s: %w", sub.UserID, err)
 		}
@@ -52,7 +53,7 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 			INSERT INTO subscriptions (user_id, subscription_level, till, since)
 			VALUES ($1, $2, $3, $4)`
 
-		_, err = tx.Exec(insertQuery, sub.UserID, sub.SubscriptionLevel, sub.Till, sub.Since)
+		_, err = tx.ExecContext(ctx, insertQuery, sub.UserID, sub.Level, sub.Till, sub.Since)
 		if err != nil {
 			return tracerr.Errorf("failed to insert subscription: %w", err)
 		}
@@ -69,16 +70,16 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 	return nil
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) GetSubscriptionByUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
 	query := `
 		SELECT user_id, subscription_id, subscription_level, till, since FROM subscriptions
 		WHERE user_id = $1`
 
 	sub := &model.Subscription{}
-	err := r.db.QueryRow(query, userID).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&sub.ID,
 		&sub.UserID,
-		&sub.SubscriptionLevel,
+		&sub.Level,
 		&sub.Till,
 		&sub.Since,
 	)
@@ -93,12 +94,12 @@ func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*m
 	return sub, nil
 }
 
-func (r *pgSubscriptionRepository) RemoveSubscription(id string) error {
+func (r *pgSubscriptionRepository) RemoveSubscription(ctx context.Context, id string) error {
 	query := `
 		DELETE FROM subscriptions
 		WHERE id = $1`
 
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return tracerr.Errorf("failed to delete subscription%s: %w", id, err)
 	}

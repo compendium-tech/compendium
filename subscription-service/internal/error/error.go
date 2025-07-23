@@ -14,6 +14,7 @@ const (
 	// 100
 	InvalidWebhookSignatureError      = 100
 	LowPrioritySubscriptionLevelError = 101
+	SubscriptionIsRequiredError       = 102
 )
 
 type AppErrorKind int

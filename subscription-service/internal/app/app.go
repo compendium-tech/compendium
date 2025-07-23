@@ -9,7 +9,7 @@ import (
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
-	"github.com/compendium-tech/compendium/subscription-service/internal/controller"
+	v1 "github.com/compendium-tech/compendium/subscription-service/internal/controller/v1"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
@@ -47,9 +47,10 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 	r.Use(commonMiddleware.DefaultCors().Handle)
 
-	controller.NewBillingWebhookController(
+	v1.NewBillingWebhookController(
 		subscriptionService,
 		paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
+	v1.NewSubscriptionController(subscriptionService).MakeRoutes(r)
 
 	return r
 }

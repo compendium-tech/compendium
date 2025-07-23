@@ -28,9 +28,9 @@ func (s SubscriptionLevel) Priority() int {
 }
 
 type Subscription struct {
-	ID                string
-	UserID            uuid.UUID
-	SubscriptionLevel SubscriptionLevel
-	Till              time.Time
-	Since             time.Time
+	ID     string
+	UserID uuid.UUID
+	Level  SubscriptionLevel
+	Till   time.Time
+	Since  time.Time
 }
