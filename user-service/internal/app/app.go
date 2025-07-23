@@ -8,6 +8,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	"github.com/compendium-tech/compendium/common/pkg/ratelimit"
 	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	v1 "github.com/compendium-tech/compendium/user-service/internal/controller/v1"
@@ -60,6 +61,7 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 	})
 	logrus.SetReportCaller(true)
 
+	ratelimiter := ratelimit.NewRedisRateLimiter(deps.RedisClient)
 	authEmailLockRepository := repository.NewRedisAuthLockRepository(deps.RedisClient)
 	deviceRepository := repository.NewPgDeviceRepository(deps.PgDb)
 	userRepository := repository.NewPgUserRepository(deps.PgDb)
@@ -71,7 +73,7 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 		userRepository, mfaRepository, refreshTokenRepository,
 		deps.EmailSender, deps.EmailMessageBuilder,
 		deps.GeoIp, deps.UserAgentParser,
-		deps.TokenManager, deps.PasswordHasher)
+		deps.TokenManager, deps.PasswordHasher, ratelimiter)
 	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()

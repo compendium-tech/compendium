@@ -105,44 +105,51 @@ func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	return nil
 }
 
-func (r *redisRefreshTokenRepository) TryRemoveRefreshTokenByToken(ctx context.Context, token string) (uuid.UUID, bool, error) {
+// FindRefreshToken retrieves the user ID associated with a refresh token
+// without removing the token. It also checks if the token is revoked.
+func (r *redisRefreshTokenRepository) FindRefreshToken(ctx context.Context, token string) (uuid.UUID, bool, error) {
 	tokenToUserIDKey := r.createTokenToUserIDKey(token)
 	revokedTokenKey := r.createRevokedTokenKey(token)
 
-	// First, check if the token is in the active mapping
+	// Try to get userID from active tokens
 	userIDStr, err := r.client.Get(ctx, tokenToUserIDKey).Result()
-
-	if err == redis.Nil {
-		// Token is NOT active. Now check if it's in the revoked list.
-		revokedUserIDStr, err := r.client.Get(ctx, revokedTokenKey).Result()
-		if err == nil {
-			// Token found in revoked list! This is the reuse detection.
-			parsedUserID, parseErr := uuid.Parse(revokedUserIDStr)
-			if parseErr != nil {
-				return uuid.Nil, false, tracerr.Errorf("failed to parse revoked userId from string '%s': %w", revokedUserIDStr, parseErr)
-			}
-			return parsedUserID, true, nil // Returns userID and `true` for `isReused`
+	if err == nil {
+		// Token is active
+		parsedUserID, parseErr := uuid.Parse(userIDStr)
+		if parseErr != nil {
+			return uuid.Nil, false, tracerr.Errorf("failed to parse userId from string '%s' for active token: %w", userIDStr, parseErr)
 		}
-		if err != redis.Nil {
-			// Some other error when checking revoked tokens
-			return uuid.Nil, false, tracerr.Errorf("failed to check revoked token %s: %w", token, err)
+		return parsedUserID, false, nil // Not reused, as it's active
+	}
+	if err != redis.Nil {
+		// Some other error getting active token
+		return uuid.Nil, false, tracerr.Errorf("failed to get userId for active token %s: %w", token, err)
+	}
+
+	// Token is not active, check if it's in the revoked list (reuse detection)
+	revokedUserIDStr, err := r.client.Get(ctx, revokedTokenKey).Result()
+	if err == nil {
+		// Token found in revoked list! This is a reuse.
+		parsedUserID, parseErr := uuid.Parse(revokedUserIDStr)
+		if parseErr != nil {
+			return uuid.Nil, false, tracerr.Errorf("failed to parse revoked userId from string '%s': %w", revokedUserIDStr, parseErr)
 		}
-		// Token is neither active nor in revoked list. Truly not found.
-		return uuid.Nil, false, nil // Returns uuid.Nil and `false` for `isReused`
+		return parsedUserID, true, nil // Returns userID and `true` for `isReused`
+	}
+	if err != redis.Nil {
+		// Some other error when checking revoked tokens
+		return uuid.Nil, false, tracerr.Errorf("failed to check revoked token %s: %w", token, err)
 	}
 
-	if err != nil {
-		return uuid.Nil, false, tracerr.Errorf("failed to get userId for token %s: %w", token, err)
-	}
+	// Token is neither active nor in revoked list. Truly not found.
+	return uuid.Nil, false, nil
+}
 
-	// Token IS active, proceed with removal
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return uuid.Nil, false, tracerr.Errorf("failed to parse userId from string '%s': %w", userIDStr, err)
-	}
-
-	tokenKey := r.createRefreshTokenKey(userID, token)
-	userTokensZSetKey := r.createUserTokensKey(userID)
+func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, token string, userId uuid.UUID) error {
+	tokenKey := r.createRefreshTokenKey(userId, token)
+	userTokensZSetKey := r.createUserTokensKey(userId)
+	tokenToUserIDKey := r.createTokenToUserIDKey(token)
+	revokedTokenKey := r.createRevokedTokenKey(token)
 
 	pipe := r.client.Pipeline()
 
@@ -150,16 +157,14 @@ func (r *redisRefreshTokenRepository) TryRemoveRefreshTokenByToken(ctx context.C
 	pipe.ZRem(ctx, userTokensZSetKey, token)
 	pipe.Del(ctx, tokenToUserIDKey)
 
-	// NEW: Add the token to a revoked list with its original expiry TTL
-	pipe.Set(ctx, revokedTokenKey, userID.String(), revokedTokenTTL)
+	pipe.Set(ctx, revokedTokenKey, userId.String(), revokedTokenTTL)
 
-	_, err = pipe.Exec(ctx)
+	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return uuid.Nil, false, tracerr.Errorf("failed to remove refresh token from Redis: %w", err)
+		return tracerr.Errorf("failed to remove refresh token from Redis: %w", err)
 	}
 
-	// If the active token was successfully removed, it was NOT a reuse.
-	return userID, false, nil // Returns userID and `false` for `isReused`
+	return nil
 }
 
 func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userId uuid.UUID) error {
@@ -177,6 +182,8 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 	for _, token := range tokens {
 		pipe.Del(ctx, r.createRefreshTokenKey(userId, token))
 		pipe.Del(ctx, r.createTokenToUserIDKey(token))
+		// Also mark all of these as revoked, as they are being invalidated by this action.
+		pipe.Set(ctx, r.createRevokedTokenKey(token), userId.String(), revokedTokenTTL)
 	}
 
 	// Delete the user's ZSET itself
