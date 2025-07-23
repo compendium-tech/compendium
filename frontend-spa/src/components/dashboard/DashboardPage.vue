@@ -47,7 +47,7 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
               <div class="text-lg text-gray-900">
                 Status: <span :class="subscriptionStatusClass">{{ user.subscriptionStatus }}</span>
-                <span v-if="user.subscriptionExpires"> (Expires: {{ formattedSubscriptionExpiry }})</span>
+                <span v-if="user.subscriptionExpires"> (Expires: {{ formattedSubscriptionExpiresAt }})</span>
               </div>
               <BaseButton class="flex items-center" @click="handleSubscribe" variant="primary" size="sm">
                 <Icon icon="famicons:card-outline" class="w-6 h-6 mr-2" />
@@ -87,7 +87,7 @@ const formattedCreationDate = computed(() => {
   return "N/A"
 })
 
-const formattedSubscriptionExpiry = computed(() => {
+const formattedSubscriptionExpiresAt = computed(() => {
   if (user.value && user.value.subscriptionExpires) {
     return new Date(user.value.subscriptionExpires).toLocaleDateString("en-US", {
       year: "numeric",
@@ -162,13 +162,19 @@ const toggleEditName = async () => {
 const handleSubscribe = () => {
   if (window.Paddle) {
     window.Paddle.Checkout.open({
-      product: "pro_01k0az151b5zeh8a2974yvr0gx",
+      settings: {
+        displayMode: "overlay",
+        theme: "light",
+        locale: "en",
+        allowLogout: false
+      },
+      product: "pro_01k0qbrebvvgfwacb4qqgyh0bx",
       customer: {
-        id: user.value ? user.value.id : "",
+        email: user.value ? user.value.email : "",
       },
       items: [
         {
-          priceId: "pri_01k0az35r3w64r2qmmzvc3rsgd",
+          priceID: "pri_01k0qbs1mgx0dnjd0zytj23zm7",
           quantity: 1
         }
       ],

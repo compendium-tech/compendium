@@ -14,8 +14,8 @@ type Session struct {
 }
 
 type RefreshToken struct {
-	UserID   uuid.UUID
-	Token    string
-	ExpireAt time.Time
-	Session  Session
+	UserID    uuid.UUID
+	Token     string
+	ExpiresAt time.Time
+	Session   Session
 }

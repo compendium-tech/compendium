@@ -54,8 +54,8 @@ If the OTP is valid, the server responds by setting several HTTP-only cookies: `
 Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
-  "accessTokenExpiry": "...",
-  "refreshTokenExpiry": "...",
+  "accessTokenExpiresAt": "...",
+  "refreshTokenExpiresAt": "...",
 }
 ```
 
@@ -83,8 +83,8 @@ Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
   "isMfaRequired": false,
-  "accessTokenExpiry": "...",
-  "refreshTokenExpiry": "...",
+  "accessTokenExpiresAt": "...",
+  "refreshTokenExpiresAt": "...",
 }
 ```
 
@@ -129,8 +129,8 @@ Upon successful OTP verification, the server will then issue the `csrfToken`, `a
 Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
-  "accessTokenExpiry": "...",
-  "refreshTokenExpiry": "...",
+  "accessTokenExpiresAt": "...",
+  "refreshTokenExpiresAt": "...",
 }
 ```
 
@@ -187,8 +187,8 @@ If the provided refresh token is valid and has not expired, the server will resp
 Set-Cookie: csrfToken=..., accessToken=..., refreshToken=...
 
 {
-  "accessTokenExpiry": "...",
-  "refreshTokenExpiry": "...",
+  "accessTokenExpiresAt": "...",
+  "refreshTokenExpiresAt": "...",
 }
 ```
 

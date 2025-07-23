@@ -580,8 +580,8 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
-	accessTokenExpiry := time.Now().Add(15 * time.Minute)
-	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiry)
+	accessTokenExpiresAt := time.Now().Add(15 * time.Minute)
+	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -599,16 +599,16 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
-	refreshTokenExpiry := time.Now().Add(20 * 24 * time.Hour)
+	refreshTokenExpiresAt := time.Now().Add(20 * 24 * time.Hour)
 	refreshToken := uuid.New().String()
 	sessionID := uuid.New()
 
 	log.L(ctx).Infof("Adding refresh token to repository for user %s with session ID %s", userID, sessionID)
 
 	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
-		UserID:   userID,
-		Token:    refreshToken,
-		ExpireAt: refreshTokenExpiry,
+		UserID:    userID,
+		Token:     refreshToken,
+		ExpiresAt: refreshTokenExpiresAt,
 		Session: model.Session{
 			ID:        sessionID,
 			UserAgent: userAgent,
@@ -623,11 +623,11 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 	log.L(ctx).Infof("Session created successfully for user %s with refresh token %s", userID, refreshToken)
 
 	return &domain.SessionResponse{
-		CsrfToken:          csrfToken,
-		AccessToken:        accessToken,
-		AccessTokenExpiry:  accessTokenExpiry,
-		RefreshToken:       refreshToken,
-		RefreshTokenExpiry: refreshTokenExpiry,
+		CsrfToken:             csrfToken,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessTokenExpiresAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshTokenExpiresAt,
 	}, nil
 }
 

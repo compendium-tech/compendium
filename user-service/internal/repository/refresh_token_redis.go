@@ -20,7 +20,7 @@ const (
 	revokedTokenTTL              = 3 * 24 * time.Hour
 	tokenHashField               = "token"
 	userIDHashField              = "userID"
-	expireAtHashField            = "expireAt"
+	expiresAtHashField           = "expiresAt"
 	sessionIDHashField           = "sessionID"
 	userAgentHashField           = "userAgent"
 	ipAddressHashField           = "ipAddress"
@@ -44,7 +44,7 @@ func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 		tokenHashField:            token.Token,
 		userIDHashField:           token.UserID.String(),
 		sessionIDHashField:        token.Session.ID.String(),
-		expireAtHashField:         token.ExpireAt.Unix(),
+		expiresAtHashField:        token.ExpiresAt.Unix(),
 		userAgentHashField:        token.Session.UserAgent,
 		ipAddressHashField:        token.Session.IPAddress,
 		sessionCreatedAtHashField: token.Session.CreatedAt.Unix(),
@@ -53,10 +53,10 @@ func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token
 	pipe := r.client.TxPipeline()
 
 	pipe.SetArgs(ctx, sessionRefreshTokenKey, token.Token, redis.SetArgs{
-		ExpireAt: token.ExpireAt,
+		ExpireAt: token.ExpiresAt,
 	})
 	pipe.HSet(ctx, tokenKey, tokenDetails)
-	pipe.ExpireAt(ctx, tokenKey, token.ExpireAt)
+	pipe.ExpireAt(ctx, tokenKey, token.ExpiresAt)
 
 	userTokensKey := userTokensKeyPrefix + token.UserID.String()
 	pipe.ZAdd(ctx, userTokensKey, redis.Z{
@@ -202,7 +202,7 @@ func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Con
 			continue
 		}
 
-		if time.Now().Before(refreshToken.ExpireAt) {
+		if time.Now().Before(refreshToken.ExpiresAt) {
 			refreshTokens = append(refreshTokens, *refreshToken)
 		}
 	}
@@ -221,9 +221,9 @@ func (r *redisRefreshTokenRepository) parseRefreshTokenDetails(details map[strin
 		return nil, fmt.Errorf("failed to parse sessionID: %w", err)
 	}
 
-	expireAtUnix, err := strconv.ParseInt(details[expireAtHashField], 10, 64)
+	expiresAtUnix, err := strconv.ParseInt(details[expiresAtHashField], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse expireAt: %w", err)
+		return nil, fmt.Errorf("failed to parse expiresAt: %w", err)
 	}
 
 	createdAtUnix, err := strconv.ParseInt(details[sessionCreatedAtHashField], 10, 64)
@@ -232,9 +232,9 @@ func (r *redisRefreshTokenRepository) parseRefreshTokenDetails(details map[strin
 	}
 
 	return &model.RefreshToken{
-		UserID:   userID,
-		Token:    details[tokenHashField],
-		ExpireAt: time.Unix(expireAtUnix, 0),
+		UserID:    userID,
+		Token:     details[tokenHashField],
+		ExpiresAt: time.Unix(expiresAtUnix, 0),
 		Session: model.Session{
 			ID:        sessionID,
 			UserAgent: details[userAgentHashField],

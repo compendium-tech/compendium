@@ -137,11 +137,11 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 
-	_, ok := responseBody["accessTokenExpiry"]
-	r.True(ok, "Response body should contain 'accessTokenExpiry'")
+	_, ok := responseBody["accessTokenExpiresAt"]
+	r.True(ok, "Response body should contain 'accessTokenExpiresAt'")
 
-	_, ok = responseBody["refreshTokenExpiry"]
-	r.True(ok, "Response body should contain 'refreshTokenExpiry'")
+	_, ok = responseBody["refreshTokenExpiresAt"]
+	r.True(ok, "Response body should contain 'refreshTokenExpiresAt'")
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
@@ -261,11 +261,11 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	r.True(ok, "Response body should contain 'isMfaRequired'")
 	r.Equal(isMfaRequired, false)
 
-	_, ok = responseBody["accessTokenExpiry"]
-	r.True(ok, "Response body should contain 'accessTokenExpiry'")
+	_, ok = responseBody["accessTokenExpiresAt"]
+	r.True(ok, "Response body should contain 'accessTokenExpiresAt'")
 
-	_, ok = responseBody["refreshTokenExpiry"]
-	r.True(ok, "Response body should contain 'refreshTokenExpiry'")
+	_, ok = responseBody["refreshTokenExpiresAt"]
+	r.True(ok, "Response body should contain 'refreshTokenExpiresAt'")
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
@@ -321,11 +321,11 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	r.True(ok, "Response body should contain 'isMfaRequired'")
 	r.Equal(isMfaRequired, true)
 
-	_, ok = responseBody["accessTokenExpiry"]
-	r.False(ok, "Response body should not contain 'accessTokenExpiry'")
+	_, ok = responseBody["accessTokenExpiresAt"]
+	r.False(ok, "Response body should not contain 'accessTokenExpiresAt'")
 
-	_, ok = responseBody["refreshTokenExpiry"]
-	r.False(ok, "Response body should not contain 'refreshTokenExpiry'")
+	_, ok = responseBody["refreshTokenExpiresAt"]
+	r.False(ok, "Response body should not contain 'refreshTokenExpiresAt'")
 
 	r.Equal(http.StatusAccepted, resp.Result().StatusCode)
 

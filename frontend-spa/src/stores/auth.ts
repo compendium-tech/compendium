@@ -4,13 +4,13 @@ import { authService } from "../api"
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     isAuthenticated: false,
-    accessTokenExpiry: null,
+    accessTokenExpiresAt: null,
     isRefreshingToken: false,
   }),
   actions: {
-    setSession(accessTokenExpiry: Date) {
+    setSession(accessTokenExpiresAt: Date) {
       this.isAuthenticated = true
-      this.accessTokenExpiry = accessTokenExpiry
+      this.accessTokenExpiresAt = accessTokenExpiresAt
     },
 
     setIsRefreshingToken(isRefreshingToken: boolean) {
@@ -19,7 +19,7 @@ export const useAuthStore = defineStore("auth", {
 
     clearSession() {
       this.isAuthenticated = false
-      this.accessTokenExpiry = null
+      this.accessTokenExpiresAt = null
     },
 
     async refresh() {
@@ -30,7 +30,7 @@ export const useAuthStore = defineStore("auth", {
       this.isRefreshingToken = true
       try {
         const response = await authService.refresh()
-        this.setSession(response.accessTokenExpiry)
+        this.setSession(response.accessTokenExpiresAt)
         this.isRefreshingToken = false
         return true
       } catch (error) {
@@ -44,6 +44,6 @@ export const useAuthStore = defineStore("auth", {
   persist: {
     key: "authState",
     storage: localStorage,
-    pick: ["isAuthenticated", "accessTokenExpiry"],
+    pick: ["isAuthenticated", "accessTokenExpiresAt"],
   },
 })

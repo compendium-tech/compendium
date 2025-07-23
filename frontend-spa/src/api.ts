@@ -80,14 +80,14 @@ function parseAndRejectAxiosError(error: any): Promise<never> {
 }
 
 interface SessionResponse {
-  accessTokenExpiry: Date
-  refreshTokenExpiry: Date
+  accessTokenExpiresAt: Date
+  refreshTokenExpiresAt: Date
 }
 
 interface SignInResponse {
   isMfaRequired: boolean
-  accessTokenExpiry?: Date
-  refreshTokenExpiry?: Date
+  accessTokenExpiresAt?: Date
+  refreshTokenExpiresAt?: Date
 }
 
 interface AuthService {
@@ -216,8 +216,8 @@ apiClient.interceptors.request.use(
     const isAuthPath = window.location.pathname.startsWith("/auth/")
 
     if (
-      authStore.accessTokenExpiry &&
-      authStore.accessTokenExpiry < expiryThreshold &&
+      authStore.accessTokenExpiresAt &&
+      authStore.accessTokenExpiresAt < expiryThreshold &&
       !isRefreshing &&
       !isAuthPath
     ) {
@@ -227,7 +227,7 @@ apiClient.interceptors.request.use(
           "Access token nearing expiry, attempting to refresh proactively..."
         )
         const refreshResponse = await authService.refresh()
-        authStore.setSession(refreshResponse.accessTokenExpiry)
+        authStore.setSession(refreshResponse.accessTokenExpiresAt)
         console.log("Access token refreshed proactively.")
       } catch (refreshError) {
         console.error("Proactive token refresh failed:", refreshError)

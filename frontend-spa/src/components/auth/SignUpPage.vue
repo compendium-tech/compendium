@@ -275,7 +275,7 @@ const verifyMfa = async (): Promise<void> => {
   try {
     const response = await authService.verifyMfaSignUp(email.value, otp.value)
 
-    authStore.setSession(response.accessTokenExpiry)
+    authStore.setSession(response.accessTokenExpiresAt)
 
     setTimeout(() => {
       router.push("/dashboard")

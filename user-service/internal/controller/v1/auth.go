@@ -268,9 +268,9 @@ func (a *AuthController) removeSession(c *gin.Context) error {
 }
 
 func setAuthCookies(c *gin.Context, session *domain.SessionResponse) {
-	cookieExpiry := 30 * 365 * 24 * 3600
+	cookieExpiresAt := 30 * 365 * 24 * 3600
 
-	c.SetCookie(csrfTokenCookieName, session.CsrfToken, cookieExpiry, "/", "", false, false)
-	c.SetCookie(accessTokenCookieName, session.AccessToken, cookieExpiry, "/", "", false, true)
-	c.SetCookie(refreshTokenCookieName, session.RefreshToken, cookieExpiry, "/", "", false, true)
+	c.SetCookie(csrfTokenCookieName, session.CsrfToken, cookieExpiresAt, "/", "", false, false)
+	c.SetCookie(accessTokenCookieName, session.AccessToken, cookieExpiresAt, "/", "", false, true)
+	c.SetCookie(refreshTokenCookieName, session.RefreshToken, cookieExpiresAt, "/", "", false, true)
 }

@@ -28,23 +28,23 @@ type SignInResponse struct {
 func (s SignInResponse) IntoBody() SignInResponseBody {
 	if s.Session != nil {
 		return SignInResponseBody{
-			AccessTokenExpiry:  &s.Session.AccessTokenExpiry,
-			RefreshTokenExpiry: &s.Session.RefreshTokenExpiry,
-			IsMfaRequired:      s.IsMfaRequired,
+			AccessTokenExpiresAt:  &s.Session.AccessTokenExpiresAt,
+			RefreshTokenExpiresAt: &s.Session.RefreshTokenExpiresAt,
+			IsMfaRequired:         s.IsMfaRequired,
 		}
 	} else {
 		return SignInResponseBody{
-			AccessTokenExpiry:  nil,
-			RefreshTokenExpiry: nil,
-			IsMfaRequired:      s.IsMfaRequired,
+			AccessTokenExpiresAt:  nil,
+			RefreshTokenExpiresAt: nil,
+			IsMfaRequired:         s.IsMfaRequired,
 		}
 	}
 }
 
 type SignInResponseBody struct {
-	AccessTokenExpiry  *time.Time `json:"accessTokenExpiry,omitempty"`
-	RefreshTokenExpiry *time.Time `json:"refreshTokenExpiry,omitempty"`
-	IsMfaRequired      bool       `json:"isMfaRequired"`
+	AccessTokenExpiresAt  *time.Time `json:"accessTokenExpiresAt,omitempty"`
+	RefreshTokenExpiresAt *time.Time `json:"refreshTokenExpiresAt,omitempty"`
+	IsMfaRequired         bool       `json:"isMfaRequired"`
 }
 
 type SubmitMfaOtpRequest struct {
@@ -60,23 +60,23 @@ type SubmitMfaOtpRequestBody struct {
 }
 
 type SessionResponse struct {
-	CsrfToken          string
-	AccessToken        string
-	RefreshToken       string
-	AccessTokenExpiry  time.Time
-	RefreshTokenExpiry time.Time
+	CsrfToken             string
+	AccessToken           string
+	RefreshToken          string
+	AccessTokenExpiresAt  time.Time
+	RefreshTokenExpiresAt time.Time
 }
 
 func (r SessionResponse) IntoBody() SessionResponseBody {
 	return SessionResponseBody{
-		AccessTokenExpiry:  r.AccessTokenExpiry,
-		RefreshTokenExpiry: r.RefreshTokenExpiry,
+		AccessTokenExpiresAt:  r.AccessTokenExpiresAt,
+		RefreshTokenExpiresAt: r.RefreshTokenExpiresAt,
 	}
 }
 
 type SessionResponseBody struct {
-	AccessTokenExpiry  time.Time `json:"accessTokenExpiry"`
-	RefreshTokenExpiry time.Time `json:"refreshTokenExpiry"`
+	AccessTokenExpiresAt  time.Time `json:"accessTokenExpiresAt"`
+	RefreshTokenExpiresAt time.Time `json:"refreshTokenExpiresAt"`
 }
 
 type RefreshTokenRequest struct {
@@ -86,11 +86,11 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
-	CsrfToken          string `json:"csrfToken"`
-	AccessToken        string `json:"accessToken"`
-	RefreshToken       string `json:"refreshToken"`
-	AccessTokenExpiry  int64  `json:"accessTokenExpiry"`
-	RefreshTokenExpiry int64  `json:"refreshTokenExpiry"`
+	CsrfToken             string `json:"csrfToken"`
+	AccessToken           string `json:"accessToken"`
+	RefreshToken          string `json:"refreshToken"`
+	AccessTokenExpiresAt  int64  `json:"accessTokenExpiresAt"`
+	RefreshTokenExpiresAt int64  `json:"refreshTokenExpiresAt"`
 }
 
 type LogoutRequest struct {
