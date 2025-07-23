@@ -2,14 +2,18 @@ package domain
 
 import (
 	"time"
-
-	"github.com/compendium-tech/compendium/subscription-service/internal/model"
-	"github.com/google/uuid"
 )
 
 type PutSubscriptionRequest struct {
-	UserID            uuid.UUID
-	SubscriptionLevel model.SubscriptionLevel
-	Till              time.Time
-	Since             time.Time
+	SubscriptionID string
+	CustomerID     string
+	Items          []SubscriptionItem
+	Till           time.Time
+	Since          time.Time
+}
+
+type SubscriptionItem struct {
+	PriceID   string
+	ProductID string
+	Quantity  int
 }

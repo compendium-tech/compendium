@@ -6,11 +6,14 @@ import (
 
 const (
 	// 0 is for internal server error.
-	RequestValidationError AppErrorKind = iota + 1
+	RequestValidationError AppErrorKind = 1
+
+	UserNotFoundError    = 4
+	TooManyRequestsError = 5
 
 	// 100
-	InvalidWebhookSignature = iota + 99
-	LowPrioritySubscriptionLevel
+	InvalidWebhookSignatureError      = 100
+	LowPrioritySubscriptionLevelError = 101
 )
 
 type AppErrorKind int

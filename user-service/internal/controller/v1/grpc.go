@@ -30,7 +30,7 @@ func (s *UserServiceServer) FindAccountByEmail(ctx context.Context, req *pb.Find
 	user, err := s.userService.FindAccountByEmail(ctx, req.Email)
 	if err != nil {
 		if err, ok := err.(appErr.AppError); ok && err.Kind() == appErr.UserNotFoundError {
-			return nil, status.Errorf(codes.NotFound, "user with email %s not found", req.Email)
+			return nil, nil
 		}
 
 		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)

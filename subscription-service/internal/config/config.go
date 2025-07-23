@@ -11,6 +11,12 @@ const (
 	EnvironmentProd string = "prod"
 )
 
+type ProductIDs struct {
+	StudentSubscriptionProductID   string
+	TeamSubscriptionProductID      string
+	CommunitySubscriptionProductID string
+}
+
 type AppConfig struct {
 	Environment           string
 	PgHost                string
@@ -23,8 +29,8 @@ type AppConfig struct {
 	JwtSingingKey         string
 	CsrfTokenHashSalt     string
 	PaddleWebhookSecret   string
-	PaddleProductIDs      PaddleProductIDs
-	PaddleApiKey          string
+	ProductIDs            ProductIDs
+	PaddleAPIKey          string
 	GrpcUserServiceTarget string
 }
 
@@ -41,12 +47,12 @@ func LoadAppConfig() *AppConfig {
 		JwtSingingKey:       "",
 		CsrfTokenHashSalt:   "",
 		PaddleWebhookSecret: "",
-		PaddleProductIDs: PaddleProductIDs{
+		ProductIDs: ProductIDs{
 			StudentSubscriptionProductID:   "",
 			TeamSubscriptionProductID:      "",
 			CommunitySubscriptionProductID: "",
 		},
-		PaddleApiKey:          "",
+		PaddleAPIKey:          "",
 		GrpcUserServiceTarget: "localhost:2000",
 	}
 
@@ -64,12 +70,12 @@ func LoadAppConfig() *AppConfig {
 	appConfig.JwtSingingKey = os.Getenv("JWT_SIGNING_KEY")
 	appConfig.CsrfTokenHashSalt = os.Getenv("CSRF_TOKEN_HASH_SALT")
 	appConfig.PaddleWebhookSecret = os.Getenv("PADDLE_WEBHOOK_SECRET")
-	appConfig.PaddleProductIDs = PaddleProductIDs{
-		StudentSubscriptionProductID:   os.Getenv("PADDLE_STUDENT_SUBSCRIPTION_PRICE_ID"),
-		TeamSubscriptionProductID:      os.Getenv("PADDLE_TEAM_SUBSCRIPTION_PRICE_ID"),
-		CommunitySubscriptionProductID: os.Getenv("PADDLE_COMMUNITY_SUBSCRIPTION_PRICE_ID"),
+	appConfig.ProductIDs = ProductIDs{
+		StudentSubscriptionProductID:   os.Getenv("STUDENT_SUBSCRIPTION_PRODUCT_ID"),
+		TeamSubscriptionProductID:      os.Getenv("TEAM_SUBSCRIPTION_PRODUCT_ID"),
+		CommunitySubscriptionProductID: os.Getenv("COMMUNITY_SUBSCRIPTION_PRODUCT_ID"),
 	}
-	appConfig.PaddleApiKey = os.Getenv("PADDLE_API_KEY")
+	appConfig.PaddleAPIKey = os.Getenv("PADDLE_API_KEY")
 	appConfig.GrpcUserServiceTarget = os.Getenv("GRPC_USER_SERVICE_TARGET")
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {

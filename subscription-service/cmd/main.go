@@ -50,7 +50,7 @@ func main() {
 		return
 	}
 
-	paddleApiClient, err := paddle.New(cfg.PaddleApiKey)
+	paddleAPIClient, err := paddle.New(cfg.PaddleAPIKey)
 	if err != nil {
 		fmt.Printf("Failed to initialize Paddle API client, cause: %s", err)
 		return
@@ -62,6 +62,6 @@ func main() {
 		Config:          cfg,
 		TokenManager:    tokenManager,
 		UserService:     userService,
-		PaddleApiClient: *paddleApiClient,
+		PaddleAPIClient: *paddleAPIClient,
 	}).Run()
 }

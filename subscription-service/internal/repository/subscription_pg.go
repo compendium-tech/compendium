@@ -33,7 +33,7 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 	case nil:
 		if sub.SubscriptionLevel.Priority() < existingSubscription.SubscriptionLevel.Priority() {
 			// If the new subscription level is lower than the existing one, do not update
-			return appErr.Errorf(appErr.LowPrioritySubscriptionLevel, "cannot update subscription for user ID %s: new level is lower than existing", sub.UserID)
+			return appErr.Errorf(appErr.LowPrioritySubscriptionLevelError, "cannot update subscription for user ID %s: new level is lower than existing", sub.UserID)
 		}
 
 		// Subscription exists, perform an update
@@ -71,12 +71,13 @@ func (r *pgSubscriptionRepository) PutSubscription(sub model.Subscription) error
 
 func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*model.Subscription, error) {
 	query := `
-		SELECT * FROM subscriptions
+		SELECT user_id, subscription_id, subscription_level, till, since FROM subscriptions
 		WHERE user_id = $1`
 
 	sub := &model.Subscription{}
 	err := r.db.QueryRow(query, userID).Scan(
 		&sub.UserID,
+		&sub.SubscriptionID,
 		&sub.SubscriptionLevel,
 		&sub.Till,
 		&sub.Since,
@@ -88,6 +89,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionByUserID(userID uuid.UUID) (*m
 
 		return nil, tracerr.Errorf("failed to get subscription by user ID %s: %w", userID, err)
 	}
+
 	return sub, nil
 }
 

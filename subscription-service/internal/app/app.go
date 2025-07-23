@@ -7,6 +7,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/controller"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
@@ -23,7 +24,7 @@ type Dependencies struct {
 	RedisClient     *redis.Client
 	TokenManager    auth.TokenManager
 	UserService     interop.UserService
-	PaddleApiClient paddle.SDK
+	PaddleAPIClient paddle.SDK
 }
 
 func NewApp(deps Dependencies) *gin.Engine {
@@ -33,8 +34,12 @@ func NewApp(deps Dependencies) *gin.Engine {
 	})
 	logrus.SetReportCaller(true)
 
+	billingAPI := billing.NewPaddleBillingAPI(deps.PaddleAPIClient)
 	subscriptionRepository := repository.NewPgSubscriptionRepository(deps.PgDB)
-	subscriptionService := service.NewSubscriptionService(subscriptionRepository)
+	billingLockRepository := repository.NewRedisBillingLockRepository(deps.RedisClient)
+	subscriptionService := service.NewSubscriptionService(
+		billingAPI, deps.Config.ProductIDs, deps.UserService,
+		billingLockRepository, subscriptionRepository)
 
 	r := gin.Default()
 	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
@@ -42,12 +47,9 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 	r.Use(commonMiddleware.DefaultCors().Handle)
 
-	controller.NewPaddleWebhookController(
+	controller.NewBillingWebhookController(
 		subscriptionService,
-		deps.Config.PaddleProductIDs,
-		deps.PaddleApiClient,
-		*paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret),
-		deps.UserService).MakeRoutes(r)
+		paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
 
 	return r
 }
