@@ -26,10 +26,14 @@ func (p *SubscriptionController) MakeRoutes(e *gin.Engine) {
 		authenticated := v1.Group("")
 		authenticated.Use(auth.RequireAuth)
 		authenticated.GET("/subscription", appErr.HandleAppErr(p.getSubscription))
+		authenticated.GET("/subscription/invitationCode", appErr.HandleAppErr(p.getSubscriptionInvitationCode))
 
 		authenticated.Use(auth.RequireCsrf)
 		authenticated.DELETE("/subscription", appErr.HandleAppErr(p.cancelSubscription))
 		authenticated.DELETE("/subscription/members/:id", appErr.HandleAppErr(p.removeSubscriptionMember))
+		authenticated.POST("/subscription/members/me", appErr.HandleAppErr(p.joinSubscription))
+		authenticated.PUT("/subscription/invitationCode", appErr.HandleAppErr(p.updateSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription/invitationCode", appErr.HandleAppErr(p.removeSubscriptionInvitationCode))
 	}
 }
 
@@ -39,7 +43,17 @@ func (p *SubscriptionController) getSubscription(c *gin.Context) error {
 		return err
 	}
 
-	c.JSON(http.StatusCreated, subscription)
+	c.JSON(http.StatusOK, subscription)
+	return nil
+}
+
+func (p *SubscriptionController) getSubscriptionInvitationCode(c *gin.Context) error {
+	code, err := p.subscriptionService.GetSubscriptionInvitationCode(c.Request.Context())
+	if err != nil {
+		return err
+	}
+
+	c.JSON(http.StatusOK, code)
 	return nil
 }
 
@@ -50,6 +64,21 @@ func (p *SubscriptionController) cancelSubscription(c *gin.Context) error {
 	}
 
 	c.Status(http.StatusNoContent)
+	return nil
+}
+
+func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
+	invitationCode := c.Query("invitationCode")
+	if invitationCode == "" {
+		return appErr.Errorf(appErr.RequestValidationError, "member ID is required")
+	}
+
+	subscription, err := p.subscriptionService.JoinSubscription(c.Request.Context(), invitationCode)
+	if err != nil {
+		return err
+	}
+
+	c.JSON(http.StatusOK, subscription)
 	return nil
 }
 
@@ -70,5 +99,25 @@ func (p *SubscriptionController) removeSubscriptionMember(c *gin.Context) error 
 	}
 
 	c.Status(http.StatusNoContent)
+	return nil
+}
+
+func (p *SubscriptionController) updateSubscriptionInvitationCode(c *gin.Context) error {
+	code, err := p.subscriptionService.UpdateSubscriptionInvitationCode(c.Request.Context())
+	if err != nil {
+		return err
+	}
+
+	c.JSON(http.StatusOK, code)
+	return nil
+}
+
+func (p *SubscriptionController) removeSubscriptionInvitationCode(c *gin.Context) error {
+	code, err := p.subscriptionService.RemoveSubscriptionInvitationCode(c.Request.Context())
+	if err != nil {
+		return err
+	}
+
+	c.JSON(http.StatusOK, code)
 	return nil
 }

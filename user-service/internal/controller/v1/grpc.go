@@ -28,12 +28,12 @@ func (s *UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRe
 		return nil, status.Errorf(codes.InvalidArgument, "user ID cannot be empty")
 	}
 
-	userId, err := uuid.Parse(req.Id)
+	userID, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID format: %v", err)
 	}
 
-	user, err := s.userService.GetAccount(ctx, userId)
+	user, err := s.userService.GetAccount(ctx, userID)
 	if err != nil {
 		if err, ok := err.(appErr.AppError); ok && err.Kind() == appErr.UserNotFoundError {
 			return nil, nil

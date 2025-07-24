@@ -41,6 +41,10 @@ type SubscriptionResponse struct {
 	*Subscription `json:"subscription,omitempty"`
 }
 
+type InvitationCodeResponse struct {
+	InvitationCode *string `json:"invitationCode,omitempty"`
+}
+
 type SubscriptionMember struct {
 	UserID          uuid.UUID        `json:"userId"`
 	Name            string           `json:"name"`

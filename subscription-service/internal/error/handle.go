@@ -45,6 +45,8 @@ func (k AppErrorKind) httpStatus() int {
 		return http.StatusPaymentRequired
 	case PayerPermissionRequired:
 		return http.StatusForbidden
+	case InvalidSubscriptionInvitationCode:
+		return http.StatusForbidden
 	default:
 		return http.StatusBadRequest
 	}

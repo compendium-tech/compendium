@@ -17,6 +17,7 @@ const (
 	SubscriptionIsRequiredError       = 102
 	AlreadySubscribedError            = 103
 	PayerPermissionRequired           = 104
+	InvalidSubscriptionInvitationCode = 105
 )
 
 type AppErrorKind int
