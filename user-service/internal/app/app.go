@@ -26,24 +26,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-type GrpcApp struct {
-	server *grpc.Server
-	port   uint16
-}
-
-func (g *GrpcApp) Run() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", g.port))
-
-	if err != nil {
-		return fmt.Errorf("failed to listen: %v", err)
-	}
-
-	logrus.Infof("Starting gRPC server on :%d", g.port)
-	return g.server.Serve(lis)
-}
-
-type Dependencies struct {
-	Config              config.AppConfig
+type GinAppDependencies struct {
+	Config              config.GinAppConfig
 	PgDB                *sql.DB
 	RedisClient         *redis.Client
 	TokenManager        auth.TokenManager
@@ -54,7 +38,7 @@ type Dependencies struct {
 	UserAgentParser     ua.UserAgentParser
 }
 
-func NewGinApp(deps Dependencies) *gin.Engine {
+func NewGinApp(deps GinAppDependencies) *gin.Engine {
 	logrus.SetFormatter(&log.LogFormatter{
 		Program:     "user-service",
 		Environment: deps.Config.Environment,
@@ -88,7 +72,28 @@ func NewGinApp(deps Dependencies) *gin.Engine {
 	return r
 }
 
-func NewGrpcApp(deps Dependencies) *GrpcApp {
+type GrpcApp struct {
+	server *grpc.Server
+	port   uint16
+}
+
+func (g *GrpcApp) Run() error {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", g.port))
+
+	if err != nil {
+		return fmt.Errorf("failed to listen: %v", err)
+	}
+
+	logrus.Infof("Starting gRPC server on :%d", g.port)
+	return g.server.Serve(lis)
+}
+
+type GrpcAppDependencies struct {
+	Config config.GrpcAppConfig
+	PgDB   *sql.DB
+}
+
+func NewGrpcApp(deps GrpcAppDependencies) *GrpcApp {
 	logrus.SetFormatter(&log.LogFormatter{
 		Program:     "user-service",
 		Environment: deps.Config.Environment,

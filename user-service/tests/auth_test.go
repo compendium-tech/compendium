@@ -37,7 +37,7 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)
@@ -118,7 +118,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	})
 	r.NoError(err, "Failed to create new user")
 
-	err = repository.NewRedisMfaRepository(s.Dependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
+	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
 	r.NoError(err, "Failed to set MFA OTP")
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp)
@@ -145,7 +145,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.Nil(code)
 
@@ -169,7 +169,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 	})
 	r.NoError(err, "Failed to create new user")
 
-	err = repository.NewRedisMfaRepository(s.Dependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
+	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
 	r.NoError(err, "Failed to set MFA OTP")
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp2)
@@ -182,7 +182,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 
 	r.Equal(http.StatusUnauthorized, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.NotEqual(code, nil)
 	r.Equal(*code, otp)
@@ -217,7 +217,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	passwordHash, err := s.Dependencies.PasswordHasher.HashPassword(password)
+	passwordHash, err := s.GinAppDependencies.PasswordHasher.HashPassword(password)
 	r.NoError(err, "Failed to obtain password hash")
 
 	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
@@ -269,7 +269,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.Nil(code)
 }
@@ -282,7 +282,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	passwordHash, err := s.Dependencies.PasswordHasher.HashPassword(password)
+	passwordHash, err := s.GinAppDependencies.PasswordHasher.HashPassword(password)
 	r.NoError(err, "Failed to obtain password hash")
 
 	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
@@ -329,7 +329,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	r.Equal(http.StatusAccepted, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.Dependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -20,46 +21,63 @@ import (
 )
 
 func main() {
+	appMode := flag.String("mode", "", "Specify the application mode: 'gin' for Gin app or 'grpc' for gRPC app")
+	flag.Parse()
+
 	validate.InitValidator()
 
 	ctx := context.Background()
 	err := godotenv.Load(".env")
 	if err != nil {
 		fmt.Printf("Failed to load .env file, using environmental variables instead: %v\n", err)
-		return
 	}
 
-	cfg := config.LoadAppConfig()
+	switch *appMode {
+	case "gin":
+		runGinApp(ctx)
+	case "grpc":
+		runGrpcApp(ctx)
+	default:
+		fmt.Printf("Invalid application mode specified: %s. Please use 'gin' or 'grpc'.\n", *appMode)
+	}
+}
+
+func runGinApp(ctx context.Context) {
+	fmt.Println("Starting Gin (HTTP) application...")
+
+	cfg := config.LoadGinAppConfig()
 
 	tokenManager, err := auth.NewJwtBasedTokenManager(cfg.JwtSingingKey)
 	if err != nil {
-		fmt.Printf("Failed to initialize token manager, cause: %s", err)
+		fmt.Printf("Failed to initialize token manager, cause: %s\n", err)
 		return
 	}
 
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
-		fmt.Printf("Failed to connect to PostgreSQL, cause: %s", err)
+		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
 		return
 	}
 
 	redisClient, err := redis.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
 	if err != nil {
-		fmt.Printf("Failed to connect to Redis, cause: %s", err)
+		fmt.Printf("Failed to connect to Redis, cause: %s\n", err)
 		return
 	}
 
 	kafkaEmailSender := emailDelivery.NewKafkaEmailMessageProducer(cfg.EmailDeliveryKafkaBroker, cfg.EmailDeliveryKafkaTopic)
+
 	emailMessageBuilder, err := email.NewEmailMessageBuilder()
 	if err != nil {
-		fmt.Printf("Failed to initialize email builder, cause: %s", err)
+		fmt.Printf("Failed to initialize email builder, cause: %s\n", err)
 		return
 	}
 
 	geoIP := geoip.NewGeoIP2Client(cfg.GeoIP2AccountID, cfg.GeoIP2LicenseKey, cfg.GeoIP2Host)
+
 	userAgentParser := ua.NewUserAgentParser()
 
-	deps := app.Dependencies{
+	deps := app.GinAppDependencies{
 		PgDB:                pgDB,
 		RedisClient:         redisClient,
 		Config:              cfg,
@@ -71,9 +89,24 @@ func main() {
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 
-	if cfg.Mode == config.ModeHttp {
-		app.NewGinApp(deps).Run()
-	} else {
-		app.NewGrpcApp(deps).Run()
+	app.NewGinApp(deps).Run()
+}
+
+func runGrpcApp(ctx context.Context) {
+	fmt.Println("Starting gRPC application...")
+
+	cfg := config.LoadGrpcAppConfig()
+
+	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
+	if err != nil {
+		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
+		return
 	}
+
+	deps := app.GrpcAppDependencies{
+		PgDB:   pgDB,
+		Config: cfg,
+	}
+
+	app.NewGrpcApp(deps).Run()
 }

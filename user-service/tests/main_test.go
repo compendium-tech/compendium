@@ -26,7 +26,7 @@ import (
 
 type APITestSuite struct {
 	suite.Suite
-	app.Dependencies
+	app.GinAppDependencies
 	ctx                     context.Context
 	app                     *gin.Engine
 	mockEmailMessageBuilder *email.MockEmailMessageBuilder
@@ -90,7 +90,7 @@ func (s *APITestSuite) initDeps() {
 		s.T().Logf("Failed to load .env file, using environmental variables instead: %v\n", err)
 	}
 
-	cfg := config.LoadAppConfig()
+	cfg := config.LoadGinAppConfig()
 
 	tokenManager, err := auth.NewJwtBasedTokenManager(cfg.JwtSingingKey)
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *APITestSuite) initDeps() {
 	s.mockGeoIP = new(geoip.MockGeoIP)
 	s.mockUserAgentParser = new(ua.MockUserAgentParser)
 
-	s.Dependencies = app.Dependencies{
+	s.GinAppDependencies = app.GinAppDependencies{
 		PgDB:                pgDB,
 		RedisClient:         redisClient,
 		Config:              cfg,
@@ -128,7 +128,7 @@ func (s *APITestSuite) initDeps() {
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 
-	s.app = app.NewGinApp(s.Dependencies)
+	s.app = app.NewGinApp(s.GinAppDependencies)
 }
 
 func (s *APITestSuite) getPgMigrationsDir() string {
