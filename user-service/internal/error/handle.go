@@ -55,6 +55,8 @@ func (k AppErrorKind) httpStatus() int {
 		return http.StatusConflict
 	case SessionNotFoundError:
 		return http.StatusNotFound
+	case FailedToRemoveCurrentSessionError:
+		return http.StatusForbidden
 	default:
 		return http.StatusBadRequest
 	}

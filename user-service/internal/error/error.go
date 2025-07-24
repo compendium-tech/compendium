@@ -15,6 +15,7 @@ const (
 	InvalidMfaOtpError
 	InvalidSessionError
 	SessionNotFoundError
+	FailedToRemoveCurrentSessionError
 )
 
 const ()
