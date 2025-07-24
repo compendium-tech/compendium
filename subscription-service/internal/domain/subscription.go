@@ -12,7 +12,7 @@ const (
 	SubscriptionRoleMember SubscriptionRole = "member"
 )
 
-type PutSubscriptionRequest struct {
+type HandleUpdatedSubscriptionRequest struct {
 	SubscriptionID string
 	CustomerID     string
 	Items          []SubscriptionItem
@@ -29,11 +29,11 @@ type SubscriptionItem struct {
 type SubscriptionRole string
 
 type Subscription struct {
-	Role    SubscriptionRole        `json:"role"`
-	Level   model.SubscriptionLevel `json:"level"`
-	Since   time.Time               `json:"since"`
-	Till    time.Time               `json:"till"`
-	Members []SubscriptionMember    `json:"members,omitempty"`
+	Role    SubscriptionRole     `json:"role"`
+	Level   model.Tier           `json:"level"`
+	Since   time.Time            `json:"since"`
+	Till    time.Time            `json:"till"`
+	Members []SubscriptionMember `json:"members,omitempty"`
 }
 
 type SubscriptionResponse struct {

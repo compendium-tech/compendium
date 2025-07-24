@@ -229,7 +229,7 @@ func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User) erro
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
-			return appErr.Errorf(appErr.EmailTakenError, "email is already taken")
+			return appErr.New(appErr.EmailTakenError, "email is already taken")
 		}
 
 		return tracerr.Wrap(err)

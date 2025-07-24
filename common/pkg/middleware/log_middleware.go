@@ -31,8 +31,8 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 	}
 
 	entry := logrus.WithFields(logrus.Fields{
-		"clientIP":  httphelp.GetClientIP(c),
-		"userID":    userID,
+		"clientIp":  httphelp.GetClientIP(c),
+		"userId":    userID,
 		"method":    c.Request.Method,
 		"path":      c.Request.RequestURI,
 		"status":    c.Writer.Status(),

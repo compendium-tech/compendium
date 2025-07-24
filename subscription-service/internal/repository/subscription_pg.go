@@ -20,28 +20,20 @@ func NewPgSubscriptionRepository(db *sql.DB) SubscriptionRepository {
 	return &pgSubscriptionRepository{db: db}
 }
 
-func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub model.Subscription) error {
+func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub model.Subscription) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return tracerr.Errorf("failed to begin transaction: %w", err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r) // Re-throw panic
-		} else if err != nil {
-			tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 
 	// Check if subscription exists
 	var existingSubscription model.Subscription
-	// Note: We need to scan the invitation_code as well now
 	checkQuery := `SELECT id, backed_by, subscription_level, till, since, invitation_code FROM subscriptions WHERE backed_by = $1`
 
 	var inviteCodeSQL sql.NullString // Use sql.NullString to handle nullable invitation_code
-	err = tx.QueryRowContext(ctx, checkQuery, sub.BackedBy).Scan(&existingSubscription.ID, &existingSubscription.BackedBy, &existingSubscription.Level, &existingSubscription.Till, &existingSubscription.Since, &inviteCodeSQL)
+	err = tx.QueryRowContext(ctx, checkQuery, sub.BackedBy).Scan(&existingSubscription.ID, &existingSubscription.BackedBy, &existingSubscription.Tier, &existingSubscription.Till, &existingSubscription.Since, &inviteCodeSQL)
 
 	switch err {
 	case nil:
@@ -51,19 +43,13 @@ func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub mode
 			existingSubscription.InvitationCode = nil
 		}
 
-		if sub.Level.Priority() < existingSubscription.Level.Priority() {
-			// If the new subscription level is lower than the existing one, do not update
-			return appErr.Errorf(appErr.LowPrioritySubscriptionLevelError, "cannot update subscription for user ID %s: new level is lower than existing", sub.BackedBy)
-		}
-
 		// Subscription exists, perform an update
-		// Include invitation_code in update if it's explicitly provided
 		updateQuery := `
 			UPDATE subscriptions
 			SET subscription_level = $1, till = $2, since = $3, invitation_code = $4
 			WHERE backed_by = $5`
 
-		_, err = tx.ExecContext(ctx, updateQuery, sub.Level, sub.Till, sub.Since, sub.InvitationCode, sub.BackedBy)
+		_, err = tx.ExecContext(ctx, updateQuery, sub.Tier, sub.Till, sub.Since, sub.InvitationCode, sub.BackedBy)
 		if err != nil {
 			return tracerr.Errorf("failed to update subscription for user ID %s: %w", sub.BackedBy, err)
 		}
@@ -73,7 +59,7 @@ func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub mode
 			INSERT INTO subscriptions (backed_by, subscription_level, till, since, invitation_code)
 			VALUES ($1, $2, $3, $4, $5)`
 
-		_, err = tx.ExecContext(ctx, insertQuery, sub.BackedBy, sub.Level, sub.Till, sub.Since, sub.InvitationCode)
+		_, err = tx.ExecContext(ctx, insertQuery, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
 		if err != nil {
 			return tracerr.Errorf("failed to insert subscription: %w", err)
 		}
@@ -100,14 +86,14 @@ func (r *pgSubscriptionRepository) PutSubscription(ctx context.Context, sub mode
 	return nil
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionByInvitationCode(ctx context.Context, invitationCode string) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByInvitationCode(ctx context.Context, invitationCode string) (*model.Subscription, error) {
 	query := `
 		SELECT id, backed_by, subscription_level, till, since
 		FROM subscriptions
 		WHERE invitation_code = $1`
 
 	var sub model.Subscription
-	err := r.db.QueryRowContext(ctx, query, invitationCode).Scan(&sub.ID, &sub.BackedBy, &sub.Level, &sub.Till, &sub.Since)
+	err := r.db.QueryRowContext(ctx, query, invitationCode).Scan(&sub.ID, &sub.BackedBy, &sub.Tier, &sub.Till, &sub.Since)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -120,7 +106,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionByInvitationCode(ctx context.C
 	return &sub, nil
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionByMemberUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByMemberUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
 	query := `
 		SELECT s.id, s.backed_by, s.subscription_level, s.till, s.since, s.invitation_code
 		FROM subscriptions s
@@ -128,7 +114,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionByMemberUserID(ctx context.Con
 		WHERE sm.user_id = $1`
 	var sub model.Subscription
 	var inviteCodeSQL sql.NullString
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Level, &sub.Till, &sub.Since, &inviteCodeSQL)
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Tier, &sub.Till, &sub.Since, &inviteCodeSQL)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -146,7 +132,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionByMemberUserID(ctx context.Con
 	return &sub, nil
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionByPayerUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByPayerUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
 	query := `
 		SELECT id, backed_by, subscription_level, till, since, invitation_code
 		FROM subscriptions
@@ -154,7 +140,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionByPayerUserID(ctx context.Cont
 
 	var sub model.Subscription
 	var inviteCodeSQL sql.NullString
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Level, &sub.Till, &sub.Since, &inviteCodeSQL)
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Tier, &sub.Till, &sub.Since, &inviteCodeSQL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -201,7 +187,7 @@ func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, s
 	return members, nil
 }
 
-func (r *pgSubscriptionRepository) AddSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
+func (r *pgSubscriptionRepository) CreateSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
 	query := `
 		INSERT INTO subscription_members (subscription_id, user_id, since)
 		VALUES ($1, $2, $3)`
@@ -213,39 +199,6 @@ func (r *pgSubscriptionRepository) AddSubscriptionMember(ctx context.Context, me
 		}
 
 		return tracerr.Errorf("failed to add subscription member: %w", err)
-	}
-
-	return nil
-}
-
-// UpdateSubscriptionInvitationCode updates the invitation code for a given subscription.
-// If code is nil, it sets the invitation_code to NULL in the database.
-func (r *pgSubscriptionRepository) UpdateSubscriptionInvitationCode(ctx context.Context, subscriptionID string, code *string) error {
-	query := `
-		UPDATE subscriptions
-		SET invitation_code = $1
-		WHERE id = $2`
-
-	var sqlCode sql.NullString
-	if code != nil {
-		sqlCode.String = *code
-		sqlCode.Valid = true
-	} else {
-		sqlCode.Valid = false // This will set the column to NULL
-	}
-
-	result, err := r.db.ExecContext(ctx, query, sqlCode, subscriptionID)
-	if err != nil {
-		return tracerr.Errorf("failed to update invitation code for subscription ID %s: %w", subscriptionID, err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return tracerr.Errorf("failed to get rows affected after updating invitation code: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return tracerr.Errorf("no subscription found with ID %s to update invitation code", subscriptionID)
 	}
 
 	return nil

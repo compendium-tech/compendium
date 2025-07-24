@@ -32,7 +32,7 @@ type errorWrap struct {
 	kind    AppErrorKind
 }
 
-func Errorf(kind AppErrorKind, format string, args ...any) errorWrap {
+func New(kind AppErrorKind, format string, args ...any) errorWrap {
 	return errorWrap{
 		message: fmt.Errorf(format, args...).Error(),
 		kind:    kind,

@@ -105,7 +105,7 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context) err
 		}
 	}
 
-	return p.subscriptionService.PutSubscription(c.Request.Context(), domain.PutSubscriptionRequest{
+	return p.subscriptionService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
 		SubscriptionID: event.Data.ID,
 		CustomerID:     event.Data.CustomerID,
 		Items:          items,
@@ -152,7 +152,7 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context) erro
 		}
 	}
 
-	return p.subscriptionService.PutSubscription(c.Request.Context(), domain.PutSubscriptionRequest{
+	return p.subscriptionService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
 		CustomerID:     event.Data.CustomerID,
 		SubscriptionID: event.Data.ID,
 		Till:           till,

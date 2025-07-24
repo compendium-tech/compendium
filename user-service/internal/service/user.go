@@ -38,7 +38,8 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 }
 
 func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error) {
-	log.L(ctx).Info("Getting user account details by ID")
+	logger := log.L(ctx).WithField("userId", id.String())
+	logger.Info("Getting user account details by ID")
 
 	user, err := u.userRepository.GetUser(ctx, id)
 	if err != nil {
@@ -46,12 +47,35 @@ func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.Acc
 	}
 
 	if user == nil {
-		log.L(ctx).Warn("User account not found for the provided ID")
-
-		return nil, appErr.Errorf(appErr.UserNotFoundError, "User not found")
+		logger.Warn("User account not found for the provided ID")
+		return nil, appErr.New(appErr.UserNotFoundError, "User not found")
 	}
 
-	log.L(ctx).Info("User account details fetched successfully")
+	logger.Info("User account details fetched successfully")
+
+	return &domain.AccountResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}, nil
+}
+
+func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
+	logger := log.L(ctx).WithField("email", email)
+	logger.Info("Finding user account by email")
+
+	user, err := u.userRepository.FindUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		logger.Warn("User account not found for the provided email")
+		return nil, appErr.New(appErr.UserNotFoundError, "User not found")
+	}
+
+	logger.Info("User account found successfully")
 
 	return &domain.AccountResponse{
 		ID:        user.ID,
@@ -62,23 +86,21 @@ func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.Acc
 }
 
 func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error) {
-	log.L(ctx).Info("Getting authenticated user account details")
-
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Info("Fetching authenticated user account details in database")
+	log.L(ctx).Info("Fetching authenticated user account details")
+
 	user, err := u.userRepository.GetUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	if user == nil {
-		log.L(ctx).Warn("Information about authenticated user not found, perhaphs session is invalid?")
-
-		return nil, appErr.Errorf(appErr.InvalidSessionError, "Invalid session")
+		log.L(ctx).Warn("Information about authenticated user not found, perhaps session is invalid?")
+		return nil, appErr.New(appErr.InvalidSessionError, "Invalid session")
 	}
 
 	log.L(ctx).Info("Account details fetched successfully")
@@ -91,45 +113,21 @@ func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domai
 	}, nil
 }
 
-func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
-	log.L(ctx).Info("Finding user account by email")
-
-	user, err := u.userRepository.FindUserByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	if user == nil {
-		log.L(ctx).Warn("User account not found for the provided email")
-
-		return nil, appErr.Errorf(appErr.UserNotFoundError, "User not found")
-	}
-
-	log.L(ctx).Info("User account found successfully")
-
-	return &domain.AccountResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-	}, nil
-}
-
 func (u *userService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
-	log.L(ctx).Info("Updating authenticated user account details")
-
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Info("Updating authenticated user account details in database")
+	logger := log.L(ctx).WithField("newName", request.Name)
+	logger.Info("Updating authenticated user account details")
+
 	user, err := u.userRepository.UpdateUserName(ctx, userID, request.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	log.L(ctx).Info("Account details updated successfully")
+	logger.Info("Account details updated successfully")
 
 	return &domain.AccountResponse{
 		ID:        user.ID,

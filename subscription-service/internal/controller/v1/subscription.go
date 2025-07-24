@@ -73,7 +73,7 @@ func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
 		return appErr.Errorf(appErr.RequestValidationError, "member ID is required")
 	}
 
-	subscription, err := p.subscriptionService.JoinSubscription(c.Request.Context(), invitationCode)
+	subscription, err := p.subscriptionService.JoinCollectiveSubscription(c.Request.Context(), invitationCode)
 	if err != nil {
 		return err
 	}

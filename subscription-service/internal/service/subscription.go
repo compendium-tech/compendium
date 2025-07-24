@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"math/big"
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/random"
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
@@ -21,13 +20,16 @@ import (
 type SubscriptionService interface {
 	GetSubscription(ctx context.Context) (*domain.SubscriptionResponse, error)
 	GetSubscriptionInvitationCode(ctx context.Context) (*domain.InvitationCodeResponse, error)
+
 	UpdateSubscriptionInvitationCode(ctx context.Context) (*domain.InvitationCodeResponse, error)
 	RemoveSubscriptionInvitationCode(ctx context.Context) (*domain.InvitationCodeResponse, error)
+
 	CancelSubscription(ctx context.Context) error
-	JoinSubscription(ctx context.Context, invitationCode string) (*domain.SubscriptionResponse, error)
+
+	JoinCollectiveSubscription(ctx context.Context, invitationCode string) (*domain.SubscriptionResponse, error)
 	RemoveSubscriptionMember(ctx context.Context, memberUserID uuid.UUID) error
 
-	PutSubscription(ctx context.Context, request domain.PutSubscriptionRequest) error
+	HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest) error
 	RemoveSubscription(ctx context.Context, subscriptionID string) error
 }
 
@@ -60,10 +62,14 @@ func (s *subscriptionService) GetSubscription(ctx context.Context) (*domain.Subs
 		return nil, err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByMemberUserID(ctx, userID)
+	log.L(ctx).Info("Getting subscription for authenticated user")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
+	log.L(ctx).Info("Subscription details fetched successfully")
 
 	return s.subscriptionToResponse(ctx, userID, subscription)
 }
@@ -74,18 +80,24 @@ func (s *subscriptionService) GetSubscriptionInvitationCode(ctx context.Context)
 		return nil, err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByMemberUserID(ctx, userID)
+	log.L(ctx).Info("Getting subscription invitation code for authenticated user")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	if subscription == nil {
+		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be retrieved")
 		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
 	}
 
 	if subscription.BackedBy != userID {
+		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be retrieved", subscription.ID)
 		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
+
+	log.L(ctx).Info("Subscription invitation code fetched successfully")
 
 	return &domain.InvitationCodeResponse{
 		InvitationCode: subscription.InvitationCode,
@@ -98,24 +110,41 @@ func (s *subscriptionService) UpdateSubscriptionInvitationCode(ctx context.Conte
 		return nil, err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByMemberUserID(ctx, userID)
+	log.L(ctx).Info("Updating subscription invitation code for authenticated user")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	if subscription == nil {
+		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be updated")
 		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
 	}
 
 	if subscription.BackedBy != userID {
+		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be updated", subscription.ID)
 		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
 
-	invitationCode := s.newInvitationCode()
-	err = s.subscriptionRepository.UpdateSubscriptionInvitationCode(ctx, subscription.ID, &invitationCode)
+	invitationCode, err := random.NewRandomString(12)
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
+		ID:             subscription.ID,
+		BackedBy:       subscription.BackedBy,
+		Tier:           subscription.Tier,
+		InvitationCode: &invitationCode,
+		Till:           subscription.Till,
+		Since:          subscription.Since,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.L(ctx).Info("Subscription invitation code updated successfully")
 
 	return &domain.InvitationCodeResponse{
 		InvitationCode: &invitationCode,
@@ -128,23 +157,36 @@ func (s *subscriptionService) RemoveSubscriptionInvitationCode(ctx context.Conte
 		return nil, err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByMemberUserID(ctx, userID)
+	log.L(ctx).Info("Removing subscription invitation code for authenticated user")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	if subscription == nil {
+		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be removed")
 		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
 	}
 
 	if subscription.BackedBy != userID {
+		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be removed", subscription.ID)
 		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
 
-	err = s.subscriptionRepository.UpdateSubscriptionInvitationCode(ctx, subscription.ID, nil)
+	err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
+		ID:             subscription.ID,
+		BackedBy:       subscription.BackedBy,
+		Tier:           subscription.Tier,
+		InvitationCode: nil,
+		Till:           subscription.Till,
+		Since:          subscription.Since,
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	log.L(ctx).Info("Subscription invitation code removed successfully")
 
 	return &domain.InvitationCodeResponse{
 		InvitationCode: nil,
@@ -157,35 +199,50 @@ func (s *subscriptionService) CancelSubscription(ctx context.Context) error {
 		return err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByMemberUserID(ctx, userID)
+	log.L(ctx).Info("Cancelling subscription for authenticated user")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	if subscription == nil {
+		log.L(ctx).Warn("Subscription not found for the authenticated user, cannot cancel")
 		return appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
 	}
 
 	if subscription.BackedBy != userID {
+		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, cannot cancel", subscription.ID)
 		return appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
 
-	// Subscription will be removed from DB after webhook will be processed.
-	return s.billingAPI.CancelSubscription(ctx, subscription.ID)
+	// Subscription will be removed from database after webhook will be processed.
+	err = s.billingAPI.CancelSubscription(ctx, subscription.ID)
+	if err != nil {
+		return err
+	}
+
+	log.L(ctx).Info("Subscription cancellation initiated successfully")
+
+	return nil
 }
 
-func (s *subscriptionService) JoinSubscription(ctx context.Context, invitationCode string) (*domain.SubscriptionResponse, error) {
+func (s *subscriptionService) JoinCollectiveSubscription(ctx context.Context, invitationCode string) (*domain.SubscriptionResponse, error) {
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByInvitationCode(ctx, invitationCode)
+	logger := log.L(ctx).WithField("invitationCode", invitationCode)
+	logger.Info("Attempting to join collective subscription")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByInvitationCode(ctx, invitationCode)
 	if err != nil {
 		return nil, err
 	}
 
-	if subscription == nil || subscription.Level == model.SubscriptionLevelStudent {
+	if subscription == nil || subscription.Tier == model.TierStudent {
+		logger.Warn("Invalid invitation code or student tier subscription used to join collective subscription")
 		return nil, appErr.Errorf(appErr.InvalidSubscriptionInvitationCode, "Invalid invitation code is used")
 	}
 
@@ -194,7 +251,7 @@ func (s *subscriptionService) JoinSubscription(ctx context.Context, invitationCo
 		return nil, err
 	}
 
-	err = s.subscriptionRepository.AddSubscriptionMember(ctx, model.SubscriptionMember{
+	err = s.subscriptionRepository.CreateSubscriptionMember(ctx, model.SubscriptionMember{
 		SubscriptionID: subscription.ID,
 		UserID:         userID,
 		Since:          time.Now().UTC(),
@@ -202,6 +259,8 @@ func (s *subscriptionService) JoinSubscription(ctx context.Context, invitationCo
 	if err != nil {
 		return nil, err
 	}
+
+	logger.Info("Successfully joined collective subscription")
 
 	return response, nil
 }
@@ -212,34 +271,52 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 		return err
 	}
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByPayerUserID(ctx, userID)
+	logger := log.L(ctx).WithField("memberUserID", memberUserID.String())
+	logger.Info("Attempting to remove subscription member")
+
+	subscription, err := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	if subscription == nil {
+		logger.Warn("Subscription not found for the authenticated payer, cannot remove member")
 		return appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
 	}
 
 	if subscription.BackedBy != userID {
+		logger.Warnf("Authenticated user is not the payer for subscription %s, cannot remove member", subscription.ID)
 		return appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
 
-	return s.subscriptionRepository.RemoveSubscriptionMemberBySubscriptionAndUserID(ctx, subscription.ID, memberUserID)
+	err = s.subscriptionRepository.RemoveSubscriptionMemberBySubscriptionAndUserID(ctx, subscription.ID, memberUserID)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Subscription member removed successfully")
+
+	return nil
 }
 
-func (s *subscriptionService) PutSubscription(ctx context.Context, request domain.PutSubscriptionRequest) (finalErr error) {
+func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest) (finalErr error) {
+	logger := log.L(ctx).WithField("subscriptionID", request.SubscriptionID).WithField("customerID", request.CustomerID)
+	logger.Info("Upserting subscription")
+
 	if len(request.Items) == 0 {
+		logger.Warn("No items in upsert subscription request")
 		return appErr.Errorf(appErr.RequestValidationError, "No items in request")
 	}
 
 	customer, err := s.billingAPI.GetCustomer(ctx, request.CustomerID)
 	if err != nil {
+		logger.Errorf("Failed to get customer from billing API: %v", err)
 		return err
 	}
 
 	lock, err := s.billingLockRepository.ObtainLock(ctx, request.CustomerID)
 	if err != nil {
+		logger.Errorf("Failed to obtain billing lock for customer %s: %v", request.CustomerID, err)
 		return err
 	}
 
@@ -247,70 +324,93 @@ func (s *subscriptionService) PutSubscription(ctx context.Context, request domai
 
 	account, err := s.userService.FindAccountByEmail(ctx, customer.Email)
 	if err != nil {
+		logger.Errorf("Failed to find account by email %s: %v", customer.Email, err)
 		return err
 	}
 
 	if account == nil {
+		logger.Warnf("Account not found for email: %s", customer.Email)
 		return appErr.Errorf(appErr.UserNotFoundError, "Account not found for email: %s", customer.Email)
 	}
 
-	if len(request.Items) > 1 {
-		log.L(ctx).Warnf("Multiple items in request, cancelling subscription for user %s", account.ID)
+	logger = logger.WithField("userId", account.ID.String())
 
-		err := s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
+	for i, item := range request.Items {
+		itemLogger := logger.WithField("itemIndex", i).WithField("productID", item.ProductID)
+		itemLogger.Info("Processing subscription item")
+
+		var subscriptionLevel model.Tier
+
+		switch item.ProductID {
+		case s.productIDs.StudentSubscriptionProductID:
+			subscriptionLevel = model.TierStudent
+		case s.productIDs.TeamSubscriptionProductID:
+			subscriptionLevel = model.TierTeam
+		case s.productIDs.CommunitySubscriptionProductID:
+			subscriptionLevel = model.TierCommunity
+		default:
+			itemLogger.Errorf("Unknown product ID %s, skipping this item", item.ProductID)
+
+			if len(request.Items) == 1 {
+				err := s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
+				if err != nil {
+					return err
+				}
+				return appErr.Errorf(appErr.RequestValidationError, "Unknown product ID: %s", item.ProductID)
+			}
+			continue
+		}
+
+		// To maintain a single active subscription per payer within this service,
+		// we first cancel any existing subscription before upserting a new one.
+		//
+		// If the cancellation fails, the external billing service will retry the request,
+		// ensuring the database isn't updated with a new subscription until the previous one is successfully canceled.
+		existingSubscription, err := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, account.ID)
 		if err != nil {
 			return err
 		}
-	}
 
-	item := request.Items[0]
+		if existingSubscription != nil {
+			itemLogger.Infof("Existing subscription %s found, cancelling it before upserting new item", existingSubscription.ID)
 
-	subscription, err := s.subscriptionRepository.GetSubscriptionByPayerUserID(ctx, account.ID)
-	if err != nil {
-		return err
-	}
-
-	if subscription != nil {
-		err := s.billingAPI.CancelSubscription(ctx, subscription.ID)
-
-		if err != nil {
-			log.L(ctx).Errorf("Failed to cancel existing subscription for user %s: %v", account.ID, err)
-
-			return err
-		}
-	}
-
-	var subscriptionLevel model.SubscriptionLevel
-
-	switch item.ProductID {
-	case s.productIDs.StudentSubscriptionProductID:
-		subscriptionLevel = model.SubscriptionLevelStudent
-	case s.productIDs.TeamSubscriptionProductID:
-		subscriptionLevel = model.SubscriptionLevelTeam
-	case s.productIDs.CommunitySubscriptionProductID:
-		subscriptionLevel = model.SubscriptionLevelCommunity
-	default:
-		{
-			log.L(ctx).Errorf("Unknown product ID %s for user %s, cancelling subscription", item.ProductID, account.ID)
-
-			err := s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
+			err := s.billingAPI.CancelSubscription(ctx, existingSubscription.ID)
 			if err != nil {
 				return err
 			}
 		}
+
+		err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
+			ID:       request.SubscriptionID,
+			BackedBy: account.ID,
+			Tier:     subscriptionLevel,
+			Till:     request.Till,
+			Since:    request.Since,
+		})
+		if err != nil {
+			return err
+		}
+
+		itemLogger.Info("Subscription item processed successfully")
 	}
 
-	return s.subscriptionRepository.PutSubscription(ctx, model.Subscription{
-		ID:       request.SubscriptionID,
-		BackedBy: account.ID,
-		Level:    subscriptionLevel,
-		Till:     request.Till,
-		Since:    request.Since,
-	})
+	logger.Info("All subscription items processed, upsert completed successfully")
+
+	return nil
 }
 
 func (s *subscriptionService) RemoveSubscription(ctx context.Context, subscriptionID string) error {
-	return s.subscriptionRepository.RemoveSubscription(ctx, subscriptionID)
+	logger := log.L(ctx).WithField("subscriptionID", subscriptionID)
+	logger.Info("Removing subscription")
+
+	err := s.subscriptionRepository.RemoveSubscription(ctx, subscriptionID)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Subscription removed successfully")
+
+	return nil
 }
 
 func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID uuid.UUID, subscription *model.Subscription) (*domain.SubscriptionResponse, error) {
@@ -327,8 +427,12 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 		role = domain.SubscriptionRolePayer
 	}
 
+	logger := log.L(ctx).WithField("subscriptionID", subscription.ID)
+	logger.Debug("Converting subscription to response format")
+
 	members, err := s.subscriptionRepository.GetSubscriptionMembers(ctx, subscription.ID)
 	if err != nil {
+		logger.Errorf("Failed to get subscription members: %v", err)
 		return nil, err
 	}
 
@@ -336,14 +440,13 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 	for _, member := range members {
 		user, err := s.userService.GetAccount(ctx, member.UserID)
 		if err != nil {
-			log.L(ctx).Errorf("Failed to get account details for subscription member %s: %v", member.UserID, err)
+			logger.Errorf("Failed to get account details for subscription member %s: %v", member.UserID, err)
 			continue
 		}
 
-		role := domain.SubscriptionRoleMember
-
-		if subscription.BackedBy == userID {
-			role = domain.SubscriptionRolePayer
+		memberRole := domain.SubscriptionRoleMember
+		if subscription.BackedBy == member.UserID {
+			memberRole = domain.SubscriptionRolePayer
 		}
 
 		if user == nil {
@@ -351,10 +454,10 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 				UserID:          member.UserID,
 				Email:           "",
 				Name:            "",
-				Role:            role,
+				Role:            memberRole,
 				IsAccountActive: false,
 			})
-
+			logger.Debugf("Added inactive member %s to response", member.UserID)
 			continue
 		}
 
@@ -362,33 +465,22 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 			UserID:          member.UserID,
 			Email:           user.Email,
 			Name:            user.Name,
-			Role:            role,
+			Role:            memberRole,
 			IsAccountActive: true,
 		})
+		logger.Debugf("Added active member %s to response", member.UserID)
 	}
+
+	logger.Debug("Successfully converted subscription to response format")
 
 	return &domain.SubscriptionResponse{
 		IsActive: true,
 		Subscription: &domain.Subscription{
 			Role:    role,
-			Level:   subscription.Level,
+			Level:   subscription.Tier,
 			Till:    subscription.Till,
 			Since:   subscription.Since,
 			Members: membersResponse,
 		},
 	}, nil
-}
-
-func (s *subscriptionService) newInvitationCode() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	code := make([]byte, 12)
-	for i := range code {
-		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			panic(err)
-		}
-		code[i] = charset[idx.Int64()]
-	}
-
-	return string(code)
 }
