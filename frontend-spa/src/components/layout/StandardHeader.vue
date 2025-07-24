@@ -10,16 +10,7 @@
           <span class="text-xl font-bold text-primary-600">.</span>
         </div>
       </RouterLink>
-      <template v-if="!authStore.isAuthenticated">
-        <RouterLink to="/auth/signin">
-          <button
-            class="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white py-2 px-6 rounded-xl transition-all transform hover:scale-105">
-            <span>Sign up</span>
-            <Icon icon="tabler:arrow-bar-to-right" />
-          </button>
-        </RouterLink>
-      </template>
-      <template v-else>
+      <template v-if="authStore.isAuthenticated">
         <RouterLink to="/dashboard">
           <Icon class="w-10 h-10 text-primary-600 transition-all transform hover:scale-105"
             icon="tdesign:user-circle-filled" />

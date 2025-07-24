@@ -5,48 +5,43 @@
         <div>
           <label for="name" class="block text-sm/6 font-medium text-gray-900">Full Name</label>
           <div class="mt-2">
-
             <BaseInput id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
               @input="validateField('name')" />
             <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}
             </p>
-
           </div>
         </div>
 
         <div>
           <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
-
             <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" input="validateField('email')" />
             <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}
             </p>
-
           </div>
         </div>
 
         <div>
           <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-
             <BaseInput id="password" type="password" v-model="password" required autocomplete="new-password"
               placeholder="A strong password" @input="validateField('password')" />
             <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
               validationErrors.password }}</p>
-
           </div>
         </div>
 
         <div>
-          <button type="submit" :disabled="isLoading || !isCredentialsFormValid"
-            class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
+          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoading || !isCredentialsFormValid">
             Sign Up
             <span v-if="isLoading"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
-          </button>
+          </BaseButton>
         </div>
-        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        <BaseTransitioningText>
+          <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        </BaseTransitioningText>
       </form>
     </template>
 
@@ -56,33 +51,31 @@
       <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
         <div>
           <div class="mt-2">
-
             <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
               maxlength="6" @input="validateField('otp')" />
             <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
-
           </div>
         </div>
         <div>
-          <button type="submit" :disabled="isLoadingMfa || !isMfaFormValid"
-            class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
+          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoadingMfa || !isMfaFormValid">
             Verify Account
             <span v-if="isLoadingMfa"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
-          </button>
+          </BaseButton>
         </div>
-        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        <BaseTransitioningText>
+          <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        </BaseTransitioningText>
       </form>
 
-      <div class="mt-6 text-center text-sm/6 space-y-3">
-        <button @click="resendOtp" :disabled="countdown > 0 || isLoading"
-          class="font-semibold text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed">
-          Resend Code <span v-if="countdown > 0">({{ countdown }}s)</span>
-        </button>
-        <p>
-          <button @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go
-            Back</button>
-        </p>
+      <div class="mt-6 space-x-3 flex">
+        <BaseButton size="sm" @click="resendOtp" :disabled="countdown > 0 || isLoading">
+          Resend Code <span v-if="countdown > 0">({{
+            countdown }}s)</span>
+        </BaseButton>
+        <BaseButton variant="outline" size="sm" @click="goBackToForm"
+          class="font-semibold text-gray-600 hover:text-gray-500">Go
+          Back</BaseButton>
       </div>
     </template>
   </AuthLayout>
@@ -92,12 +85,14 @@
 import { ref, computed, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
-import { authService } from "../../api.ts"
-import { useAuthStore } from "../../stores/auth.ts"
+import { authService } from "../../api/auth"
+import { ApiError } from "../../api/base"
+import { useAuthStore } from "../../stores/auth"
 import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validationUtils"
 import { handleApiError } from "./handleAuthErrorUtil"
 import BaseInput from "../ui/BaseInput.vue"
-import { ApiError } from "../../api.ts"
+import BaseButton from "../ui/BaseButton.vue"
+import BaseTransitioningText from "../ui/BaseTransitioningText.vue"
 
 enum State {
   Credentials,
@@ -276,10 +271,7 @@ const verifyMfa = async (): Promise<void> => {
     const response = await authService.verifyMfaSignUp(email.value, otp.value)
 
     authStore.setSession(response.accessTokenExpiresAt)
-
-    setTimeout(() => {
-      router.push("/dashboard")
-    }, 1500)
+    router.push("/dashboard")
   } catch (error) {
     if (error instanceof ApiError)
       handleApiError(error, globalError)

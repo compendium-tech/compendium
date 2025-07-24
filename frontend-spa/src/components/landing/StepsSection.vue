@@ -22,7 +22,7 @@
       </div>
 
       <div class="mt-16 text-center">
-        <BaseButton>See How It Work </BaseButton>
+        <BaseButton size="lg">See How It Work </BaseButton>
       </div>
     </div>
   </section>

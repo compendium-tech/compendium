@@ -22,7 +22,7 @@ func NewUserController(userService service.UserService) UserController {
 }
 
 func (u UserController) MakeRoutes(e *gin.Engine) {
-	v1 := e.Group("/api/v1/")
+	v1 := e.Group("/v1/")
 	{
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)

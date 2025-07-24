@@ -72,7 +72,7 @@ router.beforeEach((to, _from, next) => {
   document.title = to.meta.title || DEFAULT_TITLE
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next("/signin")
+    next("/auth/signin")
   } else if (to.meta.redirectIfAuthenticated && isAuthenticated) {
     next("/dashboard")
   } else {

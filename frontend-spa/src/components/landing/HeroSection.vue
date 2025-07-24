@@ -20,7 +20,7 @@
       </p>
 
       <RouterLink to="/auth/signin">
-        <BaseButton variant="primary" size="md" hover-effect="scale">
+        <BaseButton size="lg">
           Start your academic journey
         </BaseButton>
       </RouterLink>

@@ -1,5 +1,5 @@
 import { Ref } from "vue"
-import { ApiError, ApiErrorKind } from "../../api"
+import { ApiError, ApiErrorKind } from "../../api/base"
 
 export const handleApiError = (
   error: ApiError,

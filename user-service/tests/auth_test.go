@@ -29,7 +29,7 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 	}).Once()
 	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
 
-	req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 
 	resp := httptest.NewRecorder()
@@ -52,7 +52,7 @@ func (s *APITestSuite) Test_SignUp_TooFrequently_ReturnsTooManySignupAttemptsErr
 	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Once()
 	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
 
-	req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 
 	resp := httptest.NewRecorder()
@@ -60,7 +60,7 @@ func (s *APITestSuite) Test_SignUp_TooFrequently_ReturnsTooManySignupAttemptsErr
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	req, _ = http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
+	req, _ = http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 
 	resp = httptest.NewRecorder()
@@ -91,7 +91,7 @@ func (s *APITestSuite) Test_SignUp_WithInvalidBody_ReturnsError() {
 	}
 
 	for _, body := range bodies {
-		req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer([]byte(body)))
+		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 		req.Header.Set("Content-type", "application/json")
 
 		resp := httptest.NewRecorder()
@@ -123,7 +123,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp)
 
-	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("X-Real-IP", ipAddress)
@@ -174,7 +174,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp2)
 
-	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 
 	resp := httptest.NewRecorder()
@@ -201,7 +201,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidBody_ReturnsError() {
 	}
 
 	for _, body := range bodies {
-		req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
+		req, _ := http.NewRequest("POST", "/v1/sessions?flow=mfa", bytes.NewBuffer([]byte(body)))
 		req.Header.Set("Content-type", "application/json")
 
 		resp := httptest.NewRecorder()
@@ -231,7 +231,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	})
 	r.NoError(err, "Failed to create new user")
 
-	err = repository.NewPgTrustedDeviceRepository(s.PgDB).CreateDevice(s.ctx, model.TrustedDevice{
+	err = repository.NewPgTrustedDeviceRepository(s.PgDB).ExistsOrCreateDevice(s.ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		IPAddress: ipAddress,
@@ -243,7 +243,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 
 	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
 
-	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("X-Real-IP", ipAddress)
@@ -303,7 +303,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
 
-	req, _ := http.NewRequest("POST", "/api/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
+	req, _ := http.NewRequest("POST", "/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("X-Real-IP", ipAddress)

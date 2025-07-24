@@ -10,7 +10,9 @@
     </div>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <slot />
+      <div class="px-4 w-screen sm:w-full">
+        <slot />
+      </div>
     </div>
 
     <p v-if="formKind !== AuthFormKind.Other" class="mt-10 text-center text-sm/6 text-gray-500">

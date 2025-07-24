@@ -45,7 +45,6 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
 	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
-	r.Use(commonMiddleware.DefaultCors().Handle)
 
 	v1.NewBillingWebhookController(
 		subscriptionService,

@@ -30,7 +30,7 @@ func NewAuthController(authService service.AuthService) AuthController {
 }
 
 func (a AuthController) MakeRoutes(e *gin.Engine) {
-	v1 := e.Group("/api/v1/")
+	v1 := e.Group("/v1/")
 	{
 		v1.POST("/users", appErr.Handle(a.signUp))
 		v1.POST("/sessions", appErr.Handle(a.createSession))

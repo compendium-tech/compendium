@@ -1,6 +1,6 @@
 <template>
   <button :type="type" :disabled="disabled" :class="[
-    ' font-bold py-3 px-8 rounded-xl text-lg transition-all transform', buttonClasses,
+    ' font-bold rounded-lg transition-all transform', buttonClasses,
     { ' opacity-50 cursor-not-allowed': disabled }]" v-bind="$attrs" @click="handleClick">
     <slot></slot>
   </button>
@@ -14,7 +14,7 @@ interface BaseButtonProps {
   variant?: "primary" | "secondary" | "danger" | "outline"
   size?: "sm" | "md" | "lg"
   disabled?: boolean
-  hoverEffect?: "scale" | "none"
+  hoverEffect?: "translate" | "scale" | "none"
 }
 
 const props = withDefaults(defineProps<BaseButtonProps>(), {
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<BaseButtonProps>(), {
   variant: "primary",
   size: "md",
   disabled: false,
-  hoverEffect: "scale",
+  hoverEffect: "translate",
 })
 
 const emit = defineEmits(["click"])
@@ -32,7 +32,7 @@ const buttonClasses = computed(() => {
 
   switch (props.variant) {
     case "primary":
-      classes.push("bg-primary-600 hover:bg-primary-700 text-white")
+      classes.push("bg-primary-600 hover:bg-primary-400 text-white")
       break
     case "secondary":
       classes.push("bg-gray-200 hover:bg-gray-300 text-gray-800")
@@ -47,18 +47,22 @@ const buttonClasses = computed(() => {
 
   switch (props.size) {
     case "sm":
-      classes.push("px-4 py-2 text-sm")
+      classes.push("px-2 py-2 text-sm")
       break
     case "md":
-      classes.push("px-6 py-3 text-lg")
+      classes.push("px-4 py-3 text-base")
       break
     case "lg":
-      classes.push("px-10 py-4 text-xl")
+      classes.push("px-8 py-3 text-lg")
       break
   }
 
-  if (props.hoverEffect === "scale") {
+  if (props.hoverEffect === "scale" && !props.disabled) {
     classes.push("hover:scale-105")
+  }
+
+  if (props.hoverEffect === "translate" && !props.disabled) {
+    classes.push("hover:-translate-y-1")
   }
 
   return classes

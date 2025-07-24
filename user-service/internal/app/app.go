@@ -64,7 +64,6 @@ func NewGinApp(deps GinAppDependencies) *gin.Engine {
 	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
 	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
-	r.Use(commonMiddleware.DefaultCors().Handle)
 
 	v1.NewAuthController(authService).MakeRoutes(r)
 	v1.NewUserController(userService).MakeRoutes(r)

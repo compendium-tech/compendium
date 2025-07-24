@@ -6,7 +6,6 @@ import (
 
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/ztrue/tracerr"
 )
 
@@ -20,13 +19,28 @@ func NewPgTrustedDeviceRepository(db *sql.DB) TrustedDeviceRepository {
 	return &pgTrustedDeviceRepository{db: db}
 }
 
-func (r *pgTrustedDeviceRepository) CreateDevice(ctx context.Context, device model.TrustedDevice) (finalErr error) {
+func (r *pgTrustedDeviceRepository) ExistsOrCreateDevice(ctx context.Context, device model.TrustedDevice) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return tracerr.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer tx.Rollback()
+
+	// Check if the device already exists
+	var exists bool
+	err = tx.QueryRowContext(
+		ctx,
+		`SELECT EXISTS(SELECT 1 FROM devices WHERE user_id = $1 AND user_agent = $2 AND ip_address = $3)`,
+		device.UserID, device.UserAgent, device.IPAddress,
+	).Scan(&exists)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
+	if exists {
+		return nil
+	}
 
 	// Check the number of devices for the user
 	var deviceCount int
@@ -58,15 +72,15 @@ func (r *pgTrustedDeviceRepository) CreateDevice(ctx context.Context, device mod
 		device.ID, device.UserID, device.UserAgent, device.IPAddress, device.CreatedAt,
 	)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
-			// Device already exists, fine!
-			return nil
-		}
-
 		return tracerr.Errorf("failed to insert device: %w", err)
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return tracerr.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (r *pgTrustedDeviceRepository) DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error) {

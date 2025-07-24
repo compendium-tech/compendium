@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
@@ -38,7 +39,10 @@ func RequireAuth(c *gin.Context) {
 
 	if err != nil {
 		log.L(c.Request.Context()).Warnf("Failed to require auth, check the previous logs to reveal the reason")
-		c.AbortWithError(401, fmt.Errorf("invalid session"))
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"errorKind":    8,
+			"errorMessage": "Invalid session",
+		})
 	}
 }
 
@@ -46,7 +50,11 @@ func RequireCsrf(c *gin.Context) {
 	isCsrfPresent, ok := c.Request.Context().Value(isCsrfKey).(bool)
 
 	if !ok || !isCsrfPresent {
-		c.AbortWithError(401, fmt.Errorf("invalid session"))
+		log.L(c.Request.Context()).Warnf("Failed to require csrf token, check the previous logs to reveal the reason")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"errorKind":    8,
+			"errorMessage": "Invalid session",
+		})
 	}
 }
 

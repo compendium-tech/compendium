@@ -3,7 +3,7 @@
     <template v-if="state === State.Credentials">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div>
-          <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
+          <label for="email" class="font-medium text-gray-900">Email address</label>
           <div class="mt-2">
             <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" @input="validateField('email')" :error="validationErrors.email" />
@@ -11,7 +11,7 @@
         </div>
 
         <div>
-          <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
+          <label for="password" class="font-medium text-gray-900">Password</label>
           <div class="mt-2">
             <BaseInput id="password" type="password" v-model="password" required autocomplete="current-password"
               placeholder="A strong password" @input="validateField('password')" :error="validationErrors.password" />
@@ -19,21 +19,22 @@
         </div>
 
         <div>
-          <button type="submit" :disabled="isLoading || !isCredentialsFormValid"
-            class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
+          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoading || !isCredentialsFormValid">
             Sign In
             <span v-if="isLoading"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
-          </button>
+          </BaseButton>
         </div>
-        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        <BaseTransitioningText>
+          <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        </BaseTransitioningText>
       </form>
     </template>
 
     <template v-else-if="state === State.Mfa">
       <p class="mt-4 text-sm/6 text-gray-600">A One-Time Password has been sent to <span
           class="font-medium text-primary-600">{{ email }}</span>.</p>
-      <form @submit.prevent="verifyMfa" class="space-y-6 mt-6">
+      <form @submit.prevent="verifyMfa" class="space-y-6">
         <div>
           <div class="mt-2">
             <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
@@ -42,24 +43,25 @@
           </div>
         </div>
         <div>
-          <button type="submit" :disabled="isLoadingMfa || !isMfaFormValid"
-            class="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-primary-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:bg-primary-400 disabled:cursor-not-allowed">
+          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoadingMfa || !isMfaFormValid">
             Verify Account
             <span v-if="isLoadingMfa"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
-          </button>
+          </BaseButton>
         </div>
-        <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        <BaseTransitioningText>
+          <p v-if="globalError" class="text-red-600 text-center text-sm mt-4">{{ globalError }}</p>
+        </BaseTransitioningText>
       </form>
 
-      <div class="mt-6 text-center text-sm/6 space-y-3">
-        <button @click="resendOtp" :disabled="countdown > 0 || isLoading"
-          class="font-semibold text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed">
-          Resend Code <span v-if="countdown > 0">({{ countdown }}s)</span>
-        </button>
-        <p>
-          <button @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go Back</button>
-        </p>
+      <div class="mt-6 space-x-3 flex">
+        <BaseButton variant="primary" size="sm" @click="resendOtp" :disabled="countdown > 0 || isLoading">
+          Resend Code <span v-if="countdown > 0">({{
+            countdown }}s)</span>
+        </BaseButton>
+        <BaseButton variant="outline" size="sm" @click="goBackToForm"
+          class="font-semibold text-gray-600 hover:text-gray-500">Go
+          Back</BaseButton>
       </div>
     </template>
   </AuthLayout>
@@ -68,13 +70,15 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
-import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
-import { authService } from "../../api.ts"
-import { useAuthStore } from "../../stores/auth.ts"
+import { authService } from "../../api/auth"
+import { ApiError } from "../../api/base"
+import { useAuthStore } from "../../stores/auth"
 import { handleApiError } from "./handleAuthErrorUtil"
+import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
 import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validationUtils"
 import BaseInput from "../ui/BaseInput.vue"
-import { ApiError } from "../../api.ts"
+import BaseButton from "../ui/BaseButton.vue"
+import BaseTransitioningText from "../ui/BaseTransitioningText.vue"
 
 enum State {
   Credentials,
@@ -222,7 +226,7 @@ const handleSubmit = async (): Promise<void> => {
       return
     }
 
-    authStore.setSession(response.accessTokenExpiresAt)
+    authStore.setSession(response.accessTokenExpiresAt!)
 
     setTimeout(() => {
       router.push("/dashboard")
@@ -247,9 +251,7 @@ const verifyMfa = async (): Promise<void> => {
     const response = await authService.verifyMfaSignIn(email.value, otp.value)
 
     authStore.setSession(response.accessTokenExpiresAt)
-    setTimeout(() => {
-      router.push("/dashboard")
-    }, 1500)
+    router.push("/dashboard")
   } catch (error) {
     if (error instanceof ApiError)
       handleApiError(error, globalError)

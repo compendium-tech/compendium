@@ -597,15 +597,15 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
-	accessTokenExpiresAt := time.Now().Add(15 * time.Minute)
+	accessTokenExpiresAt := time.Now().Add(20 * time.Second)
 	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiresAt)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Info("Creating new device entry for user")
+	logger.Info("Creating new device entry if not already present for user")
 
-	err = s.trustedDeviceRepository.CreateDevice(ctx, model.TrustedDevice{
+	err = s.trustedDeviceRepository.ExistsOrCreateDevice(ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		UserAgent: userAgent,

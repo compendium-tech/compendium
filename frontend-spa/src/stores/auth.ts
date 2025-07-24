@@ -1,14 +1,14 @@
 import { defineStore } from "pinia"
-import { authService } from "../api"
+import "pinia-plugin-persistedstate"
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     isAuthenticated: false,
-    accessTokenExpiresAt: null,
+    accessTokenExpiresAt: "",
     isRefreshingToken: false,
   }),
   actions: {
-    setSession(accessTokenExpiresAt: Date) {
+    setSession(accessTokenExpiresAt: string) {
       this.isAuthenticated = true
       this.accessTokenExpiresAt = accessTokenExpiresAt
     },
@@ -20,25 +20,6 @@ export const useAuthStore = defineStore("auth", {
     clearSession() {
       this.isAuthenticated = false
       this.accessTokenExpiresAt = null
-    },
-
-    async refresh() {
-      if (this.isRefreshingToken) {
-        return false
-      }
-
-      this.isRefreshingToken = true
-      try {
-        const response = await authService.refresh()
-        this.setSession(response.accessTokenExpiresAt)
-        this.isRefreshingToken = false
-        return true
-      } catch (error) {
-        if (error.response?.data?.errorKind === 8) this.clearSession()
-
-        this.isRefreshingToken = false
-        return false
-      }
     },
   },
   persist: {

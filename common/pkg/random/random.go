@@ -1,20 +1,21 @@
 package random
 
 import (
-	"math"
-	"math/big"
-	"strconv"
-
 	"crypto/rand"
+	"fmt"
+	"math/big"
 )
 
 func NewRandomDigitCode(numberOfDigits uint8) (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(int64(math.Pow(10, float64(numberOfDigits)))))
+	upperBound := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(numberOfDigits)), nil)
+
+	n, err := rand.Int(rand.Reader, upperBound)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
-	return strconv.FormatInt(n.Int64(), 10), nil
+	format := fmt.Sprintf("%%0%dd", numberOfDigits)
+	return fmt.Sprintf(format, n), nil
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
