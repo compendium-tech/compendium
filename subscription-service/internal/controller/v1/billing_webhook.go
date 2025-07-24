@@ -34,7 +34,7 @@ func NewBillingWebhookController(
 }
 
 func (p *BillingWebhookController) MakeRoutes(e *gin.Engine) {
-	e.POST("/v1/billingEvents", appErr.HandleAppErr(p.handle))
+	e.POST("/v1/billingEvents", appErr.Handle(p.handle))
 }
 
 type event struct {

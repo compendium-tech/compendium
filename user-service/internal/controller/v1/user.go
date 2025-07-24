@@ -26,10 +26,10 @@ func (u UserController) MakeRoutes(e *gin.Engine) {
 	{
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/account", appErr.HandleAppErr(u.getAccount))
+		authenticated.GET("/account", appErr.Handle(u.getAccount))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.PUT("/account", appErr.HandleAppErr(u.updateAccount))
+		authenticated.PUT("/account", appErr.Handle(u.updateAccount))
 	}
 }
 

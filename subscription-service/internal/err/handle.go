@@ -1,4 +1,4 @@
-package error
+package err
 
 import (
 	"net/http"
@@ -41,20 +41,12 @@ func Handle(f func(c *gin.Context) error) func(c *gin.Context) {
 
 func (k AppErrorKind) httpStatus() int {
 	switch k {
-	case InvalidCredentialsError:
-		return http.StatusUnauthorized
-	case InvalidMfaOtpError:
-		return http.StatusUnauthorized
-	case InvalidSessionError:
-		return http.StatusUnauthorized
-	case TooManyRequestsError:
-		return http.StatusTooManyRequests
-	case UserNotFoundError:
-		return http.StatusNotFound
-	case EmailTakenError:
-		return http.StatusConflict
-	case SessionNotFoundError:
-		return http.StatusNotFound
+	case SubscriptionIsRequiredError:
+		return http.StatusPaymentRequired
+	case PayerPermissionRequired:
+		return http.StatusForbidden
+	case InvalidSubscriptionInvitationCode:
+		return http.StatusForbidden
 	default:
 		return http.StatusBadRequest
 	}

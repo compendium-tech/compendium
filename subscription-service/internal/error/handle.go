@@ -10,7 +10,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func HandleAppErr(f func(c *gin.Context) error) func(c *gin.Context) {
+func Handle(f func(c *gin.Context) error) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		err := f(c)
 

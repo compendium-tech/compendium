@@ -32,16 +32,16 @@ func NewAuthController(authService service.AuthService) AuthController {
 func (a AuthController) MakeRoutes(e *gin.Engine) {
 	v1 := e.Group("/api/v1/")
 	{
-		v1.POST("/users", appErr.HandleAppErr(a.signUp))
-		v1.POST("/sessions", appErr.HandleAppErr(a.createSession))
-		v1.PUT("/password", appErr.HandleAppErr(a.resetPassword))
-		v1.DELETE("/session", appErr.HandleAppErr(a.logout))
+		v1.POST("/users", appErr.Handle(a.signUp))
+		v1.POST("/sessions", appErr.Handle(a.createSession))
+		v1.PUT("/password", appErr.Handle(a.resetPassword))
+		v1.DELETE("/session", appErr.Handle(a.logout))
 
 		authenticated := v1.Group("/")
 		{
 			authenticated.Use(auth.RequireAuth)
-			authenticated.GET("/sessions", appErr.HandleAppErr(a.getSessions))
-			authenticated.DELETE("/sessions/:id", appErr.HandleAppErr(a.removeSession))
+			authenticated.GET("/sessions", appErr.Handle(a.getSessions))
+			authenticated.DELETE("/sessions/:id", appErr.Handle(a.removeSession))
 		}
 	}
 }

@@ -25,15 +25,15 @@ func (p *SubscriptionController) MakeRoutes(e *gin.Engine) {
 	{
 		authenticated := v1.Group("")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/subscription", appErr.HandleAppErr(p.getSubscription))
-		authenticated.GET("/subscription/invitationCode", appErr.HandleAppErr(p.getSubscriptionInvitationCode))
+		authenticated.GET("/subscription", appErr.Handle(p.getSubscription))
+		authenticated.GET("/subscription/invitationCode", appErr.Handle(p.getSubscriptionInvitationCode))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.DELETE("/subscription", appErr.HandleAppErr(p.cancelSubscription))
-		authenticated.DELETE("/subscription/members/:id", appErr.HandleAppErr(p.removeSubscriptionMember))
-		authenticated.POST("/subscription/members/me", appErr.HandleAppErr(p.joinSubscription))
-		authenticated.PUT("/subscription/invitationCode", appErr.HandleAppErr(p.updateSubscriptionInvitationCode))
-		authenticated.DELETE("/subscription/invitationCode", appErr.HandleAppErr(p.removeSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription", appErr.Handle(p.cancelSubscription))
+		authenticated.DELETE("/subscription/members/:id", appErr.Handle(p.removeSubscriptionMember))
+		authenticated.POST("/subscription/members/me", appErr.Handle(p.joinSubscription))
+		authenticated.PUT("/subscription/invitationCode", appErr.Handle(p.updateSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription/invitationCode", appErr.Handle(p.removeSubscriptionInvitationCode))
 	}
 }
 
