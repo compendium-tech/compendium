@@ -9,6 +9,7 @@
 -   **[Why Open Source? This is the Heart of It.](#why-open-source-this-is-the-heart-of-it)**
 -   **[Making changes](#making-changes)**
 -   **[System Architecture](#system-architecture)**
+    - [Port Usage Breakdown](#port-usage-breakdown)
     -   [Setup guide](#setup-guide)
         -   [Paddle](#paddle)
         -   [Kafka](#kafka)
@@ -175,6 +176,21 @@ This section outlines the setup process for the various components of our system
 - **Elasticsearch**: Utilized for the College database, specifically for its powerful search and analytics capabilities. This allows for efficient querying and retrieval of college-related information.
 - **Nginx**: Acts as a high-performance reverse proxy and load balancer.
 - **AWS S3, CloudFront**: Solution for static file storage and content delivery used in course microservice.
+
+## Port Usage Breakdown
+
+When running the system locally, the following ports are utilized by various services (by default):
+
+| Service                 | Protocol | Port    | Description                                   |
+| :---------------------- | :------- | :------ | :-------------------------------------------- |
+| **User Service** | HTTP     | `1000`  | Handles user-related operations over HTTP.    |
+| **User Service** | gRPC     | `2000`  | Provides user-related operations over gRPC.   |
+| **Subscription Service**| HTTP     | `1001`  | Manages user subscriptions.                   |
+| **API Gateway / Nginx** | HTTP     | `8080`  | Entry point for all external requests.        |
+| **Vue Application** | HTTP     | `5173`  | Frontend application serving the UI.          |
+| **Redis** | TCP     | `6379`  | Cache storage.          |
+| **PostgreSQL** | TCP     | `5432`  | For testing purposes one db for all microservices.          |
+| **Kafka** | TCP     | `9092`  | For email delivery with corresponding service.          |
 
 ## Setup Guide
 
