@@ -23,12 +23,12 @@ func NewPgUserRepository(db *sql.DB) UserRepository {
 	}
 }
 
-func (r *pgUserRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *pgUserRepository) GetUser(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	user := &model.User{}
 	query := `
-		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
+		SELECT id, name, email, is_admin, password_hash, created_at
 		FROM users
-		WHERE id = $1
+		WHERE id = $1 AND is_email_verified = true
 	`
 	row := r.db.QueryRowContext(ctx, query, id)
 
@@ -36,7 +36,6 @@ func (r *pgUserRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.U
 		&user.ID,
 		&user.Name,
 		&user.Email,
-		&user.IsEmailVerified,
 		&user.IsAdmin,
 		&user.PasswordHash,
 		&user.CreatedAt,
@@ -49,10 +48,12 @@ func (r *pgUserRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.U
 		return nil, tracerr.Wrap(err)
 	}
 
+	user.IsEmailVerified = true
+
 	return user, nil
 }
 
-func (r *pgUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *pgUserRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
@@ -81,6 +82,36 @@ func (r *pgUserRepository) FindByEmail(ctx context.Context, email string) (*mode
 	return user, nil
 }
 
+func (r *pgUserRepository) FindUserByVerifiedEmail(ctx context.Context, email string) (*model.User, error) {
+	user := &model.User{}
+	query := `
+		SELECT id, name, email, is_admin, password_hash, created_at
+		FROM users
+		WHERE email = $1, is_email_verified = true
+	`
+	row := r.db.QueryRowContext(ctx, query, email)
+
+	err := row.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.IsAdmin,
+		&user.PasswordHash,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, tracerr.Wrap(err)
+	}
+
+	user.IsEmailVerified = true
+
+	return user, nil
+}
+
 func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error {
 	query := `
 		UPDATE users
@@ -104,7 +135,7 @@ func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	return nil
 }
 
-func (r *pgUserRepository) UpdateName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
+func (r *pgUserRepository) UpdateUserName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
 	query := `
 		UPDATE users
 		SET name = $1

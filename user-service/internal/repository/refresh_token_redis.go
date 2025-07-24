@@ -37,7 +37,7 @@ func NewRedisRefreshTokenRepository(client *redis.Client) RefreshTokenRepository
 	}
 }
 
-func (r *redisRefreshTokenRepository) AddRefreshToken(ctx context.Context, token model.RefreshToken) error {
+func (r *redisRefreshTokenRepository) CreateRefreshToken(ctx context.Context, token model.RefreshToken) error {
 	tokenKey := refreshTokenKeyPrefix + token.Token
 	sessionRefreshTokenKey := sessionRefreshTokenKeyPrefix + token.Session.ID.String()
 	tokenDetails := map[string]any{
@@ -113,25 +113,25 @@ func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Con
 	return r.GetRefreshToken(ctx, tokenString)
 }
 
-func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, tokenString string, userID uuid.UUID) error {
-	tokenKey := refreshTokenKeyPrefix + tokenString
+func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, token string, userID uuid.UUID) error {
+	tokenKey := refreshTokenKeyPrefix + token
 	userTokensKey := userTokensKeyPrefix + userID.String()
-	revokedKey := revokedTokensKeyPrefix + tokenString
+	revokedKey := revokedTokensKeyPrefix + token
 
 	details, err := r.client.HGetAll(ctx, tokenKey).Result()
 	if err != nil {
 		return fmt.Errorf("failed to get refresh token details before removal: %w", err)
 	}
-	sessionIDStr := details[sessionIDHashField]
+	sessionID := details[sessionIDHashField]
 
 	pipe := r.client.TxPipeline()
 
 	pipe.Del(ctx, tokenKey)
-	pipe.ZRem(ctx, userTokensKey, tokenString)
+	pipe.ZRem(ctx, userTokensKey, token)
 	pipe.Set(ctx, revokedKey, "true", revokedTokenTTL)
 
-	if sessionIDStr != "" {
-		pipe.Del(ctx, fmt.Sprintf("session_id_to_token:%s", sessionIDStr)) // Remove reverse lookup
+	if sessionID != "" {
+		pipe.Del(ctx, sessionRefreshTokenKeyPrefix+sessionID)
 	}
 
 	_, err = pipe.Exec(ctx)
@@ -159,11 +159,12 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 		tokenKey := refreshTokenKeyPrefix + tokenString
 		details, err := r.client.HGetAll(ctx, tokenKey).Result()
 		if err == nil && len(details) > 0 {
-			sessionIDStr := details[sessionIDHashField]
+			sessionID := details[sessionIDHashField]
 			pipe.Del(ctx, tokenKey)
 			pipe.Set(ctx, revokedTokensKeyPrefix+tokenString, "true", revokedTokenTTL)
-			if sessionIDStr != "" {
-				pipe.Del(ctx, fmt.Sprintf("session_id_to_token:%s", sessionIDStr)) // Remove reverse lookup
+
+			if sessionID != "" {
+				pipe.Del(ctx, sessionRefreshTokenKeyPrefix+sessionID)
 			}
 		}
 	}

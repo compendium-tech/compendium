@@ -21,6 +21,20 @@ import (
 	"github.com/google/uuid"
 )
 
+// AuthService defines the interface for user authentication and session management.
+// It offers a comprehensive suite of features, including user registration,
+// login with multi-factor authentication (MFA), password reset workflows,
+// session refreshing, and session invalidation.
+//
+// # Authentication
+//
+// For operations requiring an authenticated user, an authentication middleware
+// typically handles the authentication process, populating user-specific data
+// (userID) into the context, as in most cases.
+//
+// However, for operations involving refresh tokens - specifically Logout, RemoveSessionByID,
+// and Refresh - the refreshToken is explicitly provided. This allows the service
+// to check if the caller's refresh token has already been revoked or is compromised.
 type AuthService interface {
 	SignUp(ctx context.Context, request domain.SignUpRequest) error
 	SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)
@@ -30,7 +44,7 @@ type AuthService interface {
 	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
 	GetSessionsForAuthenticatedUser(ctx context.Context) ([]domain.Session, error)
-	RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, currentRefreshToken string) error
+	RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, refreshToken string) error
 }
 
 type authService struct {
@@ -87,7 +101,7 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
-	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
 		return err
 	}
@@ -170,7 +184,7 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
-	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +248,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
-	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +323,7 @@ func (s *authService) InitPasswordReset(ctx context.Context, request domain.Init
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
-	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
 		return err
 	}
@@ -354,7 +368,7 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
 
-	user, err := s.userRepository.FindByEmail(ctx, request.Email)
+	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
 		return err
 	}
@@ -532,7 +546,7 @@ func (s *authService) GetSessionsForAuthenticatedUser(ctx context.Context) ([]do
 	return sessionsResponse, nil
 }
 
-func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, currentRefreshToken string) error {
+func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, refreshToken string) error {
 	log.L(ctx).Infof("Removing session %s for authenticated user", sessionID)
 
 	userID, err := auth.GetUserID(ctx)
@@ -540,7 +554,7 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 		return err
 	}
 
-	token, _, err := s.refreshTokenRepository.GetRefreshTokenBySessionID(ctx, sessionID)
+	token, isReused, err := s.refreshTokenRepository.GetRefreshTokenBySessionID(ctx, sessionID)
 	if err != nil {
 		return err
 	}
@@ -548,19 +562,24 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 	if token == nil {
 		log.L(ctx).Errorf("Attempted to remove non-existent session ID: %s", sessionID)
 
-		return appErr.Errorf(appErr.InvalidSessionError, "Session not found")
+		return appErr.Errorf(appErr.SessionNotFoundError, "Session not found")
 	}
 
 	if token.UserID != userID {
 		log.L(ctx).Errorf("User attempted to remove session %s which does not belong to them", sessionID)
 
-		return appErr.Errorf(appErr.InvalidSessionError, "You are not authorized to remove this session")
+		return appErr.Errorf(appErr.SessionNotFoundError, "Session not found")
 	}
 
-	if token.Token == currentRefreshToken {
-		log.L(ctx).Warnf("User attempted to remove their currently active session %s", sessionID)
+	if isReused {
+		log.L(ctx).Warnf("Refresh Token Reuse Detected during attempt to remove session! Attempted to use a previously invalidated token (%s). Forcing logout of all sessions for this user!", refreshToken)
 
-		return appErr.Errorf(appErr.FailedToRemoveCurrentSessionError, "Cannot remove your current active session")
+		err := s.refreshTokenRepository.RemoveAllRefreshTokensForUser(ctx, token.UserID)
+		if err != nil {
+			return err
+		}
+
+		return appErr.Errorf(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, token.Token, userID)
@@ -606,7 +625,7 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 
 	log.L(ctx).Infof("Adding refresh token to repository with session ID %s", sessionID)
 
-	err = s.refreshTokenRepository.AddRefreshToken(ctx, model.RefreshToken{
+	err = s.refreshTokenRepository.CreateRefreshToken(ctx, model.RefreshToken{
 		UserID:    userID,
 		Token:     refreshToken,
 		ExpiresAt: refreshTokenExpiresAt,

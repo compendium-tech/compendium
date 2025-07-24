@@ -11,6 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserService defines the interface for managing user accounts.
+//
+// Methods suffixed with AsAuthenticatedUser are designed for use within
+// authenticated API endpoints. For these, the user's identity is automatically
+// derived from the context, populated by an authentication middleware.
+//
+// Methods without this suffix (like FindAccountByEmail) are
+// intended for internal interoperability with other microservices.
 type UserService interface {
 	GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error)
 	FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error)
@@ -32,7 +40,7 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Getting user account details by ID")
 
-	user, err := u.userRepository.FindByID(ctx, id)
+	user, err := u.userRepository.GetUser(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +70,7 @@ func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domai
 	}
 
 	log.L(ctx).Info("Fetching authenticated user account details in database")
-	user, err := u.userRepository.FindByID(ctx, userID)
+	user, err := u.userRepository.GetUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +94,7 @@ func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domai
 func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
 	log.L(ctx).Info("Finding user account by email")
 
-	user, err := u.userRepository.FindByEmail(ctx, email)
+	user, err := u.userRepository.FindUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +124,7 @@ func (u *userService) UpdateAccountAsAuthenticatedUser(ctx context.Context, requ
 	}
 
 	log.L(ctx).Info("Updating authenticated user account details in database")
-	user, err := u.userRepository.UpdateName(ctx, userID, request.Name)
+	user, err := u.userRepository.UpdateUserName(ctx, userID, request.Name)
 	if err != nil {
 		return nil, err
 	}
