@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
+	"github.com/ztrue/tracerr"
 )
 
 type paddleBilling struct {
@@ -31,13 +32,25 @@ func (pb *paddleBilling) GetCustomer(ctx context.Context, customerID string) (Cu
 }
 
 func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) error {
+	subscription, err := pb.sdk.GetSubscription(ctx, &paddle.GetSubscriptionRequest{
+		SubscriptionID: subscriptionID,
+	})
+
+	if subscription == nil && err == nil {
+		return nil
+	}
+
+	if subscription.Status == paddle.SubscriptionStatusCanceled {
+		return nil
+	}
+
 	immediately := paddle.EffectiveFromImmediately
-	_, err := pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
+	_, err = pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
 		SubscriptionID: subscriptionID,
 		EffectiveFrom:  &immediately,
 	})
 	if err != nil {
-		return err
+		return tracerr.Wrap(err)
 	}
 
 	return nil

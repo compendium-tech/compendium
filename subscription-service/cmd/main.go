@@ -44,13 +44,13 @@ func main() {
 		return
 	}
 
-	userService, err := interop.NewGrpcUserServiceClient(cfg.GrpcUserServiceTarget)
+	userService, err := interop.NewGrpcUserServiceClient(cfg.GrpcUserServiceClientTarget)
 	if err != nil {
 		fmt.Printf("Failed to initialize user service, cause: %s", err)
 		return
 	}
 
-	paddleAPIClient, err := paddle.New(cfg.PaddleAPIKey)
+	paddleAPIClient, err := paddle.New(cfg.PaddleAPIKey, paddle.WithBaseURL(paddle.SandboxBaseURL))
 	if err != nil {
 		fmt.Printf("Failed to initialize Paddle API client, cause: %s", err)
 		return

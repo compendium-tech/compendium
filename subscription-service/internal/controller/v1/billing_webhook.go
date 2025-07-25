@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
@@ -57,24 +56,30 @@ func (p *BillingWebhookController) handle(c *gin.Context) error {
 		return appErr.Errorf(appErr.InvalidWebhookSignatureError, "Failed to verify request signature")
 	}
 
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		return tracerr.Wrap(err)
+	}
+
 	var webhook event
-	if err = unmarshal(c.Request, &webhook); err != nil {
+	if err = unmarshal(body, &webhook); err != nil {
 		return err
 	}
 
 	switch webhook.EventType {
 	case paddlenotification.EventTypeNameSubscriptionCreated:
-		p.handleSubscriptionCreated(c)
+		return p.handleSubscriptionCreated(c, body)
 	case paddlenotification.EventTypeNameSubscriptionUpdated:
-		p.handleSubscriptionUpdate(c)
-	}
+		return p.handleSubscriptionUpdate(c, body)
 
-	return nil
+	default:
+		return appErr.Errorf(appErr.RequestValidationError, "Unsupported event type %s", webhook.EventType)
+	}
 }
 
-func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context) error {
+func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context, body []byte) error {
 	var event paddlenotification.SubscriptionCreated
-	if err := unmarshal(c.Request, &event); err != nil {
+	if err := unmarshal(body, &event); err != nil {
 		return err
 	}
 
@@ -114,9 +119,9 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context) err
 	})
 }
 
-func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context) error {
+func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context, body []byte) error {
 	var event paddlenotification.SubscriptionUpdated
-	if err := unmarshal(c.Request, &event); err != nil {
+	if err := unmarshal(body, &event); err != nil {
 		return err
 	}
 
@@ -161,14 +166,8 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context) erro
 	})
 }
 
-func unmarshal(r *http.Request, v any) error {
-	rawBody, err := io.ReadAll(r.Body)
-
-	if err != nil {
-		return tracerr.Wrap(err)
-	}
-
-	if err := json.Unmarshal(rawBody, v); err != nil {
+func unmarshal(body []byte, v any) error {
+	if err := json.Unmarshal(body, v); err != nil {
 		return appErr.Errorf(appErr.RequestValidationError, "invalid request body")
 	}
 

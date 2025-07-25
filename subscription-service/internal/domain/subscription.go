@@ -30,7 +30,7 @@ type SubscriptionRole string
 
 type Subscription struct {
 	Role    SubscriptionRole     `json:"role"`
-	Level   model.Tier           `json:"level"`
+	Tier    model.Tier           `json:"tier"`
 	Since   time.Time            `json:"since"`
 	Till    time.Time            `json:"till"`
 	Members []SubscriptionMember `json:"members,omitempty"`

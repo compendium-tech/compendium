@@ -20,13 +20,20 @@
         </div>
         <div class="col-span-1 md:col-span-2">
           <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-          <div class="mt-1 flex rounded-lg">
-            <input v-model="editableName" type="text" id="name" :disabled="!isEditingName || isSavingName"
-              class="flex-1 block w-full rounded-l-md border-primary-100 focus:border-primary-100 sm:text-lg px-2 disabled:bg-gray-100 disabled:text-gray-600" />
+          <div class="mt-1 flex items-center space-x-2" v-if="!isEditingName">
+            <span class="text-lg">{{ user.name }}</span>
+            <BaseButton variant="outline" class="px-2 flex items-center" @click="toggleEditName" size="sm"
+              hover-effect="scale">
+              <Icon icon="mdi:pencil" class="h-5 w-5 mr-2" />
+              <span>Edit</span>
+            </BaseButton>
+          </div>
+          <div class="mt-1 flex items-center space-x-2" v-else>
+            <BaseInput v-model="editableName" type="text" id="name" :disabled="isSavingName" />
             <BaseButton class="px-4 flex items-center" @click="toggleEditName" size="sm" hover-effect="scale"
               :is-loading="isSavingName">
-              <Icon :icon="isEditingName ? 'mdi:content-save' : 'mdi:pencil'" class="h-5 w-5 mr-2" />
-              <span>{{ isEditingName ? 'Save' : 'Edit' }}</span>
+              <Icon icon="mdi:content-save" class="h-5 w-5 mr-2" />
+              <span>Save</span>
             </BaseButton>
           </div>
           <BaseTransitioningText>
@@ -45,6 +52,7 @@
 import { ref, onMounted, computed, Ref } from 'vue'
 import { userService, AccountDetails } from '../../api/user'
 import { Icon } from '@iconify/vue'
+import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseTransitioningText from '../ui/BaseTransitioningText.vue'
 

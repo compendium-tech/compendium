@@ -216,8 +216,12 @@ func (s *subscriptionService) CancelSubscription(ctx context.Context) error {
 		return appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
 	}
 
-	// Subscription will be removed from database after webhook will be processed.
 	err = s.billingAPI.CancelSubscription(ctx, subscription.ID)
+	if err != nil {
+		return err
+	}
+
+	err = s.subscriptionRepository.RemoveSubscription(ctx, subscription.ID)
 	if err != nil {
 		return err
 	}
@@ -477,7 +481,7 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 		IsActive: true,
 		Subscription: &domain.Subscription{
 			Role:    role,
-			Level:   subscription.Tier,
+			Tier:    subscription.Tier,
 			Till:    subscription.Till,
 			Since:   subscription.Since,
 			Members: membersResponse,

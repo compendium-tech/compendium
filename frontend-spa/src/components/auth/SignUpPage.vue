@@ -69,7 +69,7 @@
       </form>
 
       <div class="mt-6 space-x-3 flex">
-        <BaseButton size="sm" @click="resendOtp" :disabled="countdown > 0 || isLoading">
+        <BaseButton variant="secondary" size="sm" @click="resendOtp" :disabled="countdown > 0 || isLoading">
           Resend Code <span v-if="countdown > 0">({{
             countdown }}s)</span>
         </BaseButton>

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
@@ -71,9 +70,7 @@ func (a AuthMiddleware) parseAccessTokenCookie(c *gin.Context) (uuid.UUID, bool)
 	}
 
 	csrfToken := c.GetHeader(csrfTokenHeaderName)
-	fmt.Println(csrfToken)
 	if csrfToken != claims.CsrfToken {
-		fmt.Println(claims.CsrfToken)
 		return claims.Subject, false
 	}
 

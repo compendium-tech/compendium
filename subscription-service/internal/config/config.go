@@ -18,20 +18,20 @@ type ProductIDs struct {
 }
 
 type AppConfig struct {
-	Environment           string
-	PgHost                string
-	PgPort                uint16
-	PgUsername            string
-	PgPassword            string
-	PgDatabaseName        string
-	RedisHost             string
-	RedisPort             uint16
-	JwtSingingKey         string
-	CsrfTokenHashSalt     string
-	PaddleWebhookSecret   string
-	ProductIDs            ProductIDs
-	PaddleAPIKey          string
-	GrpcUserServiceTarget string
+	Environment                 string
+	PgHost                      string
+	PgPort                      uint16
+	PgUsername                  string
+	PgPassword                  string
+	PgDatabaseName              string
+	RedisHost                   string
+	RedisPort                   uint16
+	JwtSingingKey               string
+	CsrfTokenHashSalt           string
+	PaddleWebhookSecret         string
+	ProductIDs                  ProductIDs
+	PaddleAPIKey                string
+	GrpcUserServiceClientTarget string
 }
 
 func LoadAppConfig() *AppConfig {
@@ -52,8 +52,8 @@ func LoadAppConfig() *AppConfig {
 			TeamSubscriptionProductID:      "",
 			CommunitySubscriptionProductID: "",
 		},
-		PaddleAPIKey:          "",
-		GrpcUserServiceTarget: "localhost:2000",
+		PaddleAPIKey:                "",
+		GrpcUserServiceClientTarget: "localhost:2000",
 	}
 
 	env := os.Getenv("ENVIRONMENT")
@@ -76,7 +76,7 @@ func LoadAppConfig() *AppConfig {
 		CommunitySubscriptionProductID: os.Getenv("COMMUNITY_SUBSCRIPTION_PRODUCT_ID"),
 	}
 	appConfig.PaddleAPIKey = os.Getenv("PADDLE_API_KEY")
-	appConfig.GrpcUserServiceTarget = os.Getenv("GRPC_USER_SERVICE_TARGET")
+	appConfig.GrpcUserServiceClientTarget = os.Getenv("GRPC_USER_SERVICE_CLIENT_TARGET")
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {
 		var pgPort uint16

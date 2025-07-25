@@ -7,13 +7,16 @@
       <Icon :icon="isPasswordVisible ? 'heroicons-solid:eye' : 'heroicons-solid:eye-slash'"
         class="w-5 h-5 text-gray-400" />
     </button>
-    <p v-if="error" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{ error }}</p>
+    <BaseTransitioningText>
+      <p v-if="error" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{ error }}</p>
+    </BaseTransitioningText>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, toRefs, useAttrs } from "vue"
 import { Icon } from "@iconify/vue"
+import BaseTransitioningText from "./BaseTransitioningText.vue"
 
 interface Props {
   error?: string
