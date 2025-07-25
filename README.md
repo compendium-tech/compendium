@@ -129,12 +129,12 @@ Ask the right folks to review your code, and add any labels or milestones if nee
 
 # System Architecture
 
-<img width="80%" alt="architecture" src="https://github.com/user-attachments/assets/bd038fe6-f1ef-4631-bc3e-9ae8e8bf9e3c" />
+<img alt="architecture" src="https://github.com/user-attachments/assets/bd038fe6-f1ef-4631-bc3e-9ae8e8bf9e3c" />
 
 We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services:
 - **Python**: Primarily used for specialized microservice services, including interactions with the LLM API for the assistant service.
 - **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
-- **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. Vite's speed and Vue 3's reactive framework are key here.
+- **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. 
 - **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data.
 - **Redis**: Employed for high-speed data caching to manage authentication state and caching in some microservices.
 - [**Paddle**](https://paddle.com/): An external platform integrated for handling Subscription management and payment processing.
@@ -340,12 +340,22 @@ go run cmd/main.go # run server
 
 ### Logging
 
-To ensure comprehensive logging with contextual information such as `requestID` and `userID`, we recommend enabling `common.pkg.middleware.LoggerMiddleware` globally. This middleware will instantiate and populate a reusable logger within `context.Context`, accessible via `common.pkg.log.L(ctx)`. This allows for consistent and enriched logging throughout the application.
+To ensure comprehensive logging with contextual information such as `requestId` and `userId`, we recommend enabling `common.pkg.middleware.LoggerMiddleware` globally. This middleware will instantiate and populate a reusable logger within `context.Context`, accessible via `common.pkg.log.L(ctx)`. This allows for consistent and enriched logging throughout the application.
 
 ```go
-if university == nil {
-    log.L(ctx).Errorf("University was not found")
-    return ...
+import (
+    "github.com/compendium-tech/compendium/common/pkg/log"
+)
+
+func (s *service) GetUniversity() (*domain.University, error) {
+    ...
+    logger := log.L(ctx).WithField("universityId", universityID)
+    
+    if university == nil {
+        logger.Errorf("University was not found")
+        return ...
+    }
+    ...
 }
 ```
 
@@ -356,16 +366,19 @@ Our code mostly uses [`tracerr`](https://github.com/ztrue/tracerr) for finding s
 This means `tracerr.Wrap()`, `tracerr.New()` and `tracerr.Errorf()` should only ever be applied at the point where an error originates from an external dependency (e.g., database, external API call, file system operation) and is first returned up the call stack. It should not be used repeatedly throughout the service or presentation layers.
 
 ```go
-// In repository layer:
+import (
+    "github.com/ztrue/tracerr"
+)
+
 func (r *SomeRepo) GetItem(id string) error {
     err := db.Query("...")
     if err != nil {
-        return tracerr.Wrap(fmt.Errorf("failed to query item %s from DB: %w", id, err))
+        return tracerr.Errorf("failed to query item %s from DB: %w", id, err)
     }
+
     return nil
 }
 
-// In service layer:
 func (s *SomeService) ProcessItem(id string) error {
     err := s.repo.GetItem(id)
     if err != nil {
