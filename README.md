@@ -4,22 +4,16 @@
 # Table of Contents
 
 -   **[Welcome!](#welcome)**
-    -   [Why Compendium?](#why-compendium)
-    -   [Our Growth Vision](#our-growth-vision)
--   **[Why Open Source? This is the Heart of It.](#why-open-source-this-is-the-heart-of-it)**
 -   **[Making changes](#making-changes)**
 -   **[System Architecture](#system-architecture)**
-    - [Port Usage Breakdown](#port-usage-breakdown)
+    - [Port Usage](#port-usage)
     -   [Setup guide](#setup-guide)
-        -   [Paddle](#paddle)
-        -   [Kafka](#kafka)
-        -   [Mockery](#mockery)
-        -   [Protobuf](#protobuf)
+        -   [Paddle](#paddle), [Kafka](#kafka), [Nginx](#nginx)
+        -   [Protobuf](#protobuf), [Mockery](#mockery)
 -   **[Microservice Backend](#microservice-backend)**
     -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
         -   [Logging](#logging)
-        -   [Error Tracing](#error-tracing)
         -   [Error Handling](#error-handling)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
     -   [Running Locally](#running-locally-1)
@@ -27,7 +21,6 @@
 -----
 
 # Welcome!
-## Why Compendium?
 
 **Think about it**: applying to university is a huge deal, right? But for so many aspiring students, it's a total maze. They're trying to find the perfect university, figure out what research opportunities exist and then get tangled in the mess of admissions criteria. Information is scattered everywhere, making it a super time-consuming and frustrating experience.
 
@@ -40,34 +33,6 @@ And let's not forget the international exams like SAT, GRE, IELTS. Prep for thes
 Basically, the existing solutions out there are fragmented and come with a hefty price tag, making comprehensive support inaccessible.
 
 This is where Compendium steps in. We're bringing all these pieces together into one affordable, AI-powered platform. Our goal is to offer the "shortest way" for students to confidently research, plan, and achieve their higher education dreams, completely breaking down those walls of complexity and cost.
-
-## Our Growth Vision
-
-We're not just building a product; we're building a movement. Our growth strategy is all about getting Compendium into as many hands as possible, fast.
-
-We're going all-in on **User Acquisition** with aggressive digital marketing, SEO, and creating killer content that genuinely helps students. We want to build a massive user base quickly because, frankly, the more students we help, the more impact we have.
-
-When it comes to making money, we're using a **Freemium Model**. This means we'll offer a ton of value for free, but then have premium AI features and advanced exam prep courses for those who want to take their journey to the next level. This keeps Compendium accessible while still generating the revenue we need to keep innovating.
-
-<!-- We're actively working with Startup Accelerators. This isn't just about money; it's about refining our entire business model, getting priceless mentorship, and tapping into networks that can truly propel us forward. This ties directly into our efforts to Pitch and Raise Investments from VCs and angel investors – securing the capital to really expand aggressively. -->
-
-Of course, Strategic Partnerships are key. Teaming up with educational institutions and other Ed-Tech platforms will broaden our reach and bring even more valuable resources to our users.
-
-Finally, we're thinking Global Market Entry from day one. This means targeted localization and marketing in key international student markets to ensure Compendium becomes the go-to platform for university research and admissions worldwide. We want to be there for every student, no matter where they are.
-
-# Why Open Source? This is the Heart of It.
-
-This is where the human element really shines through for us. Making Compendium open source isn't just a technical decision; it's deeply tied to our values and our business strategy.
-
-First off, it's about community collaboration. We genuinely believe that by opening up our project, we tap into a global brain trust. Imagine developers, educators, and even students from all over the world contributing their ideas, their code, and their insights. This leads to more creative solutions, higher quality code, and a platform that truly serves a diverse user base. It's like having an army of passionate people helping you build something incredible.
-
-Then there's transparency. In an era where trust is paramount, being open source means our codebase is public. There are no hidden agendas, no secret practices. Users can see exactly how their data is handled, how features work, and how we're evolving. This builds immense trust, which is invaluable for a platform dealing with something as critical as education.
-
-Open sourcing also dramatically accelerates innovation. We're not limited by the resources of just our internal team. Contributions can come in from anywhere, leading to faster development cycles and quicker iterations on features. It means we can adapt to market needs and user feedback with incredible agility.
-
-Ultimately, it helps us build a more robust and accessible platform. When more eyes are on the code, bugs are found faster, security vulnerabilities are patched sooner, and the overall quality of the software improves. And by being open, Compendium can be more easily adapted and integrated with other educational tools, creating a richer ecosystem for students.
-
-In essence, we're open sourcing Compendium because we believe in the power of collective effort. It's about building a collaborative ecosystem around higher education guidance, making quality resources and tools not just accessible, but continuously improving, for everyone. We're inviting you to be a part of that journey.
 
 # Making changes
 
@@ -156,17 +121,17 @@ git push origin feat/add-user-profile # If working directly in the main repo
 git push origin feat/add-user-profile # If working from a fork
 ```
 
-To open a Pull Request, go to the GitHub repository page (either the original or your fork). GitHub will usually detect your newly pushed branch and prompt you to "Compare & pull request." Click this button, or alternatively, navigate to the "Pull requests" tab and click "New pull request."
+To open a PR, head to the GitHub repo page (either the original or your fork). GitHub usually spots your new branch and offers a "Compare & pull request" button. Click that, or just go to the "Pull requests" tab and hit "New pull request."
 
-When filling out the PR description, use a concise, descriptive title. In the description, provide a detailed explanation of your changes, including what problem the PR solves, how it solves it, any relevant context, design decisions, or trade-offs, screenshots or GIFs if applicable, and references to any related issues (e.g., Closes #123).
+When you're filling out the PR, give it a short, clear title. In the description, really explain what you did: what problem does this PR fix? How does it fix it? Any context, design choices, or trade-offs? Screenshots or GIFs are always a plus! And if it relates to an issue, link it (e.g., Closes #123).
 
-Request reviews from appropriate team members and add relevant labels or assign to a milestone if necessary. Be prepared to receive feedback and make further changes based on code reviews; pushing new commits to your branch will automatically update the PR. Once the PR has been approved by the required reviewers and all checks pass, it can be merged into the main branch.
+Ask the right folks to review your code, and add any labels or milestones if needed. Be ready for feedback – it's part of the process! Pushing new commits to your branch will automatically update the PR. Once enough people have approved and all our automated checks pass, your changes can be merged!
 
 # System Architecture
 
 <img width="80%" alt="architecture" src="https://github.com/user-attachments/assets/bd038fe6-f1ef-4631-bc3e-9ae8e8bf9e3c" />
 
-This section outlines the setup process for the various components of our system architecture. We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services to build a robust and scalable application.
+We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services:
 - **Python**: Primarily used for specialized microservice services, including interactions with the LLM API for the assistant service.
 - **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
 - **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. Vite's speed and Vue 3's reactive framework are key here.
@@ -177,9 +142,9 @@ This section outlines the setup process for the various components of our system
 - **Nginx**: Acts as a high-performance reverse proxy and load balancer.
 - **AWS S3, CloudFront**: Solution for static file storage and content delivery used in course microservice.
 
-## Port Usage Breakdown
+## Port Usage
 
-When running the system locally, the following ports are utilized by various services (by default):
+When you run everything on your local machine, here's which port each service hangs out on (by default):
 
 | Service                 | Protocol | Port    | Description                                   |
 | :---------------------- | :------- | :------ | :-------------------------------------------- |
@@ -237,7 +202,7 @@ One of these:
 ### Manual Download
 
 - **Download Kafka Binary**:
-  Download the latest release from https://kafka.apache.org/downloads.
+  Download the latest release from [here](https://kafka.apache.org/downloads).
 - **Extract & Navigate**:
   ```bash
   tar -xzf kafka_....tgz # Use your version
@@ -308,15 +273,23 @@ One of these:
   kafka-topics --create --topic private.emaildelivery.emails --bootstrap-server localhost:9092
   ```
 
+### Nginx
+
+To get Nginx running with our configuration, simply point it to the `nginx/api.conf` file:
+```
+nginx -c /absolute/path/to/compendium/nginx/api.conf
+```
+
 ### Mockery
 
-To install Mockery use:
+Mockery generates mocks for Go interfaces, allowing us to test individual code components in isolation. This makes our unit tests faster, more reliable, and independent of real external services or complex dependencies. To install Mockery run:
 
 ```bash
 go install github.com/vektra/mockery/v3@v3.5.1
 ```
 
-Execute this command in repository's root folder to regenerate mocks generated for Go interfaces:
+If you ever change a Go interface and need to regenerate the mocks, just run this command from the root of the repository:
+
 ```bash
 mockery
 ```
@@ -329,7 +302,7 @@ You can install protobuf [here](https://github.com/protocolbuffers/protobuf/rele
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ```
 
-To regenerate interfaces made from proto files, run these commands in repository's root folder:
+To regenerate interfaces from our .proto files, run these commands from the _root of the repository_:
 
 ```bash
 export PATH="$PATH:$(go env GOPATH)"/bin
@@ -376,7 +349,7 @@ if university == nil {
 }
 ```
 
-### Error tracing
+### Error handling
 
 Our code mostly uses [`tracerr`](https://github.com/ztrue/tracerr) for finding source of unexpected internal server errors (e.g. when database fails or external API doesn't respond). Errors must be wrapped into `tracerr.Error` (error with stacktrace) **only in the service dependency layer**.
 
@@ -403,15 +376,15 @@ func (s *SomeService) ProcessItem(id string) error {
 }
 ```
 
-### Error handling
+API layer (think HTTP handlers or gRPC servers) handles turning data into something our code can understand, and then calls our service layer. If there's a generic, unexpected internal server error from the service layer, it should be caught and logged at this presentation level, or by a special error-handling middleware. This way, we avoid writing the same error-handling code everywhere.
 
-The presentation/API layer (e.g., HTTP handlers, gRPC servers) handles incoming requests, manages data serialization/deserialization, and invokes the service layer. Generic unexpected internal server errors originating from the service layer should be handled and logged at this presentation level, or by a dedicated error-handling middleware. This approach prevents code duplication across various handlers and the service layer itself.
-
-Conversely, business logic-related errors (such as "not found" scenarios) should be returned as custom error types from the service layer. These custom errors should be logged with the contextual logger within the service layer itself, and then passed up to the presentation/API layer to be converted into an appropriate, user-friendly API response.
+On the flip side, errors related to our business logic (like, "hey, we couldn't find that user!") should be sent back as custom error types from the service layer. These custom errors should be logged with our handy contextual logger within the service layer itself. Then, they get passed up to the presentation/API layer, which can turn them into a nice, polite message for the user.
 
 # Monolithic SPA frontend
 
 ## Running Locally
+
+Want to see the app in action on your machine? Run:
 
 ```
 git clone github.com/compendium-tech/compendium
