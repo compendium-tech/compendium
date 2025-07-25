@@ -228,12 +228,19 @@ func (a *AuthController) logout(c *gin.Context) error {
 		return err
 	}
 
+	removeAuthCookies(c)
+
 	c.Status(http.StatusOK)
 	return nil
 }
 
 func (a *AuthController) getSessions(c *gin.Context) error {
-	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context())
+	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
+	if err != nil {
+		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+	}
+
+	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context(), refreshTokenCookie.Value)
 	if err != nil {
 		return err
 	}
@@ -273,4 +280,10 @@ func setAuthCookies(c *gin.Context, session *domain.SessionResponse) {
 	c.SetCookie(csrfTokenCookieName, session.CsrfToken, cookieExpiresAt, "/", "", false, false)
 	c.SetCookie(accessTokenCookieName, session.AccessToken, cookieExpiresAt, "/", "", false, true)
 	c.SetCookie(refreshTokenCookieName, session.RefreshToken, cookieExpiresAt, "/", "", false, true)
+}
+
+func removeAuthCookies(c *gin.Context) {
+	c.SetCookie(csrfTokenCookieName, "", 0, "/", "", false, false)
+	c.SetCookie(accessTokenCookieName, "", 0, "/", "", false, true)
+	c.SetCookie(refreshTokenCookieName, "", 0, "/", "", false, true)
 }

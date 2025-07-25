@@ -176,3 +176,49 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export interface Session {
+  id: string
+  isCurrent: boolean
+  name: string
+  os: string
+  device: string
+  location: string
+  userAgent: string
+  ipAddress: string
+  createdAt: string
+}
+
+export interface SessionService {
+  getSessions: () => Promise<Session[]>
+  deleteSession: (id: string) => Promise<void>
+  logout: () => Promise<void>
+}
+
+export const sessionService: SessionService = {
+  getSessions: async () => {
+    try {
+      const response = await apiClient.get("/sessions")
+
+      return response.data
+    } catch (error) {
+      return handleAxiosError(error)
+    }
+  },
+
+  deleteSession: async (id: string) => {
+    try {
+      await apiClient.delete(`/sessions/${id}`)
+    } catch (error) {
+      return handleAxiosError(error)
+    }
+  },
+
+  logout: async () => {
+    try {
+      await apiClient.delete("/session")
+    } catch (error) {
+      return handleAxiosError(error)
+    }
+  },
+}

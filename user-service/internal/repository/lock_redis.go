@@ -27,7 +27,9 @@ func (e *authLock) Release(ctx context.Context) error {
 		return tracerr.Wrap(err)
 	}
 
-	log.L(ctx).Infof("Successfully released auth lock for %s", e.email)
+	log.L(ctx).
+		WithField("email", e.email).
+		Infof("Successfully released auth lock for %s", e.email)
 
 	return nil
 }
@@ -37,7 +39,9 @@ func (e *authLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
 	// The original error is usually more important.
 	if *err != nil {
 		if lockErr := e.Release(ctx); lockErr != nil {
-			log.L(ctx).Warnf("Warning: Failed to release email lock, but original error already present: %v (release error: %v)\n", (*err), lockErr)
+			log.L(ctx).
+				WithField("email", e.email).
+				Warnf("Warning: Failed to release email lock, but original error already present: %v (release error: %v)\n", (*err), lockErr)
 		}
 
 		return
@@ -60,12 +64,13 @@ func NewRedisAuthLockRepository(rdb *redis.Client) AuthLockRepository {
 }
 
 func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) (AuthLock, error) {
-	log.L(ctx).Infof("Obtaining auth lock for %s", email)
+	logger := log.L(ctx).WithField("email", email)
+	logger.Infof("Obtaining auth lock for %s", email)
 
 	lock, err := r.client.Obtain(ctx, fmt.Sprintf("auth_locks:%s", email), authLockTtl, nil)
 	if err != nil {
 		if errors.Is(err, redislock.ErrNotObtained) {
-			log.L(ctx).Error("Failed to obtain email lock")
+			logger.Error("Failed to obtain email lock")
 
 			return nil, appErr.New(appErr.TooManyRequestsError, "Too many requests")
 		}
@@ -73,7 +78,7 @@ func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) 
 		return nil, tracerr.Wrap(err)
 	}
 
-	log.L(ctx).Infof("Successfully obtained auth lock for %s", email)
+	logger.Infof("Successfully obtained auth lock for %s", email)
 
 	return &authLock{lock: lock, email: email}, nil
 }

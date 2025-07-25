@@ -35,6 +35,8 @@ import (
 // However, for operations involving refresh tokens - specifically Logout, RemoveSessionByID,
 // and Refresh - the refreshToken is explicitly provided. This allows the service
 // to check if the caller's refresh token has already been revoked or is compromised.
+// In GetSessionsForAuthenticatedUser refreshToken is used to identify
+// the current session and is not checked against reuse.
 type AuthService interface {
 	SignUp(ctx context.Context, request domain.SignUpRequest) error
 	SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)
@@ -43,7 +45,7 @@ type AuthService interface {
 	FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error
 	Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
-	GetSessionsForAuthenticatedUser(ctx context.Context) ([]domain.Session, error)
+	GetSessionsForAuthenticatedUser(ctx context.Context, refreshToken string) ([]domain.Session, error)
 	RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, refreshToken string) error
 }
 
@@ -506,7 +508,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	return nil
 }
 
-func (s *authService) GetSessionsForAuthenticatedUser(ctx context.Context) ([]domain.Session, error) {
+func (s *authService) GetSessionsForAuthenticatedUser(ctx context.Context, refreshToken string) ([]domain.Session, error) {
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -529,6 +531,7 @@ func (s *authService) GetSessionsForAuthenticatedUser(ctx context.Context) ([]do
 
 		sessionsResponse[i] = domain.Session{
 			ID:        token.Session.ID,
+			IsCurrent: token.Token == refreshToken,
 			Name:      deviceInfo.Name,
 			Os:        deviceInfo.Os,
 			Device:    deviceInfo.Device,
@@ -597,7 +600,7 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 		return nil, err
 	}
 
-	accessTokenExpiresAt := time.Now().Add(20 * time.Second)
+	accessTokenExpiresAt := time.Now().Add(20 * time.Minute)
 	accessToken, err := s.tokenManager.NewAccessToken(userID, csrfToken, accessTokenExpiresAt)
 	if err != nil {
 		return nil, err

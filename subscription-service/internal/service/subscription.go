@@ -271,7 +271,7 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 		return err
 	}
 
-	logger := log.L(ctx).WithField("memberUserID", memberUserID.String())
+	logger := log.L(ctx).WithField("memberUserId", memberUserID.String())
 	logger.Info("Attempting to remove subscription member")
 
 	subscription, err := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, userID)
@@ -300,7 +300,7 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 }
 
 func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest) (finalErr error) {
-	logger := log.L(ctx).WithField("subscriptionID", request.SubscriptionID).WithField("customerID", request.CustomerID)
+	logger := log.L(ctx).WithField("subscriptionId", request.SubscriptionID).WithField("customerID", request.CustomerID)
 	logger.Info("Upserting subscription")
 
 	if len(request.Items) == 0 {
@@ -400,7 +400,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 }
 
 func (s *subscriptionService) RemoveSubscription(ctx context.Context, subscriptionID string) error {
-	logger := log.L(ctx).WithField("subscriptionID", subscriptionID)
+	logger := log.L(ctx).WithField("subscriptionId", subscriptionID)
 	logger.Info("Removing subscription")
 
 	err := s.subscriptionRepository.RemoveSubscription(ctx, subscriptionID)
@@ -427,7 +427,7 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 		role = domain.SubscriptionRolePayer
 	}
 
-	logger := log.L(ctx).WithField("subscriptionID", subscription.ID)
+	logger := log.L(ctx).WithField("subscriptionId", subscription.ID)
 	logger.Debug("Converting subscription to response format")
 
 	members, err := s.subscriptionRepository.GetSubscriptionMembers(ctx, subscription.ID)
