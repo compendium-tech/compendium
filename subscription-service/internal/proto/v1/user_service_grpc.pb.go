@@ -19,8 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetAccount_FullMethodName         = "/user_service.v1.UserService/GetAccount"
-	UserService_FindAccountByEmail_FullMethodName = "/user_service.v1.UserService/FindAccountByEmail"
+	UserService_GetAccount_FullMethodName = "/user_service.v1.UserService/GetAccount"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -28,7 +27,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error)
-	FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*Account, error)
 }
 
 type userServiceClient struct {
@@ -49,22 +47,11 @@ func (c *userServiceClient) GetAccount(ctx context.Context, in *GetAccountReques
 	return out, nil
 }
 
-func (c *userServiceClient) FindAccountByEmail(ctx context.Context, in *FindAccountByEmailRequest, opts ...grpc.CallOption) (*Account, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Account)
-	err := c.cc.Invoke(ctx, UserService_FindAccountByEmail_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
 	GetAccount(context.Context, *GetAccountRequest) (*Account, error)
-	FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*Account, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -77,9 +64,6 @@ type UnimplementedUserServiceServer struct{}
 
 func (UnimplementedUserServiceServer) GetAccount(context.Context, *GetAccountRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
-}
-func (UnimplementedUserServiceServer) FindAccountByEmail(context.Context, *FindAccountByEmailRequest) (*Account, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FindAccountByEmail not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -120,24 +104,6 @@ func _UserService_GetAccount_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_FindAccountByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FindAccountByEmailRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).FindAccountByEmail(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: UserService_FindAccountByEmail_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).FindAccountByEmail(ctx, req.(*FindAccountByEmailRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -148,10 +114,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAccount",
 			Handler:    _UserService_GetAccount_Handler,
-		},
-		{
-			MethodName: "FindAccountByEmail",
-			Handler:    _UserService_FindAccountByEmail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

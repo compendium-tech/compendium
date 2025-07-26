@@ -304,7 +304,7 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 }
 
 func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest) (finalErr error) {
-	logger := log.L(ctx).WithField("subscriptionId", request.SubscriptionID).WithField("customerID", request.CustomerID)
+	logger := log.L(ctx).WithField("subscriptionId", request.SubscriptionID).WithField("userId", request.UserID)
 	logger.Info("Upserting subscription")
 
 	if len(request.Items) == 0 {
@@ -312,32 +312,13 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 		return appErr.Errorf(appErr.RequestValidationError, "No items in request")
 	}
 
-	customer, err := s.billingAPI.GetCustomer(ctx, request.CustomerID)
+	lock, err := s.billingLockRepository.ObtainLock(ctx, request.UserID)
 	if err != nil {
-		logger.Errorf("Failed to get customer from billing API: %v", err)
-		return err
-	}
-
-	lock, err := s.billingLockRepository.ObtainLock(ctx, request.CustomerID)
-	if err != nil {
-		logger.Errorf("Failed to obtain billing lock for customer %s: %v", request.CustomerID, err)
+		logger.Errorf("Failed to obtain billing lock for customer %s: %v", request.UserID, err)
 		return err
 	}
 
 	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
-
-	account, err := s.userService.FindAccountByEmail(ctx, customer.Email)
-	if err != nil {
-		logger.Errorf("Failed to find account by email %s: %v", customer.Email, err)
-		return err
-	}
-
-	if account == nil {
-		logger.Warnf("Account not found for email: %s", customer.Email)
-		return appErr.Errorf(appErr.UserNotFoundError, "Account not found for email: %s", customer.Email)
-	}
-
-	logger = logger.WithField("userId", account.ID.String())
 
 	for i, item := range request.Items {
 		itemLogger := logger.WithField("itemIndex", i).WithField("productID", item.ProductID)
@@ -370,7 +351,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 		//
 		// If the cancellation fails, the external billing service will retry the request,
 		// ensuring the database isn't updated with a new subscription until the previous one is successfully canceled.
-		existingSubscription, err := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, account.ID)
+		existingSubscription, err := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, request.UserID)
 		if err != nil {
 			return err
 		}
@@ -386,7 +367,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 
 		err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
 			ID:       request.SubscriptionID,
-			BackedBy: account.ID,
+			BackedBy: request.UserID,
 			Tier:     subscriptionLevel,
 			Till:     request.Till,
 			Since:    request.Since,

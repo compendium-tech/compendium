@@ -134,50 +134,6 @@ func (x *GetAccountRequest) GetId() string {
 	return ""
 }
 
-type FindAccountByEmailRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FindAccountByEmailRequest) Reset() {
-	*x = FindAccountByEmailRequest{}
-	mi := &file_proto_user_service_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FindAccountByEmailRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FindAccountByEmailRequest) ProtoMessage() {}
-
-func (x *FindAccountByEmailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_user_service_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FindAccountByEmailRequest.ProtoReflect.Descriptor instead.
-func (*FindAccountByEmailRequest) Descriptor() ([]byte, []int) {
-	return file_proto_user_service_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *FindAccountByEmailRequest) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
-}
-
 var File_proto_user_service_proto protoreflect.FileDescriptor
 
 const file_proto_user_service_proto_rawDesc = "" +
@@ -190,13 +146,10 @@ const file_proto_user_service_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"#\n" +
 	"\x11GetAccountRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"1\n" +
-	"\x19FindAccountByEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email2\xb5\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id2Y\n" +
 	"\vUserService\x12J\n" +
 	"\n" +
-	"GetAccount\x12\".user_service.v1.GetAccountRequest\x1a\x18.user_service.v1.Account\x12Z\n" +
-	"\x12FindAccountByEmail\x12*.user_service.v1.FindAccountByEmailRequest\x1a\x18.user_service.v1.AccountB\x13Z\x11internal/proto/v1b\x06proto3"
+	"GetAccount\x12\".user_service.v1.GetAccountRequest\x1a\x18.user_service.v1.AccountB\x13Z\x11internal/proto/v1b\x06proto3"
 
 var (
 	file_proto_user_service_proto_rawDescOnce sync.Once
@@ -210,21 +163,18 @@ func file_proto_user_service_proto_rawDescGZIP() []byte {
 	return file_proto_user_service_proto_rawDescData
 }
 
-var file_proto_user_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_user_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_user_service_proto_goTypes = []any{
-	(*Account)(nil),                   // 0: user_service.v1.Account
-	(*GetAccountRequest)(nil),         // 1: user_service.v1.GetAccountRequest
-	(*FindAccountByEmailRequest)(nil), // 2: user_service.v1.FindAccountByEmailRequest
-	(*timestamppb.Timestamp)(nil),     // 3: google.protobuf.Timestamp
+	(*Account)(nil),               // 0: user_service.v1.Account
+	(*GetAccountRequest)(nil),     // 1: user_service.v1.GetAccountRequest
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_proto_user_service_proto_depIdxs = []int32{
-	3, // 0: user_service.v1.Account.created_at:type_name -> google.protobuf.Timestamp
+	2, // 0: user_service.v1.Account.created_at:type_name -> google.protobuf.Timestamp
 	1, // 1: user_service.v1.UserService.GetAccount:input_type -> user_service.v1.GetAccountRequest
-	2, // 2: user_service.v1.UserService.FindAccountByEmail:input_type -> user_service.v1.FindAccountByEmailRequest
-	0, // 3: user_service.v1.UserService.GetAccount:output_type -> user_service.v1.Account
-	0, // 4: user_service.v1.UserService.FindAccountByEmail:output_type -> user_service.v1.Account
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
+	0, // 2: user_service.v1.UserService.GetAccount:output_type -> user_service.v1.Account
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -241,7 +191,7 @@ func file_proto_user_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_user_service_proto_rawDesc), len(file_proto_user_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

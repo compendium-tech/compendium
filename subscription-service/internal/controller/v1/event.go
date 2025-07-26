@@ -13,6 +13,7 @@ import (
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/compendium-tech/compendium/subscription-service/internal/webhook"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
 )
 
@@ -83,6 +84,16 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context, bod
 		return err
 	}
 
+	userIDString, ok := event.Data.CustomData["userId"].(string)
+	if !ok {
+		return appErr.Errorf(appErr.RequestValidationError, "userId wasn't provided")
+	}
+
+	userID, err := uuid.Parse(userIDString)
+	if err != nil {
+		return appErr.Errorf(appErr.RequestValidationError, "invalid user id %s", userIDString)
+	}
+
 	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)
 	if err != nil {
 		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
@@ -112,7 +123,7 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context, bod
 
 	return p.subscriptionService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
 		SubscriptionID: event.Data.ID,
-		CustomerID:     event.Data.CustomerID,
+		UserID:         userID,
 		Items:          items,
 		Till:           till,
 		Since:          since,
@@ -128,42 +139,9 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context, body
 	switch event.Data.Status {
 	case paddlenotification.SubscriptionStatusPastDue:
 		return p.subscriptionService.RemoveSubscription(c.Request.Context(), event.Data.ID)
+	default:
+		return nil
 	}
-
-	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)
-	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
-	}
-
-	till, err := time.Parse(dateTimeLayout, *event.Data.NextBilledAt)
-	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
-	}
-
-	if len(event.Data.Items) == 0 {
-		return appErr.Errorf(appErr.RequestValidationError, "User didn't subscribe to anything")
-	}
-
-	if len(event.Data.Items) > 1 {
-		return appErr.Errorf(appErr.RequestValidationError, "User shouldn't be able to purchase more than 1 item")
-	}
-
-	items := make([]domain.SubscriptionItem, len(event.Data.Items))
-	for i, item := range event.Data.Items {
-		items[i] = domain.SubscriptionItem{
-			Quantity:  item.Quantity,
-			PriceID:   item.Price.ID,
-			ProductID: item.Product.ID,
-		}
-	}
-
-	return p.subscriptionService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
-		CustomerID:     event.Data.CustomerID,
-		SubscriptionID: event.Data.ID,
-		Till:           till,
-		Since:          since,
-		Items:          items,
-	})
 }
 
 func unmarshal(body []byte, v any) error {

@@ -49,25 +49,3 @@ func (s *UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRe
 		CreatedAt: timestamppb.New(user.CreatedAt),
 	}, nil
 }
-
-func (s *UserServiceServer) FindAccountByEmail(ctx context.Context, req *pb.FindAccountByEmailRequest) (*pb.Account, error) {
-	if req.Email == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "email cannot be empty")
-	}
-
-	user, err := s.userService.FindAccountByEmail(ctx, req.Email)
-	if err != nil {
-		if err, ok := err.(appErr.AppError); ok && err.Kind() == appErr.UserNotFoundError {
-			return nil, nil
-		}
-
-		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
-	}
-
-	return &pb.Account{
-		Id:        user.ID.String(),
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: timestamppb.New(user.CreatedAt),
-	}, nil
-}

@@ -10,10 +10,6 @@
         <AccountInfo />
 
         <div class="mt-8">
-          <SubscriptionSection />
-        </div>
-
-        <div class="mt-8">
           <ActiveSessions />
         </div>
       </div>
@@ -25,5 +21,4 @@
 import StandardLayout from '../layout/StandardLayout.vue'
 import AccountInfo from './AccountInfoSection.vue'
 import ActiveSessions from './ActiveSessionsSection.vue'
-import SubscriptionSection from './SubscriptionSection.vue'
 </script>

@@ -14,7 +14,7 @@ const (
 
 type HandleUpdatedSubscriptionRequest struct {
 	SubscriptionID string
-	CustomerID     string
+	UserID         uuid.UUID
 	Items          []SubscriptionItem
 	Till           time.Time
 	Since          time.Time

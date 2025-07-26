@@ -14,9 +14,5 @@ message Account {
 }
 
 message GetAccountRequest { string id = 1; }
-message FindAccountByEmailRequest { string email = 1; }
 
-service UserService {
-  rpc GetAccount(GetAccountRequest) returns (Account);
-  rpc FindAccountByEmail(FindAccountByEmailRequest) returns (Account);
-}
+service UserService { rpc GetAccount(GetAccountRequest) returns (Account); }
