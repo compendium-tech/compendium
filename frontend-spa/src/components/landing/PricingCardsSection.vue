@@ -8,19 +8,39 @@
         Pay only for what you need. No hidden fees, no surprises.
       </p>
 
+      <div class="flex justify-center mb-8">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+          <button type="button" @click="selectedBillingCycle = 'monthly'"
+            :class="['px-4 py-2 text-sm font-medium border rounded-l-lg', selectedBillingCycle === 'monthly' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-100']">
+            Monthly
+          </button>
+          <button type="button" @click="selectedBillingCycle = 'yearly'"
+            :class="['px-4 py-2 text-sm font-medium border rounded-r-lg', selectedBillingCycle === 'yearly' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-100']">
+            Yearly
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div v-for="(plan, index) in pricing" :key="index">
-          <div :class="`bg-white rounded-2xl overflow-hidden shadow-lg border-3 h-full flex flex-col ${plan.highlight
-            ? 'border-primary-600 md:scale-105 z-10'
-            : 'border-gray-200'
-            }`" class="animate-fade-in-up">
+          <div
+            :class="`bg-white rounded-2xl overflow-hidden shadow-lg border-3 h-full flex flex-col ${plan.highlight ? 'border-primary-600 md:scale-105 z-10' : 'border-gray-200'}`"
+            class="animate-fade-in-up">
             <div v-if="plan.highlight" class="bg-primary-600 text-white text-center py-2">
               Most Popular
             </div>
             <div class="p-8 flex-grow flex flex-col">
               <h3 class="text-2xl font-bold mb-2">{{ plan.name }}</h3>
               <div class="flex items-baseline mb-4">
-                <span class="text-5xl font-bold">{{ plan.price }}</span>
+                <span class="text-5xl font-bold">
+                  {{
+                    selectedBillingCycle === 'monthly'
+                      ? plan.priceMonthly
+                      : selectedBillingCycle === 'yearly'
+                        ? plan.priceYearly
+                        : plan.priceOneTime
+                  }}
+                </span>
                 <span class="text-gray-500">/month</span>
               </div>
               <p class="text-gray-600 mb-6">{{ plan.description }}</p>
@@ -35,8 +55,8 @@
                 </li>
               </ul>
 
-              <RouterLink to="/auth/signin">
-                <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'">
+              <RouterLink to="/auth/signin" class="mt-auto">
+                <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'" class="w-full">
                   Get Started
                 </BaseButton>
               </RouterLink>
@@ -49,12 +69,17 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterLink } from "vue-router"
 import BaseButton from "../ui/BaseButton.vue"
 
+const selectedBillingCycle = ref('monthly');
+
 interface PricingCard {
   name: string
-  price: string
+  priceMonthly: string
+  priceYearly: string
+  priceOneTime?: string
   description: string
   features: string[]
   highlight: boolean
@@ -63,7 +88,8 @@ interface PricingCard {
 const pricing: PricingCard[] = [
   {
     name: "Student",
-    price: "$5",
+    priceMonthly: "$5",
+    priceYearly: "$2.5",
     description: "Perfect for individual students",
     features: [
       "University database access",
@@ -74,7 +100,8 @@ const pricing: PricingCard[] = [
   },
   {
     name: "Team",
-    price: "$10",
+    priceMonthly: "$10",
+    priceYearly: "$4.17",
     description: "For small groups & counselors",
     features: [
       "Everything in Starter",
@@ -85,7 +112,9 @@ const pricing: PricingCard[] = [
   },
   {
     name: "Community",
-    price: "$30",
+    priceMonthly: "$30",
+    priceYearly: "$15",
+    priceOneTime: "$200",
     description: "Schools & large organizations",
     features: [
       "Everything in Pro",

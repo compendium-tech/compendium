@@ -46,8 +46,6 @@
       </div>
     </div>
 
-    ---
-
     <div class="mt-8">
       <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Subscription</h2>
 
@@ -92,19 +90,38 @@
         </div>
         <section class="py-20 px-4">
           <div class="max-w-6xl mx-auto">
+            <div class="flex justify-center mb-8">
+              <div class="inline-flex rounded-md shadow-sm" role="group">
+                <button type="button" @click="selectedBillingCycle = 'monthly'"
+                  :class="['px-4 py-2 text-sm font-medium border rounded-l-lg', selectedBillingCycle === 'monthly' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-100']">
+                  Monthly
+                </button>
+                <button type="button" @click="selectedBillingCycle = 'yearly'"
+                  :class="['px-4 py-2 text-sm font-medium border', selectedBillingCycle === 'yearly' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-900 border-gray-200 hover:bg-gray-100']">
+                  Yearly
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div v-for="(plan, index) in pricing" :key="index">
-                <div :class="`bg-white rounded-2xl overflow-hidden shadow-lg border-3 h-full flex flex-col ${plan.highlight
-                  ? 'border-primary-600 md:scale-105 z-10'
-                  : 'border-gray-200'
-                  }`" class="animate-fade-in-up">
-                  <div v-if="plan.highlight" class="bg-primary-600 text-white text-center py-2">
+                <div
+                  :class="`bg-white rounded-2xl overflow-hidden shadow-lg border-3 h-full flex flex-col ${plan.highlight ? 'border-primary-600 md:scale-105 z-10' : 'border-gray-200'}`">
+                  <div v-if="plan.highlight" class=" bg-primary-600 text-white text-center py-2">
                     Most Popular
                   </div>
                   <div class="p-8 flex-grow flex flex-col">
                     <h3 class="text-2xl font-bold mb-2">{{ plan.name }}</h3>
                     <div class="flex items-baseline mb-4">
-                      <span class="text-5xl font-bold">{{ plan.price }}</span>
+                      <span class="text-5xl font-bold">
+                        {{
+                          selectedBillingCycle === 'monthly'
+                            ? plan.priceMonthly
+                            : selectedBillingCycle === 'yearly'
+                              ? plan.priceYearly
+                              : plan.priceOneTime
+                        }}
+                      </span>
                       <span class="text-gray-500">/month</span>
                     </div>
                     <p class="text-gray-600 mb-6">{{ plan.description }}</p>
@@ -119,8 +136,8 @@
                       </li>
                     </ul>
 
-                    <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'" @click="handleSubscribe(plan.name)"
-                      class="mt-auto">
+                    <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'"
+                      @click="handleSubscribe(plan.name, selectedBillingCycle)" class="mt-auto">
                       Get Started
                     </BaseButton>
                   </div>
@@ -143,7 +160,6 @@ import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseTransitioningText from '../ui/BaseTransitioningText.vue'
 
-// Account Information State
 const user: Ref<AccountDetails | null> = ref(null)
 const isLoadingAccount = ref(true)
 const accountError: Ref<string | null> = ref(null)
@@ -153,19 +169,22 @@ const nameUpdateMessage = ref('')
 const nameUpdateSuccess = ref(false)
 const isSavingName = ref(false)
 
-// Subscription Information State
 const subscriptionResponse: Ref<SubscriptionResponse | null> = ref(null)
 const isLoadingSubscription = ref(true)
 const subscriptionError: Ref<string | null> = ref(null)
 const globalError: Ref<string | null> = ref(null)
 const isCancelling = ref(false)
 
+const selectedBillingCycle: Ref<'monthly' | 'yearly'> = ref('monthly');
+
 const w: any = window
 const paddle: any = w.Paddle
 
 interface PricingCard {
   name: string
-  price: string
+  priceMonthly: string
+  priceYearly: string
+  priceOneTime?: string
   description: string
   features: string[]
   highlight: boolean
@@ -174,7 +193,8 @@ interface PricingCard {
 const pricing: PricingCard[] = [
   {
     name: "Student",
-    price: "$5",
+    priceMonthly: "$5",
+    priceYearly: "$2.5",
     description: "Perfect for individual students",
     features: [
       "University database access",
@@ -185,7 +205,8 @@ const pricing: PricingCard[] = [
   },
   {
     name: "Team",
-    price: "$10",
+    priceMonthly: "$10",
+    priceYearly: "$4.17",
     description: "For small groups & counselors",
     features: [
       "Everything in Starter",
@@ -196,7 +217,9 @@ const pricing: PricingCard[] = [
   },
   {
     name: "Community",
-    price: "$30",
+    priceMonthly: "$30",
+    priceYearly: "$15",
+    priceOneTime: "$200",
     description: "Schools & large organizations",
     features: [
       "Everything in Pro",
@@ -207,7 +230,7 @@ const pricing: PricingCard[] = [
   }
 ]
 
-const productMap: Record<string, { monthly: string, annually: string }> = {
+const productMap: Record<string, { monthly: string, annually: string, onetime?: string }> = {
   Student: {
     monthly: 'pri_01k0qbs1mgx0dnjd0zytj23zm7',
     annually: 'pri_01k0qbt9jwq824bhec8edv4gh1',
@@ -218,11 +241,10 @@ const productMap: Record<string, { monthly: string, annually: string }> = {
   },
   Community: {
     monthly: 'pri_01k0qbytrbsfdft9ty91bng7sr',
-    annually: 'pri_01k0qbzs3rch23hx6p9ge1sa5b',
+    annually: 'pri_01k13a0e9hda6hmjck2ecn0jq9',
   },
 };
 
-// Account Information Methods
 const formattedCreationDate = computed(() => {
   if (user.value && user.value.createdAt) {
     return new Date(user.value.createdAt).toLocaleDateString('en-US', {
@@ -271,7 +293,6 @@ const toggleEditName = async () => {
   isEditingName.value = !isEditingName.value
 }
 
-// Subscription Information Methods
 const fetchSubscription = async () => {
   isLoadingSubscription.value = true
   subscriptionError.value = null
@@ -311,12 +332,18 @@ const formatSubscriptionDate = (dateString: string): string => {
   }
 }
 
-const handleSubscribe = (planName: string) => {
-  const priceId = productMap[planName]?.monthly;
+const handleSubscribe = (planName: string, billingCycle: 'monthly' | 'yearly') => {
+  let priceId: string | undefined;
+
+  if (billingCycle === 'monthly') {
+    priceId = productMap[planName]?.monthly;
+  } else if (billingCycle === 'yearly') {
+    priceId = productMap[planName]?.annually;
+  }
 
   if (!priceId) {
-    console.error('Invalid plan name or price ID not found.');
-    globalError.value = 'Could not initiate checkout for the selected plan.';
+    console.error('Invalid plan name or price ID not found for the selected billing cycle.');
+    globalError.value = 'Could not initiate checkout for the selected plan and billing cycle.';
     return;
   }
 
@@ -368,7 +395,7 @@ const handleCancelSubscription = async () => {
 }
 
 onMounted(() => {
-  fetchUserData() // Fetch user data first to get the ID
+  fetchUserData()
   fetchSubscription()
 
   if (paddle) {
