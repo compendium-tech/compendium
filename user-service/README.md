@@ -16,6 +16,9 @@
 -----
 
 ## Authentication Flow Overview
+
+<img width="972" height="910" alt="Снимок экрана 2025-07-26 в 13 34 27" src="https://github.com/user-attachments/assets/b30f974d-05fb-409b-964e-530bb674c819" />
+
 This part of the document outlines a typical authentication flow, covering user registration (sign-up) and user login (sign-in) scenarios, including considerations for multi-factor authentication (MFA) and token management.
 
 ### Sign-Up
