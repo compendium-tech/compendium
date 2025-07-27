@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package assistant_service.v1;
+
+option go_package = "internal/proto/v1";
+
+import "google/protobuf/any.proto";
+
+message ToolParameterDefinition {
+  string type = 1;
+  string name = 2;
+  string description = 3;
+  bool is_required = 4;
+  repeated string enum = 5;
+}
+
+message ToolDefinition {
+  string name = 1;
+  string description = 2;
+  repeated ToolParameterDefinition parameters = 3;
+}
+
+message ToolCall {
+  string id = 1;
+  string name = 2;
+  repeated ToolCallParameter parameters = 3;
+}
+
+message ToolCallParameter {
+  string name = 1;
+  google.protobuf.Any value = 2;
+}
+
+message Message {
+  enum Role {
+    SYSTEM = 0;
+    USER = 1;
+    ASSISTANT = 2;
+    TOOL = 3;
+  }
+
+  Role role = 1;
+  string text_content = 2;
+  repeated ToolCall tool_calls = 3;
+}
+
+message CreateResponseRequest {
+  repeated Message messages = 1;
+  repeated ToolDefinition tools = 2;
+}
+
+message CreateResponseResponse { Message message = 1; }
+
+service AssistantService {
+  rpc CreateResponse(CreateResponseRequest) returns (CreateResponseResponse);
+}
