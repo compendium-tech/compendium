@@ -20,31 +20,30 @@ const (
 
 type AppErrorKind int
 
-type AppError interface {
-	Message() string
-	Kind() AppErrorKind
-}
-
-type errorWrap struct {
-	message string
+type AppError struct {
 	kind    AppErrorKind
+	details any
 }
 
-func New(kind AppErrorKind, format string, args ...any) errorWrap {
-	return errorWrap{
-		message: fmt.Errorf(format, args...).Error(),
+func New(kind AppErrorKind) AppError {
+	return NewWithDetails(kind, nil)
+}
+
+func NewWithDetails(kind AppErrorKind, details any) AppError {
+	return AppError{
 		kind:    kind,
+		details: details,
 	}
 }
 
-func (e errorWrap) Error() string {
-	return e.message
+func NewWithReason(kind AppErrorKind, reason string) AppError {
+	return NewWithDetails(kind, map[string]any{"reason": reason})
 }
 
-func (e errorWrap) Message() string {
-	return e.message
+func (e AppError) Error() string {
+	return fmt.Sprintf("application error, kind: %d, details: %v", e.kind, e.details)
 }
 
-func (e errorWrap) Kind() AppErrorKind {
+func (e AppError) Kind() AppErrorKind {
 	return e.kind
 }

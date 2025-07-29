@@ -63,7 +63,7 @@ func (m *JwtBasedTokenManager) NewAccessToken(userID uuid.UUID, csrfToken string
 
 func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenClaims, error) {
 	claims := JwtTokenClaims{}
-	_, err := jwt.ParseWithClaims(accessToken, &claims, func(token *jwt.Token) (i interface{}, err error) {
+	_, err := jwt.ParseWithClaims(accessToken, &claims, func(token *jwt.Token) (i any, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, tracerr.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

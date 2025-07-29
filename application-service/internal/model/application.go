@@ -16,22 +16,34 @@ type Application struct {
 }
 
 type Activity struct {
-	ApplicationID uuid.UUID
-	Name          string
-	Role          string
-	Description   *string
-	HoursPerWeek  int
-	WeeksPerYear  int
-	Category      ActivityCategory
-	Grades        []Grade
+	ID           uuid.UUID
+	Name         string
+	Role         string
+	Description  *string
+	HoursPerWeek int
+	WeeksPerYear int
+	Category     ActivityCategory
+	Grades       []Grade
 }
 
 type Honor struct {
-	ApplicationID uuid.UUID
-	Title         string
-	Description   *string
-	Level         HonorLevel
-	Grade         Grade
+	ID          uuid.UUID
+	Title       string
+	Description *string
+	Level       HonorLevel
+	Grade       Grade
+}
+
+type Essay struct {
+	ID      uuid.UUID
+	Kind    EssayKind
+	Content string
+}
+
+type SupplementalEssay struct {
+	ID      uuid.UUID
+	Title   string
+	Content string
 }
 
 type ActivityCategory string
@@ -139,4 +151,27 @@ func (h *HonorLevel) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	return fmt.Errorf("invalid honor level: %s", s)
+}
+
+type EssayKind string
+
+const (
+	EssayKindPersonalStatement       EssayKind = "personal_statement"
+	EssayKindCounselorRecommendation EssayKind = "counselor_recommendation"
+	EssayKindTeacherRecommendation   EssayKind = "teacher_recommendation"
+)
+
+func (e *EssayKind) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	switch s {
+	case string(EssayKindPersonalStatement),
+		string(EssayKindCounselorRecommendation),
+		string(EssayKindTeacherRecommendation):
+		*e = EssayKind(s)
+		return nil
+	}
+	return fmt.Errorf("invalid essay kind: %s", s)
 }

@@ -3,10 +3,10 @@ package error
 import (
 	"net/http"
 
+	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	log "github.com/sirupsen/logrus"
 	"github.com/ztrue/tracerr"
 )
 
@@ -15,24 +15,31 @@ func Handle(f func(c *gin.Context) error) func(c *gin.Context) {
 		err := f(c)
 
 		if err != nil {
-			status, kind, message := func() (int, AppErrorKind, string) {
+			status, kind, details := func() (int, AppErrorKind, any) {
 				if appErr, ok := err.(AppError); ok {
-					return appErr.Kind().httpStatus(), appErr.Kind(), appErr.Message()
+					return appErr.kind.httpStatus(), appErr.kind, appErr.details
 				} else if errs, ok := err.(validator.ValidationErrors); ok {
-					return http.StatusBadRequest, RequestValidationError, validate.BuildErrorMessage(errs)
-				} else {
-					if errs, ok := err.(tracerr.Error); ok {
-						log.Printf("Cause of internal server error: %s\nStacktrace: %s", errs, errs.StackTrace())
-					} else {
-						log.Printf("Cause of internal server error: %s", err)
+					var validationErrors []string
+					for _, err := range errs {
+						validationErrors = append(validationErrors, validate.BuildValidationErrorMessage(err))
 					}
 
-					return http.StatusInternalServerError, InternalServerError, "Internal server error"
+					return http.StatusBadRequest, RequestValidationError, map[string][]string{
+						"validationErrors": validationErrors,
+					}
+				} else {
+					if errs, ok := err.(tracerr.Error); ok {
+						log.L(c.Request.Context()).Printf("Cause of internal server error: %s\nStacktrace: %s", errs, errs.StackTrace())
+					} else {
+						log.L(c.Request.Context()).Printf("Cause of internal server error: %s", err)
+					}
+
+					return http.StatusInternalServerError, InternalServerError, nil
 				}
 			}()
 
 			c.AbortWithStatusJSON(status, map[string]any{
-				"errorMessage": message,
+				"errorDetails": details,
 				"errorKind":    kind,
 			})
 		}

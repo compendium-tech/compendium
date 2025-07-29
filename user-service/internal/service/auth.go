@@ -112,12 +112,12 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 	if user != nil {
 		if user.IsEmailVerified {
 			logger.Error("User tried to sign up but email is already taken and verified")
-			return appErr.New(appErr.EmailTakenError, "Email is already taken")
+			return appErr.New(appErr.EmailTakenError)
 		}
 
 		if time.Now().UTC().Sub(user.CreatedAt) < 60*time.Second {
 			logger.Error("User tried to repeat sign up in less than 60 seconds")
-			return appErr.New(appErr.TooManyRequestsError, "Too many sign up attempts")
+			return appErr.New(appErr.TooManyRequestsError)
 		}
 	}
 
@@ -136,6 +136,7 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 	} else {
 		logger.Info("Creating new user")
 
+		isEmailTaken := false
 		err := s.userRepository.CreateUser(ctx, model.User{
 			ID:              uuid.New(),
 			Name:            request.Name,
@@ -144,9 +145,15 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 			IsAdmin:         false,
 			PasswordHash:    passwordHash,
 			CreatedAt:       time.Now().UTC(),
-		})
+		}, &isEmailTaken)
 		if err != nil {
 			return err
+		}
+
+		if isEmailTaken {
+			logger.Info("Failed to create new user model, email is already taken")
+
+			return appErr.New(appErr.EmailTakenError)
 		}
 	}
 
@@ -197,7 +204,7 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 
 	if user == nil {
 		logger.Error("MFA submission for non-existent user or MFA not requested")
-		return nil, appErr.New(appErr.MfaNotRequestedError, "2FA was not requested")
+		return nil, appErr.New(appErr.MfaNotRequestedError)
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -207,12 +214,12 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 
 	if otp == nil {
 		logger.Error("MFA submission but no OTP found")
-		return nil, appErr.New(appErr.MfaNotRequestedError, "2FA was not requested")
+		return nil, appErr.New(appErr.MfaNotRequestedError)
 	}
 
 	if *otp != request.Otp {
 		logger.Error("Invalid MFA OTP submitted")
-		return nil, appErr.New(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
+		return nil, appErr.New(appErr.InvalidMfaOtpError)
 	}
 
 	if !user.IsEmailVerified {
@@ -259,7 +266,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 
 	if user == nil {
 		logger.Error("Sign-in with invalid credentials (user not found)")
-		return nil, appErr.New(appErr.InvalidCredentialsError, "Invalid credentials")
+		return nil, appErr.New(appErr.InvalidCredentialsError)
 	}
 
 	isPasswordValid, err := s.passwordHasher.IsPasswordHashValid(user.PasswordHash, request.Password)
@@ -269,7 +276,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 
 	if !isPasswordValid {
 		logger.Error("Sign-in with invalid credentials (password mismatch)")
-		return nil, appErr.New(appErr.InvalidCredentialsError, "Invalid credentials")
+		return nil, appErr.New(appErr.InvalidCredentialsError)
 	}
 
 	deviceIsKnown, err := s.trustedDeviceRepository.DeviceExists(ctx, user.ID, request.UserAgent, request.IPAddress)
@@ -336,7 +343,7 @@ func (s *authService) InitPasswordReset(ctx context.Context, request domain.Init
 
 	if user == nil || !user.IsEmailVerified {
 		logger.Error("Password reset initiated for non-existent or unverified user")
-		return appErr.New(appErr.UserNotFoundError, "User with given email address doesn't exist")
+		return appErr.New(appErr.UserNotFoundError)
 	}
 
 	logger.Info("Setting MFA OTP for password reset")
@@ -386,7 +393,7 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 
 	if user == nil || !user.IsEmailVerified {
 		logger.Error("Password reset finish for non-existent or unverified user, or MFA not requested")
-		return appErr.New(appErr.MfaNotRequestedError, "2FA was not requested")
+		return appErr.New(appErr.MfaNotRequestedError)
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -396,12 +403,12 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 
 	if otp == nil {
 		logger.Error("Password reset finish but no OTP found")
-		return appErr.New(appErr.MfaNotRequestedError, "2FA was not requested")
+		return appErr.New(appErr.MfaNotRequestedError)
 	}
 
 	if *otp != request.Otp {
 		logger.Error("Invalid MFA OTP submitted for password reset")
-		return appErr.New(appErr.InvalidMfaOtpError, "Invalid 2FA otp")
+		return appErr.New(appErr.InvalidMfaOtpError)
 	}
 
 	logger.Info("Removing MFA OTP after successful password reset OTP verification")
@@ -438,7 +445,7 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 
 	if token == nil {
 		logger.Error("Invalid refresh token was used (not found)")
-		return nil, appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return nil, appErr.New(appErr.InvalidSessionError)
 	}
 
 	if isReused {
@@ -447,7 +454,7 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 			logger.Errorf("Failed to remove all refresh tokens after reuse detection: %v", err)
 			return nil, err
 		}
-		return nil, appErr.New(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
+		return nil, appErr.New(appErr.InvalidSessionError)
 	}
 
 	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.Session.ID), time.Minute, 1)
@@ -457,7 +464,7 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 
 	if isRateLimited {
 		logger.Warn("Refresh token rate limit exceeded")
-		return nil, appErr.New(appErr.TooManyRequestsError, "Too many refresh attempts. Please try again later.")
+		return nil, appErr.New(appErr.TooManyRequestsError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, request.RefreshToken, token.UserID)
@@ -486,7 +493,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 
 	if token == nil {
 		logger.Error("Invalid refresh token was used for logout (not found)")
-		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	if isReused {
@@ -495,7 +502,8 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 		if err != nil {
 			return err
 		}
-		return appErr.New(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
+
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, refreshToken, token.UserID)
@@ -564,12 +572,12 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 
 	if token == nil {
 		logger.Error("Attempted to remove non-existent session")
-		return appErr.New(appErr.SessionNotFoundError, "Session not found")
+		return appErr.New(appErr.SessionNotFoundError)
 	}
 
 	if token.UserID != userID {
 		logger.Error("User attempted to remove session which does not belong to them")
-		return appErr.New(appErr.SessionNotFoundError, "Session not found")
+		return appErr.New(appErr.SessionNotFoundError)
 	}
 
 	if isReused {
@@ -578,7 +586,7 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 		if err != nil {
 			return err
 		}
-		return appErr.New(appErr.InvalidSessionError, "Compromised session. All sessions terminated.")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, token.Token, userID)

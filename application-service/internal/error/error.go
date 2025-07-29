@@ -3,16 +3,13 @@ package error
 import "fmt"
 
 const (
-	InternalServerError               AppErrorKind = 0
-	RequestValidationError            AppErrorKind = 1
-	UserNotFoundError                 AppErrorKind = 4
-	TooManyRequestsError              AppErrorKind = 5
-	InvalidWebhookSignatureError      AppErrorKind = 100
-	LowPrioritySubscriptionLevelError AppErrorKind = 101
-	SubscriptionIsRequiredError       AppErrorKind = 102
-	AlreadySubscribedError            AppErrorKind = 103
-	PayerPermissionRequired           AppErrorKind = 104
-	InvalidSubscriptionInvitationCode AppErrorKind = 105
+	InternalServerError            AppErrorKind = 0
+	RequestValidationError         AppErrorKind = 1
+	ApplicationNotFoundError       AppErrorKind = 300
+	ActivityNotFoundError          AppErrorKind = 301
+	HonorNotFoundError             AppErrorKind = 302
+	EssayNotFoundError             AppErrorKind = 303
+	SupplementalEssayNotFoundError AppErrorKind = 304
 )
 
 type AppErrorKind int

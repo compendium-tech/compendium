@@ -4,7 +4,7 @@ use (
 	./email-delivery-service
 	./subscription-service
 	./user-service
-	./application-assistant-service
+	./application-service
 	./common
 )
 

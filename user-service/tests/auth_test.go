@@ -115,7 +115,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 		IsAdmin:         false,
 		PasswordHash:    []byte{},
 		CreatedAt:       time.Now().UTC(),
-	})
+	}, nil)
 	r.NoError(err, "Failed to create new user")
 
 	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
@@ -166,7 +166,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 		IsAdmin:         false,
 		PasswordHash:    []byte{},
 		CreatedAt:       time.Now().UTC(),
-	})
+	}, nil)
 	r.NoError(err, "Failed to create new user")
 
 	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
@@ -228,7 +228,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 		IsAdmin:         false,
 		PasswordHash:    passwordHash,
 		CreatedAt:       time.Now().UTC(),
-	})
+	}, nil)
 	r.NoError(err, "Failed to create new user")
 
 	err = repository.NewPgTrustedDeviceRepository(s.PgDB).ExistsOrCreateDevice(s.ctx, model.TrustedDevice{
@@ -293,7 +293,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 		IsAdmin:         false,
 		PasswordHash:    passwordHash,
 		CreatedAt:       time.Now().UTC(),
-	})
+	}, nil)
 	r.NoError(err, "Failed to create new user")
 
 	s.mockEmailMessageBuilder.On("BuildSignInMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Run(func(args mock.Arguments) {

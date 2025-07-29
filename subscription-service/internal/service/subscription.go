@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -89,12 +90,12 @@ func (s *subscriptionService) GetSubscriptionInvitationCode(ctx context.Context)
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be retrieved")
-		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
+		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be retrieved", subscription.ID)
-		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
+		return nil, appErr.New(appErr.PayerPermissionRequired)
 	}
 
 	log.L(ctx).Info("Subscription invitation code fetched successfully")
@@ -119,12 +120,12 @@ func (s *subscriptionService) UpdateSubscriptionInvitationCode(ctx context.Conte
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be updated")
-		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
+		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be updated", subscription.ID)
-		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
+		return nil, appErr.New(appErr.PayerPermissionRequired)
 	}
 
 	invitationCode, err := random.NewRandomString(12)
@@ -166,12 +167,12 @@ func (s *subscriptionService) RemoveSubscriptionInvitationCode(ctx context.Conte
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be removed")
-		return nil, appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
+		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be removed", subscription.ID)
-		return nil, appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
+		return nil, appErr.New(appErr.PayerPermissionRequired)
 	}
 
 	err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
@@ -208,12 +209,12 @@ func (s *subscriptionService) CancelSubscription(ctx context.Context) error {
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, cannot cancel")
-		return appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
+		return appErr.New(appErr.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, cannot cancel", subscription.ID)
-		return appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
+		return appErr.New(appErr.PayerPermissionRequired)
 	}
 
 	err = s.billingAPI.CancelSubscription(ctx, subscription.ID)
@@ -247,7 +248,7 @@ func (s *subscriptionService) JoinCollectiveSubscription(ctx context.Context, in
 
 	if subscription == nil || subscription.Tier == model.TierStudent {
 		logger.Warn("Invalid invitation code or student tier subscription used to join collective subscription")
-		return nil, appErr.Errorf(appErr.InvalidSubscriptionInvitationCode, "Invalid invitation code is used")
+		return nil, appErr.New(appErr.InvalidSubscriptionInvitationCode)
 	}
 
 	response, err := s.subscriptionToResponse(ctx, userID, subscription)
@@ -285,12 +286,12 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 
 	if subscription == nil {
 		logger.Warn("Subscription not found for the authenticated payer, cannot remove member")
-		return appErr.Errorf(appErr.SubscriptionIsRequiredError, "Subscription is required")
+		return appErr.New(appErr.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		logger.Warnf("Authenticated user is not the payer for subscription %s, cannot remove member", subscription.ID)
-		return appErr.Errorf(appErr.PayerPermissionRequired, "You are not a payer for subscription %s", subscription.ID)
+		return appErr.New(appErr.PayerPermissionRequired)
 	}
 
 	err = s.subscriptionRepository.RemoveSubscriptionMemberBySubscriptionAndUserID(ctx, subscription.ID, memberUserID)
@@ -309,7 +310,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 
 	if len(request.Items) == 0 {
 		logger.Warn("No items in upsert subscription request")
-		return appErr.Errorf(appErr.RequestValidationError, "No items in request")
+		return appErr.NewWithReason(appErr.RequestValidationError, "No items in request")
 	}
 
 	lock, err := s.billingLockRepository.ObtainLock(ctx, request.UserID)
@@ -341,7 +342,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 				if err != nil {
 					return err
 				}
-				return appErr.Errorf(appErr.RequestValidationError, "Unknown product ID: %s", item.ProductID)
+				return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("Unknown product ID: %s", item.ProductID))
 			}
 			continue
 		}

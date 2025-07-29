@@ -71,7 +71,7 @@ func (r *redisBillingLockRepository) ObtainLock(ctx context.Context, userID uuid
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain billing lock")
 
-			return nil, appErr.Errorf(appErr.TooManyRequestsError, "Too many requests")
+			return nil, appErr.New(appErr.TooManyRequestsError)
 		}
 
 		return nil, tracerr.Wrap(err)

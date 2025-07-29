@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -44,7 +43,8 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 		entry.Info("Request processing is started")
 	}
 
-	ctx := context.WithValue(c.Request.Context(), log.LoggerKey, entry)
+	ctx := c.Request.Context()
+	log.SetLogger(&ctx, entry)
 	c.Request = c.Request.WithContext(ctx)
 
 	c.Next()

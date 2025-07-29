@@ -48,7 +48,7 @@ func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.Acc
 
 	if user == nil {
 		logger.Warn("User account not found for the provided ID")
-		return nil, appErr.New(appErr.UserNotFoundError, "User not found")
+		return nil, appErr.New(appErr.UserNotFoundError)
 	}
 
 	logger.Info("User account details fetched successfully")
@@ -72,7 +72,7 @@ func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*do
 
 	if user == nil {
 		logger.Warn("User account not found for the provided email")
-		return nil, appErr.New(appErr.UserNotFoundError, "User not found")
+		return nil, appErr.New(appErr.UserNotFoundError)
 	}
 
 	logger.Info("User account found successfully")
@@ -100,7 +100,7 @@ func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domai
 
 	if user == nil {
 		log.L(ctx).Warn("Information about authenticated user not found, perhaps session is invalid?")
-		return nil, appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return nil, appErr.New(appErr.InvalidSessionError)
 	}
 
 	log.L(ctx).Info("Account details fetched successfully")

@@ -59,3 +59,11 @@ func BuildErrorMessage(errs validator.ValidationErrors) string {
 
 	return strings.TrimSpace(buff.String())
 }
+
+func BuildValidationErrorMessage(err validator.FieldError) string {
+	buff := bytes.NewBufferString("")
+
+	buff.WriteString(fmt.Sprintf("field <%s> doesn't follow rule <%s>", err.Field(), err.Tag()))
+
+	return buff.String()
+}

@@ -16,6 +16,10 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'honor_level') THEN
         CREATE TYPE honor_level AS ENUM ('school', 'regional', 'national', 'international');
     END IF;
+
+    IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'essay_kind') THEN
+        CREATE TYPE essay_kind AS ENUM ('personal_statement', 'counselor_recommendation', 'teacher_recommendation');
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS applications (
@@ -25,6 +29,7 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 
 CREATE TABLE IF NOT EXISTS activities (
+  index INTEGER NOT NULL,
   application_id UUID PRIMARY KEY REFERENCES applications (id),
   name TEXT NOT NULL,
   role TEXT NOT NULL,
@@ -32,13 +37,36 @@ CREATE TABLE IF NOT EXISTS activities (
   hours_per_week INTEGER NOT NULL,
   weeks_per_year INTEGER NOT NULL,
   category activity_category NOT NULL,
-  grades grade[] NOT NULL
+  grades grade[] NOT NULL,
+
+  UNIQUE (application_id, index)
 );
 
 CREATE TABLE IF NOT EXISTS honors (
+  index INTEGER NOT NULL,
   application_id UUID PRIMARY KEY REFERENCES applications (id),
   title TEXT NOT NULL,
   description TEXT,
   level honor_level NOT NULL,
-  grade grade NOT NULL
+  grade grade NOT NULL,
+
+  UNIQUE (application_id, index)
+);
+
+CREATE TABLE IF NOT EXISTS essays (
+  index INTEGER NOT NULL,
+  application_id UUID PRIMARY KEY REFERENCES applications (id),
+  kind essay_kind NOT NULL,
+  content TEXT NOT NULL,
+
+  UNIQUE (application_id, index)
+);
+
+CREATE TABLE IF NOT EXISTS supplemental_essays (
+  index INTEGER NOT NULL,
+  application_id UUID PRIMARY KEY REFERENCES applications (id),
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+
+  UNIQUE (application_id, index)
 );

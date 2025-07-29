@@ -72,7 +72,7 @@ func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) 
 		if errors.Is(err, redislock.ErrNotObtained) {
 			logger.Error("Failed to obtain email lock")
 
-			return nil, appErr.New(appErr.TooManyRequestsError, "Too many requests")
+			return nil, appErr.New(appErr.TooManyRequestsError)
 		}
 
 		return nil, tracerr.Wrap(err)

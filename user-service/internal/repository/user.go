@@ -24,5 +24,5 @@ type UserRepository interface {
 	UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error
 	UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error
 	UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error
-	CreateUser(ctx context.Context, user model.User) error
+	CreateUser(ctx context.Context, user model.User, isEmailTaken *bool) error
 }

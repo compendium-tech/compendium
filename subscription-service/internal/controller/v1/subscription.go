@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -70,7 +71,7 @@ func (p *SubscriptionController) cancelSubscription(c *gin.Context) error {
 func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
 	invitationCode := c.Query("invitationCode")
 	if invitationCode == "" {
-		return appErr.Errorf(appErr.RequestValidationError, "member ID is required")
+		return appErr.NewWithDetails(appErr.RequestValidationError, "member ID is required")
 	}
 
 	subscription, err := p.subscriptionService.JoinCollectiveSubscription(c.Request.Context(), invitationCode)
@@ -85,12 +86,12 @@ func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
 func (p *SubscriptionController) removeSubscriptionMember(c *gin.Context) error {
 	memberIDString := c.Param("id")
 	if memberIDString == "" {
-		return appErr.Errorf(appErr.RequestValidationError, "member ID is required")
+		return appErr.NewWithReason(appErr.RequestValidationError, "member ID is required")
 	}
 
 	memberID, err := uuid.Parse(memberIDString)
 	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "invalid member ID format: %v", err)
+		return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("invalid member ID format: %w", err))
 	}
 
 	err = p.subscriptionService.RemoveSubscriptionMember(c.Request.Context(), memberID)

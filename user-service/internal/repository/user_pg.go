@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -210,7 +209,7 @@ func (r *pgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, i
 	return nil
 }
 
-func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User) error {
+func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User, isEmailTaken *bool) error {
 	query := `
 		INSERT INTO users (id, name, email, is_email_verified, is_admin, password_hash, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -229,7 +228,9 @@ func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User) erro
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
-			return appErr.New(appErr.EmailTakenError, "email is already taken")
+			if isEmailTaken != nil {
+				*isEmailTaken = true
+			}
 		}
 
 		return tracerr.Wrap(err)

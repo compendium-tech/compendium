@@ -76,7 +76,7 @@ func (a *AuthController) createSession(c *gin.Context) error {
 	case "refresh":
 		return a.refresh(c)
 	default:
-		return appErr.New(appErr.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
+		return appErr.NewWithReason(appErr.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
 	}
 }
 
@@ -148,7 +148,7 @@ func (a *AuthController) signIn(c *gin.Context) error {
 func (a *AuthController) refresh(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
@@ -173,7 +173,7 @@ func (a *AuthController) resetPassword(c *gin.Context) error {
 	case "finish":
 		return a.finishPasswordReset(c)
 	default:
-		return appErr.New(appErr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
+		return appErr.NewWithReason(appErr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
 	}
 }
 
@@ -220,7 +220,7 @@ func (a *AuthController) finishPasswordReset(c *gin.Context) error {
 func (a *AuthController) logout(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	err = a.authService.Logout(c.Request.Context(), refreshTokenCookie.Value)
@@ -237,7 +237,7 @@ func (a *AuthController) logout(c *gin.Context) error {
 func (a *AuthController) getSessions(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context(), refreshTokenCookie.Value)
@@ -252,17 +252,17 @@ func (a *AuthController) getSessions(c *gin.Context) error {
 func (a *AuthController) removeSession(c *gin.Context) error {
 	sessionIdString := c.Param("id")
 	if sessionIdString == "" {
-		return appErr.New(appErr.RequestValidationError, "Session ID is required")
+		return appErr.New(appErr.RequestValidationError)
 	}
 
 	sessionId, err := uuid.Parse(sessionIdString)
 	if err != nil {
-		return appErr.New(appErr.RequestValidationError, "Session ID must be a valid UUID")
+		return appErr.New(appErr.RequestValidationError)
 	}
 
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError, "Invalid session")
+		return appErr.New(appErr.InvalidSessionError)
 	}
 
 	err = a.authService.RemoveSessionByID(c.Request.Context(), sessionId, refreshTokenCookie.Value)

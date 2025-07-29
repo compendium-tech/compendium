@@ -239,7 +239,7 @@ func (r *pgSubscriptionRepository) CreateSubscriptionMember(ctx context.Context,
 	_, err := r.db.ExecContext(ctx, query, member.SubscriptionID, member.UserID, member.Since)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return appErr.Errorf(appErr.AlreadySubscribedError, "you are already member of subscription: %s", member.SubscriptionID)
+			return appErr.New(appErr.AlreadySubscribedError)
 		}
 
 		return tracerr.Errorf("failed to add subscription member: %w", err)

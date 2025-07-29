@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -46,7 +47,7 @@ func (p *BillingWebhookController) handle(c *gin.Context) error {
 	ok, err := p.webhookVerifier.Verify(c.Request)
 
 	if err != nil && (errors.Is(err, paddle.ErrMissingSignature) || errors.Is(err, paddle.ErrInvalidSignatureFormat)) {
-		return appErr.Errorf(appErr.InvalidWebhookSignatureError, "Failed to verify request signature")
+		return appErr.NewWithReason(appErr.InvalidWebhookSignatureError, "Failed to verify request signature")
 	}
 
 	if err != nil {
@@ -54,7 +55,7 @@ func (p *BillingWebhookController) handle(c *gin.Context) error {
 	}
 
 	if !ok {
-		return appErr.Errorf(appErr.InvalidWebhookSignatureError, "Failed to verify request signature")
+		return appErr.NewWithReason(appErr.InvalidWebhookSignatureError, "Failed to verify request signature")
 	}
 
 	body, err := io.ReadAll(c.Request.Body)
@@ -74,7 +75,7 @@ func (p *BillingWebhookController) handle(c *gin.Context) error {
 		return p.handleSubscriptionUpdate(c, body)
 
 	default:
-		return appErr.Errorf(appErr.RequestValidationError, "Unsupported event type %s", webhook.EventType)
+		return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("Unsupported event type %s", webhook.EventType))
 	}
 }
 
@@ -86,30 +87,30 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context, bod
 
 	userIDString, ok := event.Data.CustomData["userId"].(string)
 	if !ok {
-		return appErr.Errorf(appErr.RequestValidationError, "userId wasn't provided")
+		return appErr.NewWithReason(appErr.RequestValidationError, "userId wasn't provided")
 	}
 
 	userID, err := uuid.Parse(userIDString)
 	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "invalid user id %s", userIDString)
+		return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("invalid user id %s", userIDString))
 	}
 
 	since, err := time.Parse(dateTimeLayout, *event.Data.StartedAt)
 	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+		return appErr.NewWithReason(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
 	}
 
 	till, err := time.Parse(dateTimeLayout, *event.Data.NextBilledAt)
 	if err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
+		return appErr.NewWithReason(appErr.RequestValidationError, "Invalid date time at `next_billed_at`")
 	}
 
 	if len(event.Data.Items) == 0 {
-		return appErr.Errorf(appErr.RequestValidationError, "User didn't subscribe to anything")
+		return appErr.NewWithReason(appErr.RequestValidationError, "User didn't subscribe to anything")
 	}
 
 	if len(event.Data.Items) > 1 {
-		return appErr.Errorf(appErr.RequestValidationError, "User shouldn't be able to purchase more than 1 item")
+		return appErr.NewWithReason(appErr.RequestValidationError, "User shouldn't be able to purchase more than 1 item")
 	}
 
 	items := make([]domain.SubscriptionItem, len(event.Data.Items))
@@ -146,7 +147,7 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context, body
 
 func unmarshal(body []byte, v any) error {
 	if err := json.Unmarshal(body, v); err != nil {
-		return appErr.Errorf(appErr.RequestValidationError, "invalid request body")
+		return appErr.NewWithReason(appErr.RequestValidationError, "invalid request body")
 	}
 
 	return nil
