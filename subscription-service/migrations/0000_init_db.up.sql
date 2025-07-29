@@ -1,8 +1,13 @@
-CREATE TYPE tier AS ENUM (
-  'student',
-  'team',
-  'community'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'tier' AND typnamespace = 'public'::regnamespace) THEN
+        CREATE TYPE tier AS ENUM (
+            'student',
+            'team',
+            'community'
+        );
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id TEXT PRIMARY KEY,
