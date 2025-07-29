@@ -5,7 +5,7 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'activity_category') THEN
         CREATE TYPE activity_category AS ENUM (
             'academic', 'art', 'athletics', 'career_oriented', 'community_service',
-            'cultural', 'debate/speech', 'environmental', 'family_responsibilities',
+            'cultural', 'debate_speech', 'environmental', 'family_responsibilities',
             'journalism_publication', 'music', 'religious', 'research', 'robotics',
             'school_spirit', 'student_government', 'theatre_drama', 'work', 'other'
         );
