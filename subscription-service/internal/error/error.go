@@ -5,19 +5,16 @@ import (
 )
 
 const (
-	// 0 is for internal server error.
-	RequestValidationError AppErrorKind = 1
-
-	UserNotFoundError    = 4
-	TooManyRequestsError = 5
-
-	// 100
-	InvalidWebhookSignatureError      = 100
-	LowPrioritySubscriptionLevelError = 101
-	SubscriptionIsRequiredError       = 102
-	AlreadySubscribedError            = 103
-	PayerPermissionRequired           = 104
-	InvalidSubscriptionInvitationCode = 105
+	InternalServerError               AppErrorKind = 0
+	RequestValidationError            AppErrorKind = 1
+	UserNotFoundError                 AppErrorKind = 4
+	TooManyRequestsError              AppErrorKind = 5
+	InvalidWebhookSignatureError      AppErrorKind = 100
+	LowPrioritySubscriptionLevelError AppErrorKind = 101
+	SubscriptionIsRequiredError       AppErrorKind = 102
+	AlreadySubscribedError            AppErrorKind = 103
+	PayerPermissionRequired           AppErrorKind = 104
+	InvalidSubscriptionInvitationCode AppErrorKind = 105
 )
 
 type AppErrorKind int

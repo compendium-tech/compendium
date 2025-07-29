@@ -1,5 +1,3 @@
--- Custom types --
-
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'activity_category') THEN
@@ -19,8 +17,6 @@ BEGIN
         CREATE TYPE honor_level AS ENUM ('school', 'regional', 'national', 'international');
     END IF;
 END $$;
-
--- Tables --
 
 CREATE TABLE IF NOT EXISTS applications (
   id UUID PRIMARY KEY,

@@ -15,11 +15,11 @@ func Handle(f func(c *gin.Context) error) func(c *gin.Context) {
 		err := f(c)
 
 		if err != nil {
-			status, kind, message := func() (int, int, string) {
+			status, kind, message := func() (int, AppErrorKind, string) {
 				if appErr, ok := err.(AppError); ok {
-					return appErr.Kind().httpStatus(), int(appErr.Kind()), appErr.Message()
+					return appErr.Kind().httpStatus(), appErr.Kind(), appErr.Message()
 				} else if errs, ok := err.(validator.ValidationErrors); ok {
-					return http.StatusBadRequest, 1, validate.BuildErrorMessage(errs)
+					return http.StatusBadRequest, RequestValidationError, validate.BuildErrorMessage(errs)
 				} else {
 					if errs, ok := err.(tracerr.Error); ok {
 						log.Printf("Cause of internal server error: %s\nStacktrace: %s", errs, errs.StackTrace())
@@ -27,7 +27,7 @@ func Handle(f func(c *gin.Context) error) func(c *gin.Context) {
 						log.Printf("Cause of internal server error: %s", err)
 					}
 
-					return http.StatusInternalServerError, 0, "Internal server error"
+					return http.StatusInternalServerError, InternalServerError, "Internal server error"
 				}
 			}()
 

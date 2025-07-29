@@ -5,15 +5,12 @@ import (
 )
 
 const (
-	// 0 is for internal server error.
-	RequestValidationError AppErrorKind = iota + 1
-
-	ApplicationNotFoundError = 300
-	ActivityNotFoundError    = 301
-	HonorNotFoundError       = 302
+	InternalServerError      AppErrorKind = 0
+	RequestValidationError   AppErrorKind = 1
+	ApplicationNotFoundError AppErrorKind = 300
+	ActivityNotFoundError    AppErrorKind = 301
+	HonorNotFoundError       AppErrorKind = 302
 )
-
-const ()
 
 type AppErrorKind int
 

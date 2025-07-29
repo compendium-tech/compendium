@@ -5,20 +5,18 @@ import (
 )
 
 const (
-	// 0 is for internal server error.
-	RequestValidationError AppErrorKind = iota + 1
-	InvalidCredentialsError
-	EmailTakenError
-	UserNotFoundError
-	TooManyRequestsError
-	MfaNotRequestedError
-	InvalidMfaOtpError
-	InvalidSessionError
-	SessionNotFoundError
-	FailedToRemoveCurrentSessionError
+	InternalServerError               AppErrorKind = 0
+	RequestValidationError            AppErrorKind = 1
+	InvalidCredentialsError           AppErrorKind = 2
+	EmailTakenError                   AppErrorKind = 3
+	UserNotFoundError                 AppErrorKind = 4
+	TooManyRequestsError              AppErrorKind = 5
+	MfaNotRequestedError              AppErrorKind = 6
+	InvalidMfaOtpError                AppErrorKind = 7
+	InvalidSessionError               AppErrorKind = 8
+	SessionNotFoundError              AppErrorKind = 9
+	FailedToRemoveCurrentSessionError AppErrorKind = 10
 )
-
-const ()
 
 type AppErrorKind int
 
