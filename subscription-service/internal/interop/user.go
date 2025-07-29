@@ -23,8 +23,7 @@ type UserService interface {
 func NewGrpcUserServiceClient(target string) (UserService, error) {
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("Failed to connect to gRPC server: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to gRPC server: %v", err)
 	}
 
 	c := pb.NewUserServiceClient(conn)
