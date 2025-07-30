@@ -324,7 +324,7 @@ func (r *pgApplicationRepository) PutHonors(ctx context.Context, applicationID u
 func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID uuid.UUID) (_ []model.Essay, finalErr error) {
 	var essays []model.Essay
 	query := `
-		SELECT index, application_id, kind, content
+		SELECT index, application_id, type, content
 		FROM essays
 		WHERE application_id = $1
 		ORDER BY index
@@ -376,7 +376,7 @@ func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID u
 	}
 
 	insertQuery := `
-		INSERT INTO essays (index, application_id, kind, content)
+		INSERT INTO essays (index, application_id, type, content)
 		VALUES ($1, $2, $3, $4)
 	`
 	for i, essay := range essays {

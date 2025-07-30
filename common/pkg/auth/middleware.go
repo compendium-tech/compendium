@@ -39,7 +39,7 @@ func RequireAuth(c *gin.Context) {
 	if err != nil {
 		log.L(c.Request.Context()).Warnf("Failed to require auth, check the previous logs to reveal the reason")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"errorKind": 8,
+			"errorType": 8,
 		})
 	}
 }
@@ -50,7 +50,7 @@ func RequireCsrf(c *gin.Context) {
 	if !ok || !isCsrfPresent {
 		log.L(c.Request.Context()).Warnf("Failed to require csrf token, check the previous logs to reveal the reason")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"errorKind": 8,
+			"errorType": 8,
 		})
 	}
 }

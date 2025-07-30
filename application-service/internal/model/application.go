@@ -36,7 +36,7 @@ type Honor struct {
 
 type Essay struct {
 	ID      uuid.UUID
-	Kind    EssayKind
+	Kind    EssayType
 	Content string
 }
 
@@ -153,25 +153,25 @@ func (h *HonorLevel) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("invalid honor level: %s", s)
 }
 
-type EssayKind string
+type EssayType string
 
 const (
-	EssayKindPersonalStatement       EssayKind = "personal_statement"
-	EssayKindCounselorRecommendation EssayKind = "counselor_recommendation"
-	EssayKindTeacherRecommendation   EssayKind = "teacher_recommendation"
+	EssayTypePersonalStatement       EssayType = "personal_statement"
+	EssayTypeCounselorRecommendation EssayType = "counselor_recommendation"
+	EssayTypeTeacherRecommendation   EssayType = "teacher_recommendation"
 )
 
-func (e *EssayKind) UnmarshalJSON(data []byte) error {
+func (e *EssayType) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 	switch s {
-	case string(EssayKindPersonalStatement),
-		string(EssayKindCounselorRecommendation),
-		string(EssayKindTeacherRecommendation):
-		*e = EssayKind(s)
+	case string(EssayTypePersonalStatement),
+		string(EssayTypeCounselorRecommendation),
+		string(EssayTypeTeacherRecommendation):
+		*e = EssayType(s)
 		return nil
 	}
-	return fmt.Errorf("invalid essay kind: %s", s)
+	return fmt.Errorf("invalid essay type: %s", s)
 }

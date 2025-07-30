@@ -7,7 +7,7 @@ export const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 })
 
-export enum ApiErrorKind {
+export enum ApiErrorType {
   InternalServerError = 0,
   RequestValidationError = 1,
   InvalidCredentialsError = 2,
@@ -20,12 +20,12 @@ export enum ApiErrorKind {
 }
 
 export class ApiError extends Error {
-  kind: ApiErrorKind
+  type: ApiErrorType
 
-  constructor(kind: ApiErrorKind, message: string) {
-    super(message)
+  constructor(type: ApiErrorType) {
+    super("API error")
     this.name = "ApiError"
-    this.kind = kind
+    this.type = type
     Object.setPrototypeOf(this, ApiError.prototype)
   }
 }
@@ -37,35 +37,30 @@ export function handleAxiosError(error: any): Promise<never> {
     if (
       data &&
       typeof data === "object" &&
-      "errorKind" in data &&
-      "errorMessage" in data
+      "errorType" in data
     ) {
       return Promise.reject(
         new ApiError(
-          (data as any).errorKind as ApiErrorKind,
-          (data as any).errorMessage as string
+          (data as any).errorType as ApiErrorType
         )
       )
     } else {
       return Promise.reject(
         new ApiError(
-          ApiErrorKind.InternalServerError,
-          "An unexpected error occurred."
+          ApiErrorType.InternalServerError,
         )
       )
     }
   } else if (error.request) {
     return Promise.reject(
       new ApiError(
-        ApiErrorKind.InternalServerError,
-        "No response received from server. Please check your network connection."
+        ApiErrorType.InternalServerError,
       )
     )
   } else {
     return Promise.reject(
       new ApiError(
-        ApiErrorKind.InternalServerError,
-        "An unexpected error occurred."
+        ApiErrorType.InternalServerError,
       )
     )
   }

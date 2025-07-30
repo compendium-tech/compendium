@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -31,18 +30,20 @@ func NewAuthController(authService service.AuthService) AuthController {
 }
 
 func (a AuthController) MakeRoutes(e *gin.Engine) {
+	var eh httputils.ErrorHandler
+
 	v1 := e.Group("/v1/")
 	{
-		v1.POST("/users", errorutils.Handle(a.signUp))
-		v1.POST("/sessions", errorutils.Handle(a.createSession))
-		v1.PUT("/password", errorutils.Handle(a.resetPassword))
-		v1.DELETE("/session", errorutils.Handle(a.logout))
+		v1.POST("/users", eh.Handle(a.signUp))
+		v1.POST("/sessions", eh.Handle(a.createSession))
+		v1.PUT("/password", eh.Handle(a.resetPassword))
+		v1.DELETE("/session", eh.Handle(a.logout))
 
 		authenticated := v1.Group("/")
 		{
 			authenticated.Use(auth.RequireAuth)
-			authenticated.GET("/sessions", errorutils.Handle(a.getSessions))
-			authenticated.DELETE("/sessions/:id", errorutils.Handle(a.removeSession))
+			authenticated.GET("/sessions", eh.Handle(a.getSessions))
+			authenticated.DELETE("/sessions/:id", eh.Handle(a.removeSession))
 		}
 	}
 }

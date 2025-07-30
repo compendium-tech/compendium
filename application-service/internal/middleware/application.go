@@ -3,9 +3,10 @@ package middleware
 import (
 	"fmt"
 
-	localctx "github.com/compendium-tech/compendium/application-service/internal/context"
+	"github.com/compendium-tech/compendium/application-service/internal/context"
 	"github.com/compendium-tech/compendium/application-service/internal/error"
 	"github.com/compendium-tech/compendium/application-service/internal/service"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,7 +23,9 @@ func NewSetApplicationFromRequest(applicationService service.ApplicationService)
 }
 
 func (s *SetApplicationFromRequest) Handle(c *gin.Context) {
-	myerror.Handle(s.handle)(c)
+	var eh httputils.ErrorHandler
+
+	eh.Handle(s.handle)(c)
 }
 
 func (s *SetApplicationFromRequest) handle(c *gin.Context) error {
@@ -45,7 +48,7 @@ func (s *SetApplicationFromRequest) handle(c *gin.Context) error {
 
 	ctx := c.Request.Context()
 	log.SetLogger(&ctx, log.L(ctx).WithField("applicationId", applicationId))
-	localctx.SetApplication(&ctx, application)
+	localcontext.SetApplication(&ctx, application)
 	c.Request = c.Request.WithContext(ctx)
 
 	return nil

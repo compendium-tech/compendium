@@ -1,5 +1,5 @@
 import { Ref } from "vue"
-import { ApiError, ApiErrorKind } from "../../api/base"
+import { ApiError, ApiErrorType } from "../../api/base"
 
 export const handleApiError = (
   error: ApiError,
@@ -9,22 +9,22 @@ export const handleApiError = (
 }
 
 const getErrorMessage = (error: ApiError) => {
-  switch (error.kind) {
-    case ApiErrorKind.RequestValidationError:
+  switch (error.type) {
+    case ApiErrorType.RequestValidationError:
       return "Invalid request data. Please check your input."
-    case ApiErrorKind.InvalidCredentialsError:
+    case ApiErrorType.InvalidCredentialsError:
       return "Invalid email or password. Please try again."
-    case ApiErrorKind.EmailTakenError:
+    case ApiErrorType.EmailTakenError:
       return "This email address is already registered. Please try logging in."
-    case ApiErrorKind.UserNotFoundError:
+    case ApiErrorType.UserNotFoundError:
       return "User not found. Please check your email address."
-    case ApiErrorKind.TooManyRequestsError:
+    case ApiErrorType.TooManyRequestsError:
       return "Too many requests. Please wait a moment before trying again."
-    case ApiErrorKind.MfaNotRequestedError:
+    case ApiErrorType.MfaNotRequestedError:
       return "MFA was not requested for this session."
-    case ApiErrorKind.InvalidMfaOtpError:
+    case ApiErrorType.InvalidMfaOtpError:
       return "Invalid OTP. Please check the code and try again."
-    case ApiErrorKind.InvalidSessionError:
+    case ApiErrorType.InvalidSessionError:
       return "Your session is invalid or expired. Please sign in again."
     default:
       return "An unexpected error occured."

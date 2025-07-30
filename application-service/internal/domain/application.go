@@ -53,18 +53,18 @@ type UpdateHonorRequest struct {
 }
 
 type CreateEssayRequest struct {
-	Kind    model.EssayKind `json:"kind"`
+	Kind    model.EssayType `json:"type"`
 	Content string          `json:"content"`
 }
 
 type UpdateEssayRequest struct {
-	Kind    model.EssayKind `json:"kind"`
+	Kind    model.EssayType `json:"type"`
 	Content string          `json:"content"`
 }
 
 type EssayResponse struct {
 	ID      uuid.UUID       `json:"id"`
-	Kind    model.EssayKind `json:"kind"`
+	Kind    model.EssayType `json:"type"`
 	Content string          `json:"content"`
 }
 

@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/compendium-tech/compendium/application-service/internal/domain"
-	"github.com/compendium-tech/compendium/application-service/internal/error"
 	"github.com/compendium-tech/compendium/application-service/internal/middleware"
 	"github.com/compendium-tech/compendium/application-service/internal/service"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/gin-gonic/gin"
 )
@@ -23,31 +23,33 @@ func NewApplicationController(applicationService service.ApplicationService) App
 }
 
 func (a ApplicationController) MakeRoutes(e *gin.Engine) {
+	var eh httputils.ErrorHandler
+
 	v1 := e.Group("/v1")
 	{
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)
 		{
-			authenticated.GET("/applications", myerror.Handle(a.getApplications))
-			authenticated.POST("/applications", myerror.Handle(a.createApplication))
+			authenticated.GET("/applications", eh.Handle(a.getApplications))
+			authenticated.POST("/applications", eh.Handle(a.createApplication))
 
 			application := authenticated.Group("/applications/:applicationId")
 			application.Use(middleware.NewSetApplicationFromRequest(a.applicationService).Handle)
 			{
-				application.PUT("/", auth.RequireCsrf, myerror.Handle(a.updateApplicationName))
-				application.DELETE("/", auth.RequireCsrf, myerror.Handle(a.removeApplication))
+				application.PUT("/", auth.RequireCsrf, eh.Handle(a.updateApplicationName))
+				application.DELETE("/", auth.RequireCsrf, eh.Handle(a.removeApplication))
 
-				application.GET("/activities", myerror.Handle(a.getActivities))
-				application.PUT("/activities", auth.RequireCsrf, myerror.Handle(a.putActivities))
+				application.GET("/activities", eh.Handle(a.getActivities))
+				application.PUT("/activities", auth.RequireCsrf, eh.Handle(a.putActivities))
 
-				application.GET("/honors", myerror.Handle(a.getHonors))
-				application.PUT("/honors", auth.RequireCsrf, myerror.Handle(a.putHonors))
+				application.GET("/honors", eh.Handle(a.getHonors))
+				application.PUT("/honors", auth.RequireCsrf, eh.Handle(a.putHonors))
 
-				application.GET("/essays", myerror.Handle(a.getEssays))
-				application.PUT("/essays", auth.RequireCsrf, myerror.Handle(a.putEssays))
+				application.GET("/essays", eh.Handle(a.getEssays))
+				application.PUT("/essays", auth.RequireCsrf, eh.Handle(a.putEssays))
 
-				application.GET("/supplemental-essays", myerror.Handle(a.getSupplementalEssays))
-				application.PUT("/supplemental-essays", auth.RequireCsrf, myerror.Handle(a.putSupplementalEssays))
+				application.GET("/supplemental-essays", eh.Handle(a.getSupplementalEssays))
+				application.PUT("/supplemental-essays", auth.RequireCsrf, eh.Handle(a.putSupplementalEssays))
 			}
 		}
 	}

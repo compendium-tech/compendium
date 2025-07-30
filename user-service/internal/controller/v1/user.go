@@ -1,10 +1,10 @@
 package v1
 
 import (
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
@@ -13,6 +13,7 @@ import (
 
 type UserController struct {
 	userService service.UserService
+	e           httputils.ErrorHandler
 }
 
 func NewUserController(userService service.UserService) UserController {
@@ -26,10 +27,10 @@ func (u UserController) MakeRoutes(e *gin.Engine) {
 	{
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/account", errorutils.Handle(u.getAccount))
+		authenticated.GET("/account", u.e.Handle(u.getAccount))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.PUT("/account", errorutils.Handle(u.updateAccount))
+		authenticated.PUT("/account", u.e.Handle(u.updateAccount))
 	}
 }
 

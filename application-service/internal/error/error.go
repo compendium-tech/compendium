@@ -11,39 +11,39 @@ const (
 )
 
 type MyError struct {
-	kind    int
+	ty      int
 	details any
 }
 
-func New(kind int) MyError {
-	return NewWithDetails(kind, nil)
+func New(ty int) MyError {
+	return NewWithDetails(ty, nil)
 }
 
-func NewWithDetails(kind int, details any) MyError {
+func NewWithDetails(ty int, details any) MyError {
 	return MyError{
-		kind:    kind,
+		ty:      ty,
 		details: details,
 	}
 }
 
-func NewWithReason(kind int, reason string) MyError {
-	return NewWithDetails(kind, map[string]any{"reason": reason})
+func NewWithReason(ty int, reason string) MyError {
+	return NewWithDetails(ty, map[string]any{"reason": reason})
 }
 
 func (e MyError) Error() string {
-	return fmt.Sprintf("application error, kind: %d, details: %v", e.kind, e.details)
+	return fmt.Sprintf("application error, type: %d, details: %v", e.ty, e.details)
 }
 
-func (e MyError) Kind() int {
-	return e.kind
+func (e MyError) ErrorType() int {
+	return e.ty
 }
 
-func (e MyError) Details() any {
+func (e MyError) ErrorDetails() any {
 	return e.details
 }
 
 func (e MyError) HttpStatus() int {
-	switch e.kind {
+	switch e.ty {
 	case ApplicationNotFoundError:
 		return http.StatusNotFound
 	default:

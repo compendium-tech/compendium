@@ -17,8 +17,8 @@ BEGIN
         CREATE TYPE honor_level AS ENUM ('school', 'regional', 'national', 'international');
     END IF;
 
-    IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'essay_kind') THEN
-        CREATE TYPE essay_kind AS ENUM ('personal_statement', 'counselor_recommendation', 'teacher_recommendation');
+    IF NOT EXISTS (SELECT FROM pg_type WHERE typname = 'essay_type') THEN
+        CREATE TYPE essay_type AS ENUM ('personal_statement', 'counselor_recommendation', 'teacher_recommendation');
     END IF;
 END $$;
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS honors (
 CREATE TABLE IF NOT EXISTS essays (
   index INTEGER NOT NULL,
   application_id UUID PRIMARY KEY REFERENCES applications (id),
-  kind essay_kind NOT NULL,
+  type essay_type NOT NULL,
   content TEXT NOT NULL,
 
   UNIQUE (application_id, index)

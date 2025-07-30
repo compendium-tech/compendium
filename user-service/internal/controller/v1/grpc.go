@@ -37,7 +37,7 @@ func (s *UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRe
 	user, err := s.userService.GetAccount(ctx, userID)
 	if err != nil {
 		var myerr myerror.MyError
-		if errors.As(err, &myerr) && myerr.Kind() == myerror.UserNotFoundError {
+		if errors.As(err, &myerr) && myerr.ErrorType() == myerror.UserNotFoundError {
 			return nil, nil
 		}
 

@@ -1,4 +1,4 @@
-package errorutils
+package httputils
 
 import (
 	"errors"
@@ -10,30 +10,32 @@ import (
 	"net/http"
 )
 
+// ErrorHandler is a default solution to centralizing error handling for Gin handlers.
+// See Handle for more details.
+type ErrorHandler struct{}
+
 type HandlerFuncWithError func(c *gin.Context) error
 
-// Handle is a solution to centralizing error handling for handler functions.
-//
-// It intercepts errors, categorizes them using `errors.As`, and sends appropriate HTTP status codes
-// and JSON responses to the client, while logging internal server errors.
+// Handle intercepts errors, categorizes them using `errors.As`, and sends appropriate HTTP
+// status codes and JSON responses to the client, while logging internal server errors.
 //
 // # Usage with Custom Errors
 //
 // To be handled gracefully by this middleware, your custom error types should implement the following interface (or a struct with methods matching it):
 //
 //	type HandledError interface {
-//	  Kind() int        // Returns an application-specific integer code for the error category.
-//	  HttpStatus() int  // Returns the appropriate HTTP status code (e.g., http.StatusBadRequest, http.StatusNotFound).
-//	  Details() any     // Returns any additional, structured data relevant to the error (e.g., validation messages, specific IDs).
+//	  ErrorType() int     // Returns an application-specific integer code for the error category.
+//	  ErrorDetails() any  // Returns any additional, structured data relevant to the error (e.g., validation messages, specific IDs).
+//	  HttpStatus() int    // Returns the appropriate HTTP status code (e.g., http.StatusBadRequest, http.StatusNotFound).
 //	}
 //
 // # Example
 //
-//	// Define application-specific error kinds as integers.
+//	// Define application-specific error types as integers.
 //	const (
-//	  UserNotFoundErrKind = 1001
-//	  InvalidInputErrKind = 1002
-//	  ServiceUnavailableKind = 2001
+//	  UserNotFoundError = 1001
+//	  InvalidInputError = 1002
+//	  ServiceUnavailableError = 2001
 //	)
 //
 //	type APIError struct {
@@ -53,18 +55,18 @@ type HandlerFuncWithError func(c *gin.Context) error
 //	}
 //
 //	// Kind returns the application-specific error code.
-//	func (e APIError) Kind() int { return e.Code }
+//	func (e APIError) ErrorType() int { return e.Code }
 //
 //	// HttpStatus returns the HTTP status code for the response.
 //	func (e APIError) HttpStatus() int { return e.Status }
 //
 //	// Details returns any extra information about the error.
-//	func (e APIError) Details() any { return e.ExtraInfo }
+//	func (e APIError) ErrorDetails() any { return e.ExtraInfo }
 //
 //	// Helper function to create a new APIError (optional, but good practice).
-//	func NewAPIError(kind, status int, msg string, details any, err error) APIError {
+//	func NewAPIError(ty, status int, msg string, details any, err error) APIError {
 //	  return APIError{
-//	    Code:       kind,
+//	    Code:       ty,
 //	    Status:     status,
 //	    Message:    msg,
 //	    ExtraInfo:  details,
@@ -76,14 +78,14 @@ type HandlerFuncWithError func(c *gin.Context) error
 //	  userID := c.Param("id")
 //	    if userID == "invalid" {
 //	      return NewAPIError(
-//	        InvalidInputErrKind,
+//	        InvalidInputError,
 //	        http.StatusBadRequest,
 //	        "Invalid user ID format.",
 //	        map[string]string{"input": userID, "reason": "non-numeric"}
 //	      )
 //	  } else if userID == "nonexistent" {
 //	      return NewAPIError(
-//	         UserNotFoundErrKind,
+//	         UserNotFoundError,
 //	         http.StatusNotFound,
 //	         "User with the provided ID does not exist.",
 //	         map[string]string{"requested_id": userID}
@@ -94,26 +96,29 @@ type HandlerFuncWithError func(c *gin.Context) error
 //	  return nil
 //	}
 //
-//	router := gin.Default()
-//	router.GET("/users/:id", errorutils.Handle(GetUserByID))
-//	router.Run(":8080")
-func Handle(f HandlerFuncWithError) gin.HandlerFunc {
+//	func main() {
+//	  var e httputils.ErrorHandler
+//	  router := gin.Default()
+//	  router.GET("/users/:id", e.Handle(GetUserByID))
+//	  router.Run(":8080")
+//	}
+func (h ErrorHandler) Handle(f HandlerFuncWithError) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := f(c)
 
 		if err != nil {
-			status, kind, details := func() (int, int, any) {
+			status, ty, details := func() (int, int, any) {
 				var myErr interface {
-					Kind() int
+					ErrorType() int
+					ErrorDetails() any
 					HttpStatus() int
-					Details() any
 				}
 
 				var validationErrs validator.ValidationErrors
 				var trcErr tracerr.Error
 
 				if errors.As(err, &myErr) {
-					return myErr.HttpStatus(), myErr.Kind(), myErr.Details()
+					return myErr.HttpStatus(), myErr.ErrorType(), myErr.ErrorDetails()
 				} else if errors.As(err, &validationErrs) {
 					var validationMessages []string
 					for _, ve := range validationErrs {
@@ -136,7 +141,7 @@ func Handle(f HandlerFuncWithError) gin.HandlerFunc {
 
 			c.AbortWithStatusJSON(status, map[string]any{
 				"errorDetails": details,
-				"errorKind":    kind,
+				"errorType":    ty,
 			})
 		}
 	}

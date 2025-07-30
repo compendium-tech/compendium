@@ -2,10 +2,10 @@ package v1
 
 import (
 	"fmt"
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/gin-gonic/gin"
@@ -23,19 +23,21 @@ func NewSubscriptionController(subscriptionService service.SubscriptionService) 
 }
 
 func (p *SubscriptionController) MakeRoutes(e *gin.Engine) {
+	var eh httputils.ErrorHandler
+
 	v1 := e.Group("/v1")
 	{
 		authenticated := v1.Group("")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/subscription", errorutils.Handle(p.getSubscription))
-		authenticated.GET("/subscription/invitationCode", errorutils.Handle(p.getSubscriptionInvitationCode))
+		authenticated.GET("/subscription", eh.Handle(p.getSubscription))
+		authenticated.GET("/subscription/invitationCode", eh.Handle(p.getSubscriptionInvitationCode))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.DELETE("/subscription", errorutils.Handle(p.cancelSubscription))
-		authenticated.DELETE("/subscription/members/:id", errorutils.Handle(p.removeSubscriptionMember))
-		authenticated.POST("/subscription/members/me", errorutils.Handle(p.joinSubscription))
-		authenticated.PUT("/subscription/invitationCode", errorutils.Handle(p.updateSubscriptionInvitationCode))
-		authenticated.DELETE("/subscription/invitationCode", errorutils.Handle(p.removeSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription", eh.Handle(p.cancelSubscription))
+		authenticated.DELETE("/subscription/members/:id", eh.Handle(p.removeSubscriptionMember))
+		authenticated.POST("/subscription/members/me", eh.Handle(p.joinSubscription))
+		authenticated.PUT("/subscription/invitationCode", eh.Handle(p.updateSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription/invitationCode", eh.Handle(p.removeSubscriptionInvitationCode))
 	}
 }
 

@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"io"
 	"time"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
 	"github.com/PaddleHQ/paddle-go-sdk/v4/pkg/paddlenotification"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
 	"github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
@@ -34,7 +34,9 @@ func NewBillingWebhookController(
 }
 
 func (p *BillingWebhookController) MakeRoutes(e *gin.Engine) {
-	e.POST("/v1/billingEvents", errorutils.Handle(p.handle))
+	var eh httputils.ErrorHandler
+
+	e.POST("/v1/billingEvents", eh.Handle(p.handle))
 }
 
 type event struct {
@@ -62,19 +64,21 @@ func (p *BillingWebhookController) handle(c *gin.Context) error {
 		return tracerr.Wrap(err)
 	}
 
-	var webhook event
-	if err = unmarshal(body, &webhook); err != nil {
+	var webhookEvent event
+	if err = unmarshal(body, &webhookEvent); err != nil {
 		return err
 	}
 
-	switch webhook.EventType {
+	switch webhookEvent.EventType {
 	case paddlenotification.EventTypeNameSubscriptionCreated:
 		return p.handleSubscriptionCreated(c, body)
 	case paddlenotification.EventTypeNameSubscriptionUpdated:
 		return p.handleSubscriptionUpdate(c, body)
 
 	default:
-		return myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("Unsupported event type %s", webhook.EventType))
+		return myerror.NewWithReason(
+			myerror.RequestValidationError,
+			fmt.Sprintf("Unsupported event type %s", webhookEvent.EventType))
 	}
 }
 

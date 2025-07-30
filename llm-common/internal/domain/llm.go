@@ -1,13 +1,21 @@
 package domain
 
 const (
-	ROLE_SYSTEM    Role = "system"
-	ROLE_USER      Role = "user"
-	ROLE_ASSISTANT Role = "assistant"
-	ROLE_TOOL      Role = "tool"
+	RoleSystem    Role = "system"
+	RoleUser      Role = "user"
+	RoleAssistant Role = "assistant"
+	RoleTool      Role = "tool"
+	TypeString    Type = "STRING"
+	TypeNumber    Type = "NUMBER"
+	TypeInteger   Type = "INTEGER"
+	TypeBoolean   Type = "BOOLEAN"
+	TypeArray     Type = "ARRAY"
+	TypeObject    Type = "OBJECT"
+	TypeNULL      Type = "NULL"
 )
 
 type Role string
+type Type string
 
 type Message struct {
 	Role        Role
@@ -28,7 +36,7 @@ type ToolDefinition struct {
 }
 
 type ToolParameter struct {
-	Type        string
+	Type        Type
 	Name        string
 	Description string
 	IsRequired  bool
