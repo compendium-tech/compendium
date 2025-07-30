@@ -2,8 +2,9 @@ package v1
 
 import (
 	"context"
+	"errors"
 
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/error"
 	pb "github.com/compendium-tech/compendium/user-service/internal/proto/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/google/uuid"
@@ -35,7 +36,8 @@ func (s *UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRe
 
 	user, err := s.userService.GetAccount(ctx, userID)
 	if err != nil {
-		if err, ok := err.(appErr.AppError); ok && err.Kind() == appErr.UserNotFoundError {
+		var myerr myerror.MyError
+		if errors.As(err, &myerr) && myerr.Kind() == myerror.UserNotFoundError {
 			return nil, nil
 		}
 

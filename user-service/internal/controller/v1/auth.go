@@ -1,13 +1,14 @@
 package v1
 
 import (
+	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	"github.com/compendium-tech/compendium/common/pkg/httphelp"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -32,21 +33,21 @@ func NewAuthController(authService service.AuthService) AuthController {
 func (a AuthController) MakeRoutes(e *gin.Engine) {
 	v1 := e.Group("/v1/")
 	{
-		v1.POST("/users", appErr.Handle(a.signUp))
-		v1.POST("/sessions", appErr.Handle(a.createSession))
-		v1.PUT("/password", appErr.Handle(a.resetPassword))
-		v1.DELETE("/session", appErr.Handle(a.logout))
+		v1.POST("/users", errorutils.Handle(a.signUp))
+		v1.POST("/sessions", errorutils.Handle(a.createSession))
+		v1.PUT("/password", errorutils.Handle(a.resetPassword))
+		v1.DELETE("/session", errorutils.Handle(a.logout))
 
 		authenticated := v1.Group("/")
 		{
 			authenticated.Use(auth.RequireAuth)
-			authenticated.GET("/sessions", appErr.Handle(a.getSessions))
-			authenticated.DELETE("/sessions/:id", appErr.Handle(a.removeSession))
+			authenticated.GET("/sessions", errorutils.Handle(a.getSessions))
+			authenticated.DELETE("/sessions/:id", errorutils.Handle(a.removeSession))
 		}
 	}
 }
 
-func (a *AuthController) signUp(c *gin.Context) error {
+func (a AuthController) signUp(c *gin.Context) error {
 	var request domain.SignUpRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -67,7 +68,7 @@ func (a *AuthController) signUp(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) createSession(c *gin.Context) error {
+func (a AuthController) createSession(c *gin.Context) error {
 	switch c.Query("flow") {
 	case "mfa":
 		return a.submitMfaOtp(c)
@@ -76,11 +77,11 @@ func (a *AuthController) createSession(c *gin.Context) error {
 	case "refresh":
 		return a.refresh(c)
 	default:
-		return appErr.NewWithReason(appErr.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
+		return myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
 	}
 }
 
-func (a *AuthController) submitMfaOtp(c *gin.Context) error {
+func (a AuthController) submitMfaOtp(c *gin.Context) error {
 	var body domain.SubmitMfaOtpRequestBody
 
 	if err := c.BindJSON(&body); err != nil {
@@ -94,8 +95,8 @@ func (a *AuthController) submitMfaOtp(c *gin.Context) error {
 	request := domain.SubmitMfaOtpRequest{
 		Email:     body.Email,
 		Otp:       body.Otp,
-		IPAddress: httphelp.GetClientIP(c),
-		UserAgent: httphelp.GetUserAgent(c),
+		IPAddress: httputils.GetClientIP(c),
+		UserAgent: httputils.GetUserAgent(c),
 	}
 
 	response, err := a.authService.SubmitMfaOtp(c.Request.Context(), request)
@@ -109,7 +110,7 @@ func (a *AuthController) submitMfaOtp(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) signIn(c *gin.Context) error {
+func (a AuthController) signIn(c *gin.Context) error {
 	var body domain.SignInRequestBody
 
 	if err := c.BindJSON(&body); err != nil {
@@ -123,8 +124,8 @@ func (a *AuthController) signIn(c *gin.Context) error {
 	request := domain.SignInRequest{
 		Email:     body.Email,
 		Password:  body.Password,
-		IPAddress: httphelp.GetClientIP(c),
-		UserAgent: httphelp.GetUserAgent(c),
+		IPAddress: httputils.GetClientIP(c),
+		UserAgent: httputils.GetUserAgent(c),
 	}
 
 	response, err := a.authService.SignIn(c.Request.Context(), request)
@@ -145,16 +146,16 @@ func (a *AuthController) signIn(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) refresh(c *gin.Context) error {
+func (a AuthController) refresh(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
 		RefreshToken: refreshTokenCookie.Value,
-		IPAddress:    httphelp.GetClientIP(c),
-		UserAgent:    httphelp.GetUserAgent(c),
+		IPAddress:    httputils.GetClientIP(c),
+		UserAgent:    httputils.GetUserAgent(c),
 	})
 	if err != nil {
 		return err
@@ -166,18 +167,18 @@ func (a *AuthController) refresh(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) resetPassword(c *gin.Context) error {
+func (a AuthController) resetPassword(c *gin.Context) error {
 	switch c.Query("flow") {
 	case "init":
 		return a.initPasswordReset(c)
 	case "finish":
 		return a.finishPasswordReset(c)
 	default:
-		return appErr.NewWithReason(appErr.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
+		return myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
 	}
 }
 
-func (a *AuthController) initPasswordReset(c *gin.Context) error {
+func (a AuthController) initPasswordReset(c *gin.Context) error {
 	var request domain.InitPasswordResetRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -197,7 +198,7 @@ func (a *AuthController) initPasswordReset(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) finishPasswordReset(c *gin.Context) error {
+func (a AuthController) finishPasswordReset(c *gin.Context) error {
 	var request domain.FinishPasswordResetRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -217,10 +218,10 @@ func (a *AuthController) finishPasswordReset(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) logout(c *gin.Context) error {
+func (a AuthController) logout(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	err = a.authService.Logout(c.Request.Context(), refreshTokenCookie.Value)
@@ -234,10 +235,10 @@ func (a *AuthController) logout(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) getSessions(c *gin.Context) error {
+func (a AuthController) getSessions(c *gin.Context) error {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context(), refreshTokenCookie.Value)
@@ -249,20 +250,20 @@ func (a *AuthController) getSessions(c *gin.Context) error {
 	return nil
 }
 
-func (a *AuthController) removeSession(c *gin.Context) error {
+func (a AuthController) removeSession(c *gin.Context) error {
 	sessionIdString := c.Param("id")
 	if sessionIdString == "" {
-		return appErr.New(appErr.RequestValidationError)
+		return myerror.New(myerror.RequestValidationError)
 	}
 
 	sessionId, err := uuid.Parse(sessionIdString)
 	if err != nil {
-		return appErr.New(appErr.RequestValidationError)
+		return myerror.New(myerror.RequestValidationError)
 	}
 
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	err = a.authService.RemoveSessionByID(c.Request.Context(), sessionId, refreshTokenCookie.Value)

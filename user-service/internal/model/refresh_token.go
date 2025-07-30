@@ -22,7 +22,7 @@ type Session struct {
 // RefreshToken represents a stored refresh token in the auth cache storage.
 //
 // ExpiresAt indicates the time when this refresh token should expire.
-// It is should not be used for validation after retrieval, as the storage
+// It should not be used for validation after retrieval, as the storage
 // mechanism handles expiration.
 type RefreshToken struct {
 	Session

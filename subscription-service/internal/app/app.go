@@ -43,7 +43,7 @@ func NewApp(deps Dependencies) *gin.Engine {
 
 	r := gin.Default()
 	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
-	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
+	r.Use(auth.Middleware{TokenManager: deps.TokenManager}.Handle)
 	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 
 	v1.NewBillingWebhookController(

@@ -8,7 +8,7 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/redis/go-redis/v9"
 	"github.com/ztrue/tracerr"
 )
@@ -34,25 +34,6 @@ func (e *authLock) Release(ctx context.Context) error {
 	return nil
 }
 
-func (e *authLock) ReleaseAndHandleErr(ctx context.Context, err *error) {
-	// If an error already exists, don't overwrite it with a potential lock release error.
-	// The original error is usually more important.
-	if *err != nil {
-		if lockErr := e.Release(ctx); lockErr != nil {
-			log.L(ctx).
-				WithField("email", e.email).
-				Warnf("Warning: Failed to release email lock, but original error already present: %v (release error: %v)\n", (*err), lockErr)
-		}
-
-		return
-	}
-
-	lockErr := e.Release(ctx)
-	if lockErr != nil {
-		*err = lockErr
-	}
-}
-
 type redisAuthLockRepository struct {
 	client *redislock.Client
 }
@@ -72,7 +53,7 @@ func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) 
 		if errors.Is(err, redislock.ErrNotObtained) {
 			logger.Error("Failed to obtain email lock")
 
-			return nil, appErr.New(appErr.TooManyRequestsError)
+			return nil, myerror.New(myerror.TooManyRequestsError)
 		}
 
 		return nil, tracerr.Wrap(err)

@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	localCtx "github.com/compendium-tech/compendium/application-service/internal/context"
+	"github.com/compendium-tech/compendium/application-service/internal/context"
 	"github.com/compendium-tech/compendium/application-service/internal/domain"
-	appErr "github.com/compendium-tech/compendium/application-service/internal/error"
+	"github.com/compendium-tech/compendium/application-service/internal/error"
 	"github.com/compendium-tech/compendium/application-service/internal/model"
 	"github.com/compendium-tech/compendium/application-service/internal/repository"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	log "github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/google/uuid"
 )
 
@@ -86,7 +86,7 @@ func (a *applicationService) GetCurrentApplicationModel(ctx context.Context, id 
 
 	if application == nil || application.UserID != userID {
 		logger.Warn("Application not found")
-		return nil, appErr.New(appErr.ApplicationNotFoundError)
+		return nil, myerror.New(myerror.ApplicationNotFoundError)
 	}
 
 	logger.Info("Application model fetched successfully")
@@ -126,7 +126,7 @@ func (a *applicationService) UpdateCurrentApplicationName(ctx context.Context, n
 	logger := log.L(ctx).WithField("newName", name)
 	logger.Info("Updating current application name")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (a *applicationService) UpdateCurrentApplicationName(ctx context.Context, n
 func (a *applicationService) RemoveCurrentApplication(ctx context.Context) error {
 	log.L(ctx).Info("Removing current application")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (a *applicationService) RemoveCurrentApplication(ctx context.Context) error
 func (a *applicationService) GetActivities(ctx context.Context) ([]domain.ActivityResponse, error) {
 	log.L(ctx).Info("Getting activities")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (a *applicationService) PutActivities(ctx context.Context, activityRequests
 	logger := log.L(ctx).WithField("activityCount", len(activityRequests))
 	logger.Info("Putting activities")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (a *applicationService) PutActivities(ctx context.Context, activityRequests
 func (a *applicationService) GetHonors(ctx context.Context) ([]domain.HonorResponse, error) {
 	log.L(ctx).Info("Getting honors")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (a *applicationService) PutHonors(ctx context.Context, honorRequests []doma
 	logger := log.L(ctx).WithField("honorCount", len(honorRequests))
 	logger.Info("Putting honors")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func (a *applicationService) PutHonors(ctx context.Context, honorRequests []doma
 func (a *applicationService) GetEssays(ctx context.Context) ([]domain.EssayResponse, error) {
 	log.L(ctx).Info("Getting essays")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +306,7 @@ func (a *applicationService) PutEssays(ctx context.Context, essayRequests []doma
 	logger := log.L(ctx).WithField("essayCount", len(essayRequests))
 	logger.Info("Putting essays")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func (a *applicationService) PutEssays(ctx context.Context, essayRequests []doma
 func (a *applicationService) GetSupplementalEssays(ctx context.Context) ([]domain.SupplementalEssayResponse, error) {
 	log.L(ctx).Info("Getting supplemental essays")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func (a *applicationService) PutSupplementalEssays(ctx context.Context, suppleme
 	logger := log.L(ctx).WithField("supplementalEssayCount", len(supplementalEssayRequests))
 	logger.Info("Putting supplemental essays")
 
-	application, err := localCtx.GetApplication(ctx)
+	application, err := localcontext.GetApplication(ctx)
 	if err != nil {
 		return err
 	}

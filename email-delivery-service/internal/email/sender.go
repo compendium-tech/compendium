@@ -1,11 +1,11 @@
 package email
 
-type EmailMessage struct {
+type Message struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
 }
 
-type EmailSender interface {
-	SendMessage(msg EmailMessage) error
+type Sender interface {
+	SendMessage(msg Message) error
 }

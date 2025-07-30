@@ -1,39 +1,52 @@
-package error
+package myerror
 
-import "fmt"
-
-const (
-	InternalServerError            AppErrorKind = 0
-	RequestValidationError         AppErrorKind = 1
-	ApplicationNotFoundError       AppErrorKind = 300
-	ActivityNotFoundError          AppErrorKind = 301
-	HonorNotFoundError             AppErrorKind = 302
-	EssayNotFoundError             AppErrorKind = 303
-	SupplementalEssayNotFoundError AppErrorKind = 304
+import (
+	"fmt"
+	"net/http"
 )
 
-type AppErrorKind int
+const (
+	RequestValidationError   = 1
+	ApplicationNotFoundError = 300
+)
 
-type AppError struct {
-	kind    AppErrorKind
+type MyError struct {
+	kind    int
 	details any
 }
 
-func New(kind AppErrorKind) AppError {
+func New(kind int) MyError {
 	return NewWithDetails(kind, nil)
 }
 
-func NewWithDetails(kind AppErrorKind, details any) AppError {
-	return AppError{
+func NewWithDetails(kind int, details any) MyError {
+	return MyError{
 		kind:    kind,
 		details: details,
 	}
 }
 
-func NewWithReason(kind AppErrorKind, reason string) AppError {
+func NewWithReason(kind int, reason string) MyError {
 	return NewWithDetails(kind, map[string]any{"reason": reason})
 }
 
-func (e AppError) Error() string {
+func (e MyError) Error() string {
 	return fmt.Sprintf("application error, kind: %d, details: %v", e.kind, e.details)
+}
+
+func (e MyError) Kind() int {
+	return e.kind
+}
+
+func (e MyError) Details() any {
+	return e.details
+}
+
+func (e MyError) HttpStatus() int {
+	switch e.kind {
+	case ApplicationNotFoundError:
+		return http.StatusNotFound
+	default:
+		return http.StatusBadRequest
+	}
 }

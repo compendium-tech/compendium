@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"time"
 
-	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
+	"github.com/compendium-tech/compendium/user-service/internal/email"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/google/uuid"
@@ -21,13 +22,13 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 
 	r := s.Require()
 
-	name, email, password := "John", "johndoe@test.com", "Qwerty123!!!"
-	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, email, password)
+	name, emailAddress, password := "John", "johndoe@test.com", "Qwerty123!!!"
+	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, emailAddress, password)
 
-	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
 	}).Once()
-	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
+	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
@@ -37,7 +38,7 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)
@@ -46,11 +47,11 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 func (s *APITestSuite) Test_SignUp_TooFrequently_ReturnsTooManySignupAttemptsError() {
 	r := s.Require()
 
-	name, email, password := "John", "johndoe@test.com", "Qwerty123!!!"
-	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, email, password)
+	name, emailAddress, password := "John", "johndoe@test.com", "Qwerty123!!!"
+	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, emailAddress, password)
 
-	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Once()
-	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
+	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Once()
+	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
@@ -231,7 +232,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	}, nil)
 	r.NoError(err, "Failed to create new user")
 
-	err = repository.NewPgTrustedDeviceRepository(s.PgDB).ExistsOrCreateDevice(s.ctx, model.TrustedDevice{
+	err = repository.NewPgTrustedDeviceRepository(s.PgDB).UpsertDevice(s.ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		IPAddress: ipAddress,
@@ -262,6 +263,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	r.Equal(isMfaRequired, false)
 
 	_, ok = responseBody["accessTokenExpiresAt"]
+	log.Println(responseBody["accessTokenExpiresAt"])
 	r.True(ok, "Response body should contain 'accessTokenExpiresAt'")
 
 	_, ok = responseBody["refreshTokenExpiresAt"]
@@ -279,7 +281,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	r := s.Require()
 
-	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
+	userID, emailAddress, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
 	passwordHash, err := s.GinAppDependencies.PasswordHasher.HashPassword(password)
@@ -288,7 +290,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
 		ID:              userID,
 		Name:            "John",
-		Email:           email,
+		Email:           emailAddress,
 		IsEmailVerified: true,
 		IsAdmin:         false,
 		PasswordHash:    passwordHash,
@@ -296,12 +298,12 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	}, nil)
 	r.NoError(err, "Failed to create new user")
 
-	s.mockEmailMessageBuilder.On("BuildSignInMfaEmailMessage", email, mock.Anything).Return(emailDelivery.EmailMessage{}, nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("BuildSignInMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
 	}).Once()
-	s.mockEmailSender.On("SendMessage", emailDelivery.EmailMessage{}).Return(nil).Once()
+	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
 
-	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
+	body := fmt.Sprintf(`{"email":"%s","password":"%s"}`, emailAddress, password)
 
 	req, _ := http.NewRequest("POST", "/v1/sessions?flow=password", bytes.NewBuffer([]byte(body)))
 	req.Header.Set("Content-type", "application/json")
@@ -329,7 +331,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	r.Equal(http.StatusAccepted, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
+	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
 	r.NoError(err, "Failed to fetch MFA OTP")
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)

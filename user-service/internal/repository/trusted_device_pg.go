@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
-
+	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
@@ -19,13 +19,13 @@ func NewPgTrustedDeviceRepository(db *sql.DB) TrustedDeviceRepository {
 	return &pgTrustedDeviceRepository{db: db}
 }
 
-func (r *pgTrustedDeviceRepository) ExistsOrCreateDevice(ctx context.Context, device model.TrustedDevice) error {
+func (r *pgTrustedDeviceRepository) UpsertDevice(ctx context.Context, device model.TrustedDevice) (finalErr error) {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return tracerr.Errorf("failed to begin transaction: %w", err)
+		return tracerr.Errorf("failed to begin transaction: %v", err)
 	}
 
-	defer tx.Rollback()
+	defer pg.DeferRollback(&finalErr, tx)
 
 	// Check if the device already exists
 	var exists bool

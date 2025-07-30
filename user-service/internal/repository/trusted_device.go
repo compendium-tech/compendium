@@ -8,6 +8,6 @@ import (
 )
 
 type TrustedDeviceRepository interface {
-	ExistsOrCreateDevice(ctx context.Context, device model.TrustedDevice) error
+	UpsertDevice(ctx context.Context, device model.TrustedDevice) error
 	DeviceExists(ctx context.Context, userID uuid.UUID, userAgent string, ipAddress string) (bool, error)
 }

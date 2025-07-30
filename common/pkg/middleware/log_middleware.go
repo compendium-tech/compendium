@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	"github.com/compendium-tech/compendium/common/pkg/httphelp"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,7 +30,7 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 	}
 
 	entry := logrus.WithFields(logrus.Fields{
-		"clientIp":  httphelp.GetClientIP(c),
+		"clientIp":  httputils.GetClientIP(c),
 		"userId":    userID,
 		"method":    c.Request.Method,
 		"path":      c.Request.RequestURI,
@@ -49,7 +49,7 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 
 	c.Next()
 
-	duration := GetDurationInMillseconds(start)
+	duration := GetDurationInMilliseconds(start)
 
 	entry = entry.WithFields(logrus.Fields{
 		"duration": duration,
@@ -64,7 +64,7 @@ func (l LoggerMiddleware) Handle(c *gin.Context) {
 	}
 }
 
-func GetDurationInMillseconds(start time.Time) float64 {
+func GetDurationInMilliseconds(start time.Time) float64 {
 	end := time.Now()
 	duration := end.Sub(start)
 	milliseconds := float64(duration) / float64(time.Millisecond)

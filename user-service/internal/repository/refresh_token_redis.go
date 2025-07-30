@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -103,7 +104,7 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 
 func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool, error) {
 	tokenString, err := r.client.Get(ctx, sessionRefreshTokenKeyPrefix+sessionID.String()).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return nil, false, nil
 	}
 	if err != nil {

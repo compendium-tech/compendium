@@ -1,42 +1,61 @@
-package error
+package myerror
 
-import "fmt"
-
-const (
-	InternalServerError               AppErrorKind = 0
-	RequestValidationError            AppErrorKind = 1
-	UserNotFoundError                 AppErrorKind = 4
-	TooManyRequestsError              AppErrorKind = 5
-	InvalidWebhookSignatureError      AppErrorKind = 100
-	LowPrioritySubscriptionLevelError AppErrorKind = 101
-	SubscriptionIsRequiredError       AppErrorKind = 102
-	AlreadySubscribedError            AppErrorKind = 103
-	PayerPermissionRequired           AppErrorKind = 104
-	InvalidSubscriptionInvitationCode AppErrorKind = 105
+import (
+	"fmt"
+	"net/http"
 )
 
-type AppErrorKind int
+const (
+	RequestValidationError            = 1
+	TooManyRequestsError              = 5
+	InvalidWebhookSignatureError      = 100
+	SubscriptionIsRequiredError       = 102
+	AlreadySubscribedError            = 103
+	PayerPermissionRequired           = 104
+	InvalidSubscriptionInvitationCode = 105
+)
 
-type AppError struct {
-	kind    AppErrorKind
+type MyError struct {
+	kind    int
 	details any
 }
 
-func New(kind AppErrorKind) AppError {
+func New(kind int) MyError {
 	return NewWithDetails(kind, nil)
 }
 
-func NewWithDetails(kind AppErrorKind, details any) AppError {
-	return AppError{
+func NewWithDetails(kind int, details any) MyError {
+	return MyError{
 		kind:    kind,
 		details: details,
 	}
 }
 
-func NewWithReason(kind AppErrorKind, reason string) AppError {
+func NewWithReason(kind int, reason string) MyError {
 	return NewWithDetails(kind, map[string]any{"reason": reason})
 }
 
-func (e AppError) Error() string {
+func (e MyError) Error() string {
 	return fmt.Sprintf("application error, kind: %d, details: %v", e.kind, e.details)
+}
+
+func (e MyError) Kind() int {
+	return e.kind
+}
+
+func (e MyError) Details() any {
+	return e.details
+}
+
+func (e MyError) HttpStatus() int {
+	switch e.kind {
+	case SubscriptionIsRequiredError:
+		return http.StatusPaymentRequired
+	case PayerPermissionRequired:
+		return http.StatusForbidden
+	case InvalidSubscriptionInvitationCode:
+		return http.StatusForbidden
+	default:
+		return http.StatusBadRequest
+	}
 }

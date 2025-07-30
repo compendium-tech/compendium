@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"errors"
 	"github.com/ztrue/tracerr"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,7 +34,7 @@ func (b *bcryptPasswordHasher) IsPasswordHashValid(passwordHash []byte, password
 	err := bcrypt.CompareHashAndPassword(passwordHash, []byte(password))
 
 	if err != nil {
-		if err == bcrypt.ErrMismatchedHashAndPassword {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return false, nil
 		}
 

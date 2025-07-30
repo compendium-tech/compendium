@@ -11,7 +11,6 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
-	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -29,8 +28,8 @@ type APITestSuite struct {
 	app.GinAppDependencies
 	ctx                     context.Context
 	app                     *gin.Engine
-	mockEmailMessageBuilder *email.MockEmailMessageBuilder
-	mockEmailSender         *emailDelivery.MockEmailSender
+	mockEmailMessageBuilder *email.MockMessageBuilder
+	mockEmailSender         *email.MockSender
 	mockGeoIP               *geoip.MockGeoIP
 	mockUserAgentParser     *ua.MockUserAgentParser
 }
@@ -111,8 +110,8 @@ func (s *APITestSuite) initDeps() {
 	}
 
 	s.ctx = ctx
-	s.mockEmailSender = new(emailDelivery.MockEmailSender)
-	s.mockEmailMessageBuilder = new(email.MockEmailMessageBuilder)
+	s.mockEmailSender = new(email.MockSender)
+	s.mockEmailMessageBuilder = new(email.MockMessageBuilder)
 	s.mockGeoIP = new(geoip.MockGeoIP)
 	s.mockUserAgentParser = new(ua.MockUserAgentParser)
 

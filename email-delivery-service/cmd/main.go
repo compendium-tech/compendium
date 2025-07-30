@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	email2 "github.com/compendium-tech/compendium/email-delivery-service/internal/email"
 	"time"
 
 	"github.com/compendium-tech/compendium/email-delivery-service/internal/config"
-	"github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/joho/godotenv"
-	kafka "github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,13 +25,13 @@ func main() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetReportCaller(true)
 
-	smtpSender := email.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
+	smtpSender := email2.NewSmtpEmailSender(cfg.SmtpHost, cfg.SmtpPort, cfg.SmtpUsername, cfg.SmtpPassword, cfg.SmtpFrom)
 	consumeAndSendEmails(ctx, cfg, smtpSender)
 }
 
 func consumeAndSendEmails(
 	ctx context.Context,
-	cfg config.AppConfig, sender email.EmailSender) {
+	cfg config.AppConfig, sender email2.Sender) {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{cfg.KafkaBroker},
 		Topic:    cfg.KafkaTopic,
@@ -56,7 +56,7 @@ func consumeAndSendEmails(
 		logrus.Printf("Received message from Kafka - Topic: %s, Partition: %d, Offset: %d, Key: %s",
 			m.Topic, m.Partition, m.Offset, string(m.Key))
 
-		var emailMsg email.EmailMessage
+		var emailMsg email2.Message
 
 		if err := json.Unmarshal(m.Value, &emailMsg); err != nil {
 			logrus.Printf("Error unmarshaling email message: %v, Message value: %s", err, string(m.Value))

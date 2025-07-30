@@ -18,7 +18,6 @@ func NewPgClient(ctx context.Context, host string, port uint16, username, passwo
 
 	err = db.PingContext(ctx)
 	if err != nil {
-		db.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 

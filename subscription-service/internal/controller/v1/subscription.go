@@ -2,10 +2,11 @@ package v1
 
 import (
 	"fmt"
+	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
+	"github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -26,15 +27,15 @@ func (p *SubscriptionController) MakeRoutes(e *gin.Engine) {
 	{
 		authenticated := v1.Group("")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/subscription", appErr.Handle(p.getSubscription))
-		authenticated.GET("/subscription/invitationCode", appErr.Handle(p.getSubscriptionInvitationCode))
+		authenticated.GET("/subscription", errorutils.Handle(p.getSubscription))
+		authenticated.GET("/subscription/invitationCode", errorutils.Handle(p.getSubscriptionInvitationCode))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.DELETE("/subscription", appErr.Handle(p.cancelSubscription))
-		authenticated.DELETE("/subscription/members/:id", appErr.Handle(p.removeSubscriptionMember))
-		authenticated.POST("/subscription/members/me", appErr.Handle(p.joinSubscription))
-		authenticated.PUT("/subscription/invitationCode", appErr.Handle(p.updateSubscriptionInvitationCode))
-		authenticated.DELETE("/subscription/invitationCode", appErr.Handle(p.removeSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription", errorutils.Handle(p.cancelSubscription))
+		authenticated.DELETE("/subscription/members/:id", errorutils.Handle(p.removeSubscriptionMember))
+		authenticated.POST("/subscription/members/me", errorutils.Handle(p.joinSubscription))
+		authenticated.PUT("/subscription/invitationCode", errorutils.Handle(p.updateSubscriptionInvitationCode))
+		authenticated.DELETE("/subscription/invitationCode", errorutils.Handle(p.removeSubscriptionInvitationCode))
 	}
 }
 
@@ -71,7 +72,7 @@ func (p *SubscriptionController) cancelSubscription(c *gin.Context) error {
 func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
 	invitationCode := c.Query("invitationCode")
 	if invitationCode == "" {
-		return appErr.NewWithDetails(appErr.RequestValidationError, "member ID is required")
+		return myerror.NewWithDetails(myerror.RequestValidationError, "member ID is required")
 	}
 
 	subscription, err := p.subscriptionService.JoinCollectiveSubscription(c.Request.Context(), invitationCode)
@@ -86,12 +87,12 @@ func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
 func (p *SubscriptionController) removeSubscriptionMember(c *gin.Context) error {
 	memberIDString := c.Param("id")
 	if memberIDString == "" {
-		return appErr.NewWithReason(appErr.RequestValidationError, "member ID is required")
+		return myerror.NewWithReason(myerror.RequestValidationError, "member ID is required")
 	}
 
 	memberID, err := uuid.Parse(memberIDString)
 	if err != nil {
-		return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("invalid member ID format: %w", err))
+		return myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("invalid member ID format: %w", err))
 	}
 
 	err = p.subscriptionService.RemoveSubscriptionMember(c.Request.Context(), memberID)

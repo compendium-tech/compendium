@@ -1,49 +1,74 @@
-package error
+package myerror
 
 import (
 	"fmt"
+	"net/http"
 )
 
 const (
-	InternalServerError               AppErrorKind = 0
-	RequestValidationError            AppErrorKind = 1
-	InvalidCredentialsError           AppErrorKind = 2
-	EmailTakenError                   AppErrorKind = 3
-	UserNotFoundError                 AppErrorKind = 4
-	TooManyRequestsError              AppErrorKind = 5
-	MfaNotRequestedError              AppErrorKind = 6
-	InvalidMfaOtpError                AppErrorKind = 7
-	InvalidSessionError               AppErrorKind = 8
-	SessionNotFoundError              AppErrorKind = 9
-	FailedToRemoveCurrentSessionError AppErrorKind = 10
+	RequestValidationError            = 1
+	InvalidCredentialsError           = 2
+	EmailTakenError                   = 3
+	UserNotFoundError                 = 4
+	TooManyRequestsError              = 5
+	MfaNotRequestedError              = 6
+	InvalidMfaOtpError                = 7
+	InvalidSessionError               = 8
+	SessionNotFoundError              = 9
+	FailedToRemoveCurrentSessionError = 10
 )
 
-type AppErrorKind int
-
-type AppError struct {
-	kind    AppErrorKind
+type MyError struct {
+	kind    int
 	details any
 }
 
-func New(kind AppErrorKind) AppError {
+func New(kind int) MyError {
 	return NewWithDetails(kind, nil)
 }
 
-func NewWithDetails(kind AppErrorKind, details any) AppError {
-	return AppError{
+func NewWithDetails(kind int, details any) MyError {
+	return MyError{
 		kind:    kind,
 		details: details,
 	}
 }
 
-func NewWithReason(kind AppErrorKind, reason string) AppError {
+func NewWithReason(kind int, reason string) MyError {
 	return NewWithDetails(kind, map[string]any{"reason": reason})
 }
 
-func (e AppError) Error() string {
+func (e MyError) Error() string {
 	return fmt.Sprintf("application error, kind: %d, details: %v", e.kind, e.details)
 }
 
-func (e AppError) Kind() AppErrorKind {
+func (e MyError) Kind() int {
 	return e.kind
+}
+
+func (e MyError) Details() any {
+	return e.details
+}
+
+func (e MyError) HttpStatus() int {
+	switch e.kind {
+	case InvalidCredentialsError:
+		return http.StatusUnauthorized
+	case InvalidMfaOtpError:
+		return http.StatusUnauthorized
+	case InvalidSessionError:
+		return http.StatusUnauthorized
+	case TooManyRequestsError:
+		return http.StatusTooManyRequests
+	case UserNotFoundError:
+		return http.StatusNotFound
+	case EmailTakenError:
+		return http.StatusConflict
+	case SessionNotFoundError:
+		return http.StatusNotFound
+	case FailedToRemoveCurrentSessionError:
+		return http.StatusForbidden
+	default:
+		return http.StatusBadRequest
+	}
 }

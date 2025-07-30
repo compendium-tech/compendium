@@ -1,4 +1,4 @@
-package httphelp
+package httputils
 
 import (
 	"strings"
@@ -17,7 +17,7 @@ func GetClientIP(c *gin.Context) string {
 		requester = c.Request.RemoteAddr
 	}
 
-	// if requester is a comma delimited list, take the first one
+	// if requester is a comma-delimited list, take the first one
 	// (this happens when proxied via elastic load balancer then again through nginx)
 	if strings.Contains(requester, ",") {
 		requester = strings.Split(requester, ",")[0]

@@ -6,13 +6,11 @@ packages:
             UserService:
     github.com/compendium-tech/compendium/user-service/internal/email:
         interfaces:
-            EmailMessageBuilder:
+            MessageBuilder:
+            Sender:
     github.com/compendium-tech/compendium/user-service/internal/ua:
         interfaces:
             UserAgentParser:
     github.com/compendium-tech/compendium/user-service/internal/geoip:
         interfaces:
             GeoIP:
-    github.com/compendium-tech/compendium/email-delivery-service/pkg/email:
-        interfaces:
-            EmailSender:

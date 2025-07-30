@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -40,7 +41,7 @@ func (r *pgUserRepository) GetUser(ctx context.Context, id uuid.UUID) (*model.Us
 		&user.CreatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 
@@ -71,7 +72,7 @@ func (r *pgUserRepository) FindUserByEmail(ctx context.Context, email string) (*
 		&user.CreatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 
@@ -99,7 +100,7 @@ func (r *pgUserRepository) FindUserByVerifiedEmail(ctx context.Context, email st
 		&user.CreatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 
@@ -227,7 +228,8 @@ func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User, isEm
 	)
 
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // 23505 is the SQLSTATE for unique_violation
 			if isEmailTaken != nil {
 				*isEmailTaken = true
 			}

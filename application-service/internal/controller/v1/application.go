@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/compendium-tech/compendium/application-service/internal/domain"
-	appErr "github.com/compendium-tech/compendium/application-service/internal/error"
+	"github.com/compendium-tech/compendium/application-service/internal/error"
 	"github.com/compendium-tech/compendium/application-service/internal/middleware"
 	"github.com/compendium-tech/compendium/application-service/internal/service"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -28,32 +28,32 @@ func (a ApplicationController) MakeRoutes(e *gin.Engine) {
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)
 		{
-			authenticated.GET("/applications", appErr.Handle(a.getApplications))
-			authenticated.POST("/applications", appErr.Handle(a.createApplication))
+			authenticated.GET("/applications", myerror.Handle(a.getApplications))
+			authenticated.POST("/applications", myerror.Handle(a.createApplication))
 
 			application := authenticated.Group("/applications/:applicationId")
 			application.Use(middleware.NewSetApplicationFromRequest(a.applicationService).Handle)
 			{
-				application.PUT("/", auth.RequireCsrf, appErr.Handle(a.updateApplicationName))
-				application.DELETE("/", auth.RequireCsrf, appErr.Handle(a.removeApplication))
+				application.PUT("/", auth.RequireCsrf, myerror.Handle(a.updateApplicationName))
+				application.DELETE("/", auth.RequireCsrf, myerror.Handle(a.removeApplication))
 
-				application.GET("/activities", appErr.Handle(a.getActivities))
-				application.PUT("/activities", auth.RequireCsrf, appErr.Handle(a.putActivities))
+				application.GET("/activities", myerror.Handle(a.getActivities))
+				application.PUT("/activities", auth.RequireCsrf, myerror.Handle(a.putActivities))
 
-				application.GET("/honors", appErr.Handle(a.getHonors))
-				application.PUT("/honors", auth.RequireCsrf, appErr.Handle(a.putHonors))
+				application.GET("/honors", myerror.Handle(a.getHonors))
+				application.PUT("/honors", auth.RequireCsrf, myerror.Handle(a.putHonors))
 
-				application.GET("/essays", appErr.Handle(a.getEssays))
-				application.PUT("/essays", auth.RequireCsrf, appErr.Handle(a.putEssays))
+				application.GET("/essays", myerror.Handle(a.getEssays))
+				application.PUT("/essays", auth.RequireCsrf, myerror.Handle(a.putEssays))
 
-				application.GET("/supplemental-essays", appErr.Handle(a.getSupplementalEssays))
-				application.PUT("/supplemental-essays", auth.RequireCsrf, appErr.Handle(a.putSupplementalEssays))
+				application.GET("/supplemental-essays", myerror.Handle(a.getSupplementalEssays))
+				application.PUT("/supplemental-essays", auth.RequireCsrf, myerror.Handle(a.putSupplementalEssays))
 			}
 		}
 	}
 }
 
-func (a *ApplicationController) getApplications(c *gin.Context) error {
+func (a ApplicationController) getApplications(c *gin.Context) error {
 	response, err := a.applicationService.GetApplications(c.Request.Context())
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (a *ApplicationController) getApplications(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) createApplication(c *gin.Context) error {
+func (a ApplicationController) createApplication(c *gin.Context) error {
 	var request domain.CreateApplicationRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -83,7 +83,7 @@ func (a *ApplicationController) createApplication(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) updateApplicationName(c *gin.Context) error {
+func (a ApplicationController) updateApplicationName(c *gin.Context) error {
 	var request struct {
 		Name string `json:"name"`
 	}
@@ -101,7 +101,7 @@ func (a *ApplicationController) updateApplicationName(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) removeApplication(c *gin.Context) error {
+func (a ApplicationController) removeApplication(c *gin.Context) error {
 	err := a.applicationService.RemoveCurrentApplication(c.Request.Context())
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (a *ApplicationController) removeApplication(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) getActivities(c *gin.Context) error {
+func (a ApplicationController) getActivities(c *gin.Context) error {
 	response, err := a.applicationService.GetActivities(c.Request.Context())
 	if err != nil {
 		return err
@@ -121,7 +121,7 @@ func (a *ApplicationController) getActivities(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) putActivities(c *gin.Context) error {
+func (a ApplicationController) putActivities(c *gin.Context) error {
 	var request []domain.UpdateActivityRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -141,7 +141,7 @@ func (a *ApplicationController) putActivities(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) getHonors(c *gin.Context) error {
+func (a ApplicationController) getHonors(c *gin.Context) error {
 	response, err := a.applicationService.GetHonors(c.Request.Context())
 	if err != nil {
 		return err
@@ -151,7 +151,7 @@ func (a *ApplicationController) getHonors(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) putHonors(c *gin.Context) error {
+func (a ApplicationController) putHonors(c *gin.Context) error {
 	var request []domain.UpdateHonorRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -171,7 +171,7 @@ func (a *ApplicationController) putHonors(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) getEssays(c *gin.Context) error {
+func (a ApplicationController) getEssays(c *gin.Context) error {
 	response, err := a.applicationService.GetEssays(c.Request.Context())
 	if err != nil {
 		return err
@@ -181,7 +181,7 @@ func (a *ApplicationController) getEssays(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) putEssays(c *gin.Context) error {
+func (a ApplicationController) putEssays(c *gin.Context) error {
 	var request []domain.UpdateEssayRequest
 
 	if err := c.BindJSON(&request); err != nil {
@@ -201,7 +201,7 @@ func (a *ApplicationController) putEssays(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) getSupplementalEssays(c *gin.Context) error {
+func (a ApplicationController) getSupplementalEssays(c *gin.Context) error {
 	response, err := a.applicationService.GetSupplementalEssays(c.Request.Context())
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (a *ApplicationController) getSupplementalEssays(c *gin.Context) error {
 	return nil
 }
 
-func (a *ApplicationController) putSupplementalEssays(c *gin.Context) error {
+func (a ApplicationController) putSupplementalEssays(c *gin.Context) error {
 	var request []domain.UpdateSupplementalEssayRequest
 
 	if err := c.BindJSON(&request); err != nil {

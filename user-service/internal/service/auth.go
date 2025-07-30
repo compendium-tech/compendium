@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/compendium-tech/compendium/common/pkg/error"
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	log "github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/random"
 	"github.com/compendium-tech/compendium/common/pkg/ratelimit"
-	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
+	"github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
@@ -23,7 +23,7 @@ import (
 
 // AuthService defines the interface for user authentication and session management.
 // It offers a comprehensive suite of features, including user registration,
-// login with multi-factor authentication (MFA), password reset workflows,
+// login with multifactor authentication (MFA), password reset workflows,
 // session refreshing, and session invalidation.
 //
 // # Authentication
@@ -55,13 +55,13 @@ type authService struct {
 	userRepository          repository.UserRepository
 	mfaRepository           repository.MfaRepository
 	refreshTokenRepository  repository.RefreshTokenRepository
-	emailSender             emailDelivery.EmailSender
-	emailMessageBuilder     email.EmailMessageBuilder
+	emailSender             email.Sender
+	emailMessageBuilder     email.MessageBuilder
 	geoIP                   geoip.GeoIP
 	userAgentParser         ua.UserAgentParser
 	tokenManager            auth.TokenManager
 	passwordHasher          hash.PasswordHasher
-	ratelimiter             ratelimit.RateLimiter
+	rateLimiter             ratelimit.RateLimiter
 }
 
 func NewAuthService(
@@ -70,13 +70,13 @@ func NewAuthService(
 	userRepository repository.UserRepository,
 	mfaRepository repository.MfaRepository,
 	refreshTokenRepository repository.RefreshTokenRepository,
-	emailSender emailDelivery.EmailSender,
-	emailMessageBuilder email.EmailMessageBuilder,
+	emailSender email.Sender,
+	emailMessageBuilder email.MessageBuilder,
 	geoIP geoip.GeoIP,
 	userAgentParser ua.UserAgentParser,
 	tokenManager auth.TokenManager,
 	passwordHasher hash.PasswordHasher,
-	ratelimiter ratelimit.RateLimiter) AuthService {
+	rateLimiter ratelimit.RateLimiter) AuthService {
 	return &authService{
 		authLockRepository:      authEmailLockRepository,
 		trustedDeviceRepository: trustedDeviceRepository,
@@ -89,7 +89,7 @@ func NewAuthService(
 		userAgentParser:         userAgentParser,
 		tokenManager:            tokenManager,
 		passwordHasher:          passwordHasher,
-		ratelimiter:             ratelimiter,
+		rateLimiter:             rateLimiter,
 	}
 }
 
@@ -102,7 +102,7 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 		return err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
@@ -112,12 +112,12 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 	if user != nil {
 		if user.IsEmailVerified {
 			logger.Error("User tried to sign up but email is already taken and verified")
-			return appErr.New(appErr.EmailTakenError)
+			return myerror.New(myerror.EmailTakenError)
 		}
 
 		if time.Now().UTC().Sub(user.CreatedAt) < 60*time.Second {
 			logger.Error("User tried to repeat sign up in less than 60 seconds")
-			return appErr.New(appErr.TooManyRequestsError)
+			return myerror.New(myerror.TooManyRequestsError)
 		}
 	}
 
@@ -153,7 +153,7 @@ func (s *authService) SignUp(ctx context.Context, request domain.SignUpRequest) 
 		if isEmailTaken {
 			logger.Info("Failed to create new user model, email is already taken")
 
-			return appErr.New(appErr.EmailTakenError)
+			return myerror.New(myerror.EmailTakenError)
 		}
 	}
 
@@ -195,7 +195,7 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 		return nil, err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 
 	if user == nil {
 		logger.Error("MFA submission for non-existent user or MFA not requested")
-		return nil, appErr.New(appErr.MfaNotRequestedError)
+		return nil, myerror.New(myerror.MfaNotRequestedError)
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -214,12 +214,12 @@ func (s *authService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfa
 
 	if otp == nil {
 		logger.Error("MFA submission but no OTP found")
-		return nil, appErr.New(appErr.MfaNotRequestedError)
+		return nil, myerror.New(myerror.MfaNotRequestedError)
 	}
 
 	if *otp != request.Otp {
 		logger.Error("Invalid MFA OTP submitted")
-		return nil, appErr.New(appErr.InvalidMfaOtpError)
+		return nil, myerror.New(myerror.InvalidMfaOtpError)
 	}
 
 	if !user.IsEmailVerified {
@@ -257,7 +257,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 		return nil, err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
@@ -266,7 +266,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 
 	if user == nil {
 		logger.Error("Sign-in with invalid credentials (user not found)")
-		return nil, appErr.New(appErr.InvalidCredentialsError)
+		return nil, myerror.New(myerror.InvalidCredentialsError)
 	}
 
 	isPasswordValid, err := s.passwordHasher.IsPasswordHashValid(user.PasswordHash, request.Password)
@@ -276,7 +276,7 @@ func (s *authService) SignIn(ctx context.Context, request domain.SignInRequest) 
 
 	if !isPasswordValid {
 		logger.Error("Sign-in with invalid credentials (password mismatch)")
-		return nil, appErr.New(appErr.InvalidCredentialsError)
+		return nil, myerror.New(myerror.InvalidCredentialsError)
 	}
 
 	deviceIsKnown, err := s.trustedDeviceRepository.DeviceExists(ctx, user.ID, request.UserAgent, request.IPAddress)
@@ -334,7 +334,7 @@ func (s *authService) InitPasswordReset(ctx context.Context, request domain.Init
 		return err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
@@ -343,7 +343,7 @@ func (s *authService) InitPasswordReset(ctx context.Context, request domain.Init
 
 	if user == nil || !user.IsEmailVerified {
 		logger.Error("Password reset initiated for non-existent or unverified user")
-		return appErr.New(appErr.UserNotFoundError)
+		return myerror.New(myerror.UserNotFoundError)
 	}
 
 	logger.Info("Setting MFA OTP for password reset")
@@ -384,7 +384,7 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 		return err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	user, err := s.userRepository.FindUserByEmail(ctx, request.Email)
 	if err != nil {
@@ -393,7 +393,7 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 
 	if user == nil || !user.IsEmailVerified {
 		logger.Error("Password reset finish for non-existent or unverified user, or MFA not requested")
-		return appErr.New(appErr.MfaNotRequestedError)
+		return myerror.New(myerror.MfaNotRequestedError)
 	}
 
 	otp, err := s.mfaRepository.GetMfaOtpByEmail(ctx, request.Email)
@@ -403,12 +403,12 @@ func (s *authService) FinishPasswordReset(ctx context.Context, request domain.Fi
 
 	if otp == nil {
 		logger.Error("Password reset finish but no OTP found")
-		return appErr.New(appErr.MfaNotRequestedError)
+		return myerror.New(myerror.MfaNotRequestedError)
 	}
 
 	if *otp != request.Otp {
 		logger.Error("Invalid MFA OTP submitted for password reset")
-		return appErr.New(appErr.InvalidMfaOtpError)
+		return myerror.New(myerror.InvalidMfaOtpError)
 	}
 
 	logger.Info("Removing MFA OTP after successful password reset OTP verification")
@@ -445,7 +445,7 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 
 	if token == nil {
 		logger.Error("Invalid refresh token was used (not found)")
-		return nil, appErr.New(appErr.InvalidSessionError)
+		return nil, myerror.New(myerror.InvalidSessionError)
 	}
 
 	if isReused {
@@ -454,17 +454,17 @@ func (s *authService) Refresh(ctx context.Context, request domain.RefreshTokenRe
 			logger.Errorf("Failed to remove all refresh tokens after reuse detection: %v", err)
 			return nil, err
 		}
-		return nil, appErr.New(appErr.InvalidSessionError)
+		return nil, myerror.New(myerror.InvalidSessionError)
 	}
 
-	isRateLimited, err := s.ratelimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.Session.ID), time.Minute, 1)
+	isRateLimited, err := s.rateLimiter.IsRateLimited(ctx, fmt.Sprintf("refresh:%s", token.Session.ID), time.Minute, 1)
 	if err != nil {
 		return nil, err
 	}
 
 	if isRateLimited {
 		logger.Warn("Refresh token rate limit exceeded")
-		return nil, appErr.New(appErr.TooManyRequestsError)
+		return nil, myerror.New(myerror.TooManyRequestsError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, request.RefreshToken, token.UserID)
@@ -493,7 +493,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 
 	if token == nil {
 		logger.Error("Invalid refresh token was used for logout (not found)")
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	if isReused {
@@ -503,7 +503,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 			return err
 		}
 
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, refreshToken, token.UserID)
@@ -572,12 +572,12 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 
 	if token == nil {
 		logger.Error("Attempted to remove non-existent session")
-		return appErr.New(appErr.SessionNotFoundError)
+		return myerror.New(myerror.SessionNotFoundError)
 	}
 
 	if token.UserID != userID {
 		logger.Error("User attempted to remove session which does not belong to them")
-		return appErr.New(appErr.SessionNotFoundError)
+		return myerror.New(myerror.SessionNotFoundError)
 	}
 
 	if isReused {
@@ -586,7 +586,7 @@ func (s *authService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID
 		if err != nil {
 			return err
 		}
-		return appErr.New(appErr.InvalidSessionError)
+		return myerror.New(myerror.InvalidSessionError)
 	}
 
 	err = s.refreshTokenRepository.RemoveRefreshToken(ctx, token.Token, userID)
@@ -616,7 +616,7 @@ func (s *authService) createSession(ctx context.Context, userID uuid.UUID, userA
 
 	logger.Info("Creating new device entry if not already present for user")
 
-	err = s.trustedDeviceRepository.ExistsOrCreateDevice(ctx, model.TrustedDevice{
+	err = s.trustedDeviceRepository.UpsertDevice(ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		UserAgent: userAgent,

@@ -5,28 +5,27 @@ import (
 	"strings"
 	"text/template"
 
-	email "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/ztrue/tracerr"
 )
 
-type EmailMessageBuilder interface {
-	BuildSignUpMfaEmailMessage(to string, otp string) (email.EmailMessage, error)
-	BuildSignInMfaEmailMessage(to string, otp string) (email.EmailMessage, error)
-	BuildPasswordResetMfaEmailMessage(to string, otp string) (email.EmailMessage, error)
+type MessageBuilder interface {
+	BuildSignUpMfaEmailMessage(to string, otp string) (Message, error)
+	BuildSignInMfaEmailMessage(to string, otp string) (Message, error)
+	BuildPasswordResetMfaEmailMessage(to string, otp string) (Message, error)
 }
 
 type emailMessageBuilder struct {
 	templates *template.Template
 }
 
-func NewEmailMessageBuilder() (EmailMessageBuilder, error) {
+func NewMessageBuilder() (MessageBuilder, error) {
 	templates, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, err
 	}
 
 	if templates == nil {
-		return nil, fmt.Errorf("email templates were not initialized correctly. perhaps `templates` folder doesn't exist?")
+		return nil, fmt.Errorf("email templates were not initialized correctly. perhaps `templates` folder doesn't exist")
 	}
 
 	return &emailMessageBuilder{
@@ -44,7 +43,7 @@ func (b *emailMessageBuilder) executeTemplate(name string, data any) (string, er
 	return body.String(), nil
 }
 
-func (b *emailMessageBuilder) BuildSignUpMfaEmailMessage(to, otp string) (email.EmailMessage, error) {
+func (b *emailMessageBuilder) BuildSignUpMfaEmailMessage(to, otp string) (Message, error) {
 	type signUpEmailData struct {
 		VerificationCode string
 	}
@@ -53,17 +52,17 @@ func (b *emailMessageBuilder) BuildSignUpMfaEmailMessage(to, otp string) (email.
 	body, err := b.executeTemplate("sign_up.html", data)
 
 	if err != nil {
-		return email.EmailMessage{}, err
+		return Message{}, err
 	}
 
-	return email.EmailMessage{
+	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,
 	}, nil
 }
 
-func (b *emailMessageBuilder) BuildSignInMfaEmailMessage(to, otp string) (email.EmailMessage, error) {
+func (b *emailMessageBuilder) BuildSignInMfaEmailMessage(to, otp string) (Message, error) {
 	type signInEmailData struct {
 		VerificationCode string
 	}
@@ -72,17 +71,17 @@ func (b *emailMessageBuilder) BuildSignInMfaEmailMessage(to, otp string) (email.
 	body, err := b.executeTemplate("sign_in.html", data)
 
 	if err != nil {
-		return email.EmailMessage{}, err
+		return Message{}, err
 	}
 
-	return email.EmailMessage{
+	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,
 	}, err
 }
 
-func (b *emailMessageBuilder) BuildPasswordResetMfaEmailMessage(to string, otp string) (email.EmailMessage, error) {
+func (b *emailMessageBuilder) BuildPasswordResetMfaEmailMessage(to string, otp string) (Message, error) {
 	type passwordResetEmailData struct {
 		VerificationCode string
 	}
@@ -91,10 +90,10 @@ func (b *emailMessageBuilder) BuildPasswordResetMfaEmailMessage(to string, otp s
 	body, err := b.executeTemplate("password_reset.html", data)
 
 	if err != nil {
-		return email.EmailMessage{}, err
+		return Message{}, err
 	}
 
-	return email.EmailMessage{
+	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,

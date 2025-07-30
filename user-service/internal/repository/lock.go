@@ -18,24 +18,6 @@ type AuthLockRepository interface {
 // See [AuthLockRepository] for more details.
 //
 // Release manually releases the lock. Returns error if lock is no longer held.
-//
-// ReleaseAndHandleErr releases the acquired lock and also handles a potential
-// error from the deferred function. This is typically used in defer statements
-// to ensure the lock is always released, even if an error occurs during the
-// function's execution. Example:
-//
-//	func foo() (finalErr error) {
-//	  lock, err := s.authLockRepository.ObtainLock(ctx, email)
-//	    if err != nil {
-//	    return err
-//	  }
-//
-//	  defer lock.ReleaseAndHandleErr(ctx, &finalErr)
-//	  ...
-//	}
-//
-// The err parameter should be a pointer to the named return error variable of the function.
 type AuthLock interface {
 	Release(ctx context.Context) error
-	ReleaseAndHandleErr(ctx context.Context, err *error)
 }

@@ -23,7 +23,7 @@ const (
 // For other tiers ("student"), this simply indicates the user to whom the individual subscription is directly tied.
 //
 // InvitationCode is a code used for joining collective subscriptions (e.g., "team" tier).
-// It is set to null if its not possible to join them. It is nil if joining via code isn't possible
+// It is set to null if it's not possible to join them. It is nil if joining via code isn't possible
 // for that specific subscription.
 //
 // Since is updated with each new billing cycle, reflecting the start of the

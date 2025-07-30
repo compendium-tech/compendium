@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -36,7 +37,7 @@ func (r *redisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string)
 	code, err := r.client.Get(ctx, r.createMfaOtpKey(email)).Result()
 
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return nil, nil
 		}
 

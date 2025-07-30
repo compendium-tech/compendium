@@ -1,12 +1,12 @@
 package v1
 
 import (
+	"github.com/compendium-tech/compendium/common/pkg/error"
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
-	appErr "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -26,14 +26,14 @@ func (u UserController) MakeRoutes(e *gin.Engine) {
 	{
 		authenticated := v1.Group("/")
 		authenticated.Use(auth.RequireAuth)
-		authenticated.GET("/account", appErr.Handle(u.getAccount))
+		authenticated.GET("/account", errorutils.Handle(u.getAccount))
 
 		authenticated.Use(auth.RequireCsrf)
-		authenticated.PUT("/account", appErr.Handle(u.updateAccount))
+		authenticated.PUT("/account", errorutils.Handle(u.updateAccount))
 	}
 }
 
-func (u *UserController) getAccount(c *gin.Context) error {
+func (u UserController) getAccount(c *gin.Context) error {
 	response, err := u.userService.GetAccountAsAuthenticatedUser(c.Request.Context())
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (u *UserController) getAccount(c *gin.Context) error {
 	return nil
 }
 
-func (u *UserController) updateAccount(c *gin.Context) error {
+func (u UserController) updateAccount(c *gin.Context) error {
 	var request domain.UpdateAccount
 
 	if err := c.BindJSON(&request); err != nil {

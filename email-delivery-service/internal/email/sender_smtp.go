@@ -13,7 +13,7 @@ type smtpEmailSender struct {
 	from     string
 }
 
-func NewSmtpEmailSender(host string, port uint16, username string, password string, from string) EmailSender {
+func NewSmtpEmailSender(host string, port uint16, username string, password string, from string) Sender {
 	return &smtpEmailSender{
 		host:     host,
 		port:     port,
@@ -23,7 +23,7 @@ func NewSmtpEmailSender(host string, port uint16, username string, password stri
 	}
 }
 
-func (s *smtpEmailSender) SendMessage(msg EmailMessage) error {
+func (s *smtpEmailSender) SendMessage(msg Message) error {
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
 
 	emailContent := []byte(

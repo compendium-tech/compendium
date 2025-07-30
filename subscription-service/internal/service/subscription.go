@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/compendium-tech/compendium/common/pkg/error"
 	"time"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
@@ -11,7 +12,7 @@ import (
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
-	appErr "github.com/compendium-tech/compendium/subscription-service/internal/error"
+	"github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
@@ -90,12 +91,12 @@ func (s *subscriptionService) GetSubscriptionInvitationCode(ctx context.Context)
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be retrieved")
-		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
+		return nil, myerror.New(myerror.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be retrieved", subscription.ID)
-		return nil, appErr.New(appErr.PayerPermissionRequired)
+		return nil, myerror.New(myerror.PayerPermissionRequired)
 	}
 
 	log.L(ctx).Info("Subscription invitation code fetched successfully")
@@ -120,12 +121,12 @@ func (s *subscriptionService) UpdateSubscriptionInvitationCode(ctx context.Conte
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be updated")
-		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
+		return nil, myerror.New(myerror.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be updated", subscription.ID)
-		return nil, appErr.New(appErr.PayerPermissionRequired)
+		return nil, myerror.New(myerror.PayerPermissionRequired)
 	}
 
 	invitationCode, err := random.NewRandomString(12)
@@ -167,12 +168,12 @@ func (s *subscriptionService) RemoveSubscriptionInvitationCode(ctx context.Conte
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, invitation code cannot be removed")
-		return nil, appErr.New(appErr.SubscriptionIsRequiredError)
+		return nil, myerror.New(myerror.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, invitation code cannot be removed", subscription.ID)
-		return nil, appErr.New(appErr.PayerPermissionRequired)
+		return nil, myerror.New(myerror.PayerPermissionRequired)
 	}
 
 	err = s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
@@ -209,12 +210,12 @@ func (s *subscriptionService) CancelSubscription(ctx context.Context) error {
 
 	if subscription == nil {
 		log.L(ctx).Warn("Subscription not found for the authenticated user, cannot cancel")
-		return appErr.New(appErr.SubscriptionIsRequiredError)
+		return myerror.New(myerror.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		log.L(ctx).Warnf("Authenticated user is not the payer for subscription %s, cannot cancel", subscription.ID)
-		return appErr.New(appErr.PayerPermissionRequired)
+		return myerror.New(myerror.PayerPermissionRequired)
 	}
 
 	err = s.billingAPI.CancelSubscription(ctx, subscription.ID)
@@ -248,7 +249,7 @@ func (s *subscriptionService) JoinCollectiveSubscription(ctx context.Context, in
 
 	if subscription == nil || subscription.Tier == model.TierStudent {
 		logger.Warn("Invalid invitation code or student tier subscription used to join collective subscription")
-		return nil, appErr.New(appErr.InvalidSubscriptionInvitationCode)
+		return nil, myerror.New(myerror.InvalidSubscriptionInvitationCode)
 	}
 
 	response, err := s.subscriptionToResponse(ctx, userID, subscription)
@@ -286,12 +287,12 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 
 	if subscription == nil {
 		logger.Warn("Subscription not found for the authenticated payer, cannot remove member")
-		return appErr.New(appErr.SubscriptionIsRequiredError)
+		return myerror.New(myerror.SubscriptionIsRequiredError)
 	}
 
 	if subscription.BackedBy != userID {
 		logger.Warnf("Authenticated user is not the payer for subscription %s, cannot remove member", subscription.ID)
-		return appErr.New(appErr.PayerPermissionRequired)
+		return myerror.New(myerror.PayerPermissionRequired)
 	}
 
 	err = s.subscriptionRepository.RemoveSubscriptionMemberBySubscriptionAndUserID(ctx, subscription.ID, memberUserID)
@@ -310,7 +311,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 
 	if len(request.Items) == 0 {
 		logger.Warn("No items in upsert subscription request")
-		return appErr.NewWithReason(appErr.RequestValidationError, "No items in request")
+		return myerror.NewWithReason(myerror.RequestValidationError, "No items in request")
 	}
 
 	lock, err := s.billingLockRepository.ObtainLock(ctx, request.UserID)
@@ -319,7 +320,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 		return err
 	}
 
-	defer lock.ReleaseAndHandleErr(ctx, &finalErr)
+	defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 
 	for i, item := range request.Items {
 		itemLogger := logger.WithField("itemIndex", i).WithField("productID", item.ProductID)
@@ -342,7 +343,7 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 				if err != nil {
 					return err
 				}
-				return appErr.NewWithReason(appErr.RequestValidationError, fmt.Sprintf("Unknown product ID: %s", item.ProductID))
+				return myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("Unknown product ID: %s", item.ProductID))
 			}
 			continue
 		}

@@ -15,7 +15,11 @@ var Validate *validator.Validate
 func InitValidator() {
 	Validate = validator.New()
 
-	Validate.RegisterValidation("password", ValidatePassword)
+	err := Validate.RegisterValidation("password", validatePassword)
+	if err != nil {
+		return
+	}
+
 	Validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 
@@ -27,7 +31,7 @@ func InitValidator() {
 	})
 }
 
-func ValidatePassword(fl validator.FieldLevel) bool {
+func validatePassword(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
 	if !regexp.MustCompile(`[A-Z]`).MatchString(password) {
@@ -49,20 +53,8 @@ func ValidatePassword(fl validator.FieldLevel) bool {
 	return true
 }
 
-func BuildErrorMessage(errs validator.ValidationErrors) string {
+func BuildErrorMessage(err validator.FieldError) string {
 	buff := bytes.NewBufferString("")
-
-	for i := 0; i < len(errs); i++ {
-		buff.WriteString(fmt.Sprintf("field <%s> doesn't follow rule <%s>", errs[i].Field(), errs[i].Tag()))
-		buff.WriteString("\n")
-	}
-
-	return strings.TrimSpace(buff.String())
-}
-
-func BuildValidationErrorMessage(err validator.FieldError) string {
-	buff := bytes.NewBufferString("")
-
 	buff.WriteString(fmt.Sprintf("field <%s> doesn't follow rule <%s>", err.Field(), err.Tag()))
 
 	return buff.String()

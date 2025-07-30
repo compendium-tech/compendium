@@ -7,9 +7,8 @@ import (
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
+	"github.com/compendium-tech/compendium/common/pkg/middleware"
 	"github.com/compendium-tech/compendium/common/pkg/ratelimit"
-	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	v1 "github.com/compendium-tech/compendium/user-service/internal/controller/v1"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -31,8 +30,8 @@ type GinAppDependencies struct {
 	PgDB                *sql.DB
 	RedisClient         *redis.Client
 	TokenManager        auth.TokenManager
-	EmailSender         emailDelivery.EmailSender
-	EmailMessageBuilder email.EmailMessageBuilder
+	EmailSender         email.Sender
+	EmailMessageBuilder email.MessageBuilder
 	PasswordHasher      hash.PasswordHasher
 	GeoIP               geoip.GeoIP
 	UserAgentParser     ua.UserAgentParser
@@ -45,7 +44,7 @@ func NewGinApp(deps GinAppDependencies) *gin.Engine {
 	})
 	logrus.SetReportCaller(true)
 
-	ratelimiter := ratelimit.NewRedisRateLimiter(deps.RedisClient)
+	rateLimiter := ratelimit.NewRedisRateLimiter(deps.RedisClient)
 	authEmailLockRepository := repository.NewRedisAuthLockRepository(deps.RedisClient)
 	deviceRepository := repository.NewPgTrustedDeviceRepository(deps.PgDB)
 	userRepository := repository.NewPgUserRepository(deps.PgDB)
@@ -57,13 +56,13 @@ func NewGinApp(deps GinAppDependencies) *gin.Engine {
 		userRepository, mfaRepository, refreshTokenRepository,
 		deps.EmailSender, deps.EmailMessageBuilder,
 		deps.GeoIP, deps.UserAgentParser,
-		deps.TokenManager, deps.PasswordHasher, ratelimiter)
+		deps.TokenManager, deps.PasswordHasher, rateLimiter)
 	userService := service.NewUserService(userRepository)
 
 	r := gin.Default()
-	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
-	r.Use(auth.AuthMiddleware{TokenManager: deps.TokenManager}.Handle)
-	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
+	r.Use(middleware.RequestIDMiddleware{AllowToSet: false}.Handle)
+	r.Use(auth.Middleware{TokenManager: deps.TokenManager}.Handle)
+	r.Use(middleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 
 	v1.NewAuthController(authService).MakeRoutes(r)
 	v1.NewUserController(userService).MakeRoutes(r)

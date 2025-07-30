@@ -15,11 +15,11 @@ var isCsrfKey = _isCsrfKey{}
 
 const csrfTokenHeaderName = "X-Csrf-Token"
 
-type AuthMiddleware struct {
+type Middleware struct {
 	TokenManager TokenManager
 }
 
-func (a AuthMiddleware) Handle(c *gin.Context) {
+func (a Middleware) Handle(c *gin.Context) {
 	userID, isCsrfTokenValid := a.parseAccessTokenCookie(c)
 	if userID == uuid.Nil {
 		return
@@ -55,7 +55,7 @@ func RequireCsrf(c *gin.Context) {
 	}
 }
 
-func (a AuthMiddleware) parseAccessTokenCookie(c *gin.Context) (uuid.UUID, bool) {
+func (a Middleware) parseAccessTokenCookie(c *gin.Context) (uuid.UUID, bool) {
 	accessToken, err := c.Cookie("accessToken")
 
 	if err != nil {

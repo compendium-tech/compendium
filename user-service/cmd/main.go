@@ -9,7 +9,6 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
-	emailDelivery "github.com/compendium-tech/compendium/email-delivery-service/pkg/email"
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
@@ -65,9 +64,9 @@ func runGinApp(ctx context.Context) {
 		return
 	}
 
-	kafkaEmailSender := emailDelivery.NewKafkaEmailMessageProducer(cfg.EmailDeliveryKafkaBroker, cfg.EmailDeliveryKafkaTopic)
+	kafkaEmailSender := email.NewKafkaEmailMessageProducer(cfg.EmailDeliveryKafkaBroker, cfg.EmailDeliveryKafkaTopic)
 
-	emailMessageBuilder, err := email.NewEmailMessageBuilder()
+	emailMessageBuilder, err := email.NewMessageBuilder()
 	if err != nil {
 		fmt.Printf("Failed to initialize email builder, cause: %s\n", err)
 		return
@@ -89,7 +88,7 @@ func runGinApp(ctx context.Context) {
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 
-	app.NewGinApp(deps).Run()
+	_ = app.NewGinApp(deps).Run()
 }
 
 func runGrpcApp(ctx context.Context) {
@@ -108,5 +107,5 @@ func runGrpcApp(ctx context.Context) {
 		Config: cfg,
 	}
 
-	app.NewGrpcApp(deps).Run()
+	_ = app.NewGrpcApp(deps).Run()
 }
