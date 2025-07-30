@@ -11,16 +11,15 @@ const (
 	TypeBoolean   Type = "BOOLEAN"
 	TypeArray     Type = "ARRAY"
 	TypeObject    Type = "OBJECT"
-	TypeNULL      Type = "NULL"
 )
 
 type Role string
 type Type string
 
 type Message struct {
-	Role        Role
-	TextContent string
-	ToolCalls   []ToolCall
+	Role      Role
+	Text      string
+	ToolCalls []ToolCall
 }
 
 type ToolCall struct {
@@ -43,6 +42,9 @@ type ToolParameter struct {
 	Enum        []string
 }
 
-type Response struct {
-	Message Message
+type StructuredOutputSchema struct {
+	Type        Type                               `json:"type,omitempty"`
+	Description string                             `json:"description,omitempty"`
+	Properties  map[string]*StructuredOutputSchema `json:"properties,omitempty"`
+	Required    []string                           `json:"required,omitempty"`
 }
