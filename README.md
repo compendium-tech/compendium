@@ -129,10 +129,7 @@ Ask the right folks to review your code, and add any labels or milestones if nee
 
 # System Architecture
 
-<img alt="architecture" src="https://github.com/user-attachments/assets/bd038fe6-f1ef-4631-bc3e-9ae8e8bf9e3c" />
-
 We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services:
-- **Python**: Primarily used for specialized microservice services, including interactions with the LLM API for the assistant service.
 - **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
 - **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. 
 - **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data.
