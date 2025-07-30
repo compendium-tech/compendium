@@ -373,7 +373,7 @@ import (
 func (r *SomeRepo) GetItem(id string) error {
     err := db.Query("...")
     if err != nil {
-        return tracerr.Errorf("failed to query item %s from DB: %w", id, err)
+        return tracerr.Errorf("failed to query item %s from DB: %v", id, err)
     }
 
     return nil
