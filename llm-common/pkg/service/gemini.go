@@ -14,72 +14,23 @@ type geminiClient struct {
 	tools  []*genai.Tool
 }
 
-func NewGeminiClient(ctx context.Context, cfg *genai.ClientConfig, tools []domain.ToolDefinition) (LLMService, error) {
+func NewGeminiClient(ctx context.Context, cfg *genai.ClientConfig) (LLMService, error) {
 	client, err := genai.NewClient(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
-	c := &geminiClient{client: client}
-	c.addTools(tools)
-
-	return c, nil
-}
-
-func (g *geminiClient) addTools(tools []domain.ToolDefinition) {
-	genAITools := make([]*genai.Tool, 0, len(tools))
-	for _, toolDef := range tools {
-		parameters := make([]*genai.Schema, len(toolDef.Parameters))
-		for i, param := range toolDef.Parameters {
-			parameters[i] = &genai.Schema{
-				Type:        toGenAIType(param.Type),
-				Description: param.Description,
-				Enum:        param.Enum,
-			}
-		}
-
-		parameterSchema := map[string]any{
-			"type":       "object",
-			"properties": make(map[string]any),
-			"required":   make([]string, 0),
-		}
-		properties := parameterSchema["properties"].(map[string]any)
-		for _, param := range toolDef.Parameters {
-			m := map[string]any{
-				"type":        string(param.Type),
-				"description": param.Description,
-			}
-
-			if len(param.Enum) > 0 {
-				m["enum"] = param.Enum
-			}
-
-			properties[param.Name] = m
-
-			if param.IsRequired {
-				parameterSchema["required"] = append(parameterSchema["required"].([]string), param.Name)
-			}
-		}
-
-		genAITools = append(genAITools, &genai.Tool{
-			FunctionDeclarations: []*genai.FunctionDeclaration{
-				{
-					Name:                 toolDef.Name,
-					Description:          toolDef.Description,
-					ParametersJsonSchema: parameterSchema,
-				},
-			},
-		})
-	}
-
-	g.tools = genAITools
+	return &geminiClient{client: client}, nil
 }
 
 func (g *geminiClient) GenerateResponse(
 	ctx context.Context,
 	chatHistory []domain.Message,
+	tools []domain.ToolDefinition,
 	structuredOutputSchema *domain.StructuredOutputSchema,
 ) (*domain.Message, error) {
+	g.useTools(tools)
+
 	contents := make([]*genai.Content, 0, len(chatHistory))
 	for _, msg := range chatHistory {
 		parts := make([]*genai.Part, 0, 1+len(msg.ToolCalls))
@@ -182,4 +133,53 @@ func toGenAIType(t domain.Type) genai.Type {
 	default:
 		return genai.TypeString
 	}
+}
+
+func (g *geminiClient) useTools(tools []domain.ToolDefinition) {
+	genAITools := make([]*genai.Tool, 0, len(tools))
+	for _, toolDef := range tools {
+		parameters := make([]*genai.Schema, len(toolDef.Parameters))
+		for i, param := range toolDef.Parameters {
+			parameters[i] = &genai.Schema{
+				Type:        toGenAIType(param.Type),
+				Description: param.Description,
+				Enum:        param.Enum,
+			}
+		}
+
+		parameterSchema := map[string]any{
+			"type":       "object",
+			"properties": make(map[string]any),
+			"required":   make([]string, 0),
+		}
+		properties := parameterSchema["properties"].(map[string]any)
+		for _, param := range toolDef.Parameters {
+			m := map[string]any{
+				"type":        string(param.Type),
+				"description": param.Description,
+			}
+
+			if len(param.Enum) > 0 {
+				m["enum"] = param.Enum
+			}
+
+			properties[param.Name] = m
+
+			if param.IsRequired {
+				parameterSchema["required"] = append(parameterSchema["required"].([]string), param.Name)
+			}
+		}
+
+		genAITools = append(genAITools, &genai.Tool{
+			FunctionDeclarations: []*genai.FunctionDeclaration{
+				{
+					Name:                 toolDef.Name,
+					Description:          toolDef.Description,
+					ParametersJsonSchema: parameterSchema,
+				},
+			},
+		})
+	}
+
+	g.tools = genAITools
 }

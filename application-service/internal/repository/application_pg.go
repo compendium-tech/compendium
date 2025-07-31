@@ -341,7 +341,7 @@ func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID u
 		err := rows.Scan(
 			&essay.ID,
 			&applicationID,
-			&essay.Kind,
+			&essay.Type,
 			&essay.Content,
 		)
 		if err != nil {
@@ -385,7 +385,7 @@ func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID u
 			insertQuery,
 			i,
 			applicationID,
-			essay.Kind,
+			essay.Type,
 			essay.Content,
 		)
 		if err != nil {

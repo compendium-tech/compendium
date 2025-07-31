@@ -1,12 +1,13 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/compendium-tech/compendium/application-service/internal/middleware"
 	"github.com/compendium-tech/compendium/application-service/internal/service"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	httputils "github.com/compendium-tech/compendium/common/pkg/http"
+	"github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type ApplicationEvaluationController struct {

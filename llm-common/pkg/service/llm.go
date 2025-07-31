@@ -8,5 +8,6 @@ import (
 type LLMService interface {
 	GenerateResponse(
 		ctx context.Context, chatHistory []domain.Message,
+		tools []domain.ToolDefinition,
 		structuredOutputSchema *domain.StructuredOutputSchema) (*domain.Message, error)
 }

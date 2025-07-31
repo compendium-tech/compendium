@@ -1,0 +1,44 @@
+package app
+
+import (
+	"database/sql"
+	"github.com/compendium-tech/compendium/application-service/internal/config"
+	v1 "github.com/compendium-tech/compendium/application-service/internal/controller/v1"
+	"github.com/compendium-tech/compendium/application-service/internal/repository"
+	"github.com/compendium-tech/compendium/application-service/internal/service"
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/middleware"
+	llmservice "github.com/compendium-tech/compendium/llm-common/pkg/service"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
+
+type Dependencies struct {
+	Config       *config.AppConfig
+	PgDB         *sql.DB
+	TokenManager auth.TokenManager
+	LLMService   llmservice.LLMService
+}
+
+func NewApp(deps Dependencies) *gin.Engine {
+	logrus.SetFormatter(&log.LogFormatter{
+		Program:     "application-service",
+		Environment: deps.Config.Environment,
+	})
+	logrus.SetReportCaller(true)
+
+	applicationRepository := repository.NewPgApplicationRepository(deps.PgDB)
+	applicationService := service.NewApplicationService(applicationRepository)
+	applicationEvaluationService := service.NewApplicationEvaluateService(applicationRepository, deps.LLMService)
+
+	r := gin.Default()
+	r.Use(middleware.RequestIDMiddleware{AllowToSet: false}.Handle)
+	r.Use(auth.Middleware{TokenManager: deps.TokenManager}.Handle)
+	r.Use(middleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
+
+	v1.NewApplicationController(applicationService).MakeRoutes(r)
+	v1.NewApplicationEvaluationController(applicationService, applicationEvaluationService).MakeRoutes(r)
+
+	return r
+}

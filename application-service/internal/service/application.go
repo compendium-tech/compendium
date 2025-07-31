@@ -293,7 +293,7 @@ func (a *applicationService) GetEssays(ctx context.Context) ([]domain.EssayRespo
 	for _, essay := range essays {
 		essayResponses = append(essayResponses, domain.EssayResponse{
 			ID:      essay.ID,
-			Kind:    essay.Kind,
+			Kind:    essay.Type,
 			Content: essay.Content,
 		})
 	}
@@ -315,7 +315,7 @@ func (a *applicationService) PutEssays(ctx context.Context, essayRequests []doma
 	for _, essayRequest := range essayRequests {
 		essays = append(essays, model.Essay{
 			ID:      uuid.New(),
-			Kind:    essayRequest.Kind,
+			Type:    essayRequest.Kind,
 			Content: essayRequest.Content,
 		})
 	}

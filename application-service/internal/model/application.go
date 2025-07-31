@@ -36,7 +36,7 @@ type Honor struct {
 
 type Essay struct {
 	ID      uuid.UUID
-	Kind    EssayType
+	Type    EssayType
 	Content string
 }
 
