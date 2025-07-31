@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/compendium-tech/compendium/llm-common/internal/domain"
+	"github.com/compendium-tech/compendium/llm-common/pkg/domain"
 	"google.golang.org/genai"
 )
 
@@ -146,7 +146,7 @@ func structuredOutputSchemaToGenAI(domainSchema *domain.StructuredOutputSchema) 
 	ty := toGenAIType(domainSchema.Type)
 	properties := make(map[string]*genai.Schema)
 	for name, prop := range domainSchema.Properties {
-		properties[name] = structuredOutputSchemaToGenAI(prop)
+		properties[name] = structuredOutputSchemaToGenAI(&prop)
 	}
 
 	return &genai.Schema{

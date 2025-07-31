@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/compendium-tech/compendium/llm-common/internal/domain"
+	"github.com/compendium-tech/compendium/llm-common/pkg/domain"
 )
 
 type LLMService interface {

@@ -18,7 +18,7 @@ import (
 // derived from the context, populated by an authentication middleware.
 //
 // Methods without this suffix (like FindAccountByEmail) are
-// intended for internal interoperability with other microservices.
+// intended for interoperability with other microservices.
 type UserService interface {
 	GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error)
 	FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error)

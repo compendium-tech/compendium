@@ -43,8 +43,8 @@ type ToolParameter struct {
 }
 
 type StructuredOutputSchema struct {
-	Type        Type                               `json:"type,omitempty"`
-	Description string                             `json:"description,omitempty"`
-	Properties  map[string]*StructuredOutputSchema `json:"properties,omitempty"`
-	Required    []string                           `json:"required,omitempty"`
+	Type        Type                              `json:"type,omitempty"`
+	Description string                            `json:"description,omitempty"`
+	Properties  map[string]StructuredOutputSchema `json:"properties,omitempty"`
+	Required    []string                          `json:"required,omitempty"`
 }
