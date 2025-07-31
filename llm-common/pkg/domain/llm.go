@@ -46,5 +46,8 @@ type StructuredOutputSchema struct {
 	Type        Type                              `json:"type,omitempty"`
 	Description string                            `json:"description,omitempty"`
 	Properties  map[string]StructuredOutputSchema `json:"properties,omitempty"`
+	Items       *StructuredOutputSchema           `json:"items,omitempty"`
+	MaxItems    *int64                            `json:"maxItems,omitempty"`
+	MinItems    *int64                            `json:"minItems,omitempty"`
 	Required    []string                          `json:"required,omitempty"`
 }

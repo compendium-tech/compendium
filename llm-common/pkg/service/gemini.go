@@ -149,10 +149,18 @@ func structuredOutputSchemaToGenAI(domainSchema *domain.StructuredOutputSchema) 
 		properties[name] = structuredOutputSchemaToGenAI(&prop)
 	}
 
+	var items *genai.Schema
+	if domainSchema.Items != nil {
+		items = structuredOutputSchemaToGenAI(domainSchema.Items)
+	}
+
 	return &genai.Schema{
 		Type:        ty,
 		Description: domainSchema.Description,
 		Properties:  properties,
+		Items:       items,
+		MaxItems:    domainSchema.MaxItems,
+		MinItems:    domainSchema.MinItems,
 		Required:    domainSchema.Required,
 	}
 }
