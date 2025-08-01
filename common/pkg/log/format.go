@@ -3,6 +3,7 @@ package log
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -17,10 +18,7 @@ type LogFormatter struct {
 
 func (f *LogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	data := make(logrus.Fields, len(entry.Data)+7)
-
-	for k, v := range entry.Data {
-		data[k] = v
-	}
+	maps.Copy(data, entry.Data)
 
 	data["time"] = entry.Time.UTC().Format(timeStampFormat)
 	data["msg"] = entry.Message

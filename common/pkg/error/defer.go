@@ -2,6 +2,7 @@ package errorutils
 
 import (
 	"context"
+
 	"github.com/ztrue/tracerr"
 )
 

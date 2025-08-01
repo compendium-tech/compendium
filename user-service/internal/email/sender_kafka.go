@@ -3,6 +3,7 @@ package email
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/segmentio/kafka-go"
 	"github.com/ztrue/tracerr"
 )

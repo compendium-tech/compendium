@@ -3,12 +3,13 @@ package middleware
 import (
 	"time"
 
-	"github.com/compendium-tech/compendium/common/pkg/auth"
-	"github.com/compendium-tech/compendium/common/pkg/http"
-	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	httputils "github.com/compendium-tech/compendium/common/pkg/http"
+	"github.com/compendium-tech/compendium/common/pkg/log"
 )
 
 type LoggerMiddleware struct {

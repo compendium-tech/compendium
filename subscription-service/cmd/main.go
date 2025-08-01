@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
+	"github.com/joho/godotenv"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
@@ -12,7 +14,6 @@ import (
 	"github.com/compendium-tech/compendium/subscription-service/internal/app"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
-	"github.com/joho/godotenv"
 )
 
 func main() {

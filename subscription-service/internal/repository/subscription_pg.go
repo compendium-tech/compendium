@@ -4,16 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"time"
 
-	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/compendium-tech/compendium/common/pkg/pg"
-	"github.com/compendium-tech/compendium/subscription-service/internal/error"
-	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/ztrue/tracerr"
+
+	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/pg"
+	myerror "github.com/compendium-tech/compendium/subscription-service/internal/error"
+	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 )
 
 type pgSubscriptionRepository struct {

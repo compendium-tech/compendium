@@ -2,6 +2,7 @@ package hash
 
 import (
 	"errors"
+
 	"github.com/ztrue/tracerr"
 	"golang.org/x/crypto/bcrypt"
 )

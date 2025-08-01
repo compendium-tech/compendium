@@ -37,23 +37,21 @@ type AppConfig struct {
 func LoadAppConfig() *AppConfig {
 	appConfig := &AppConfig{
 		Environment:         EnvironmentProd,
-		PgHost:              "127.0.0.1",
-		PgPort:              5432,
-		PgUsername:          "postgres",
-		PgPassword:          "",
-		PgDatabaseName:      "",
-		RedisPort:           6379,
-		RedisHost:           "127.0.0.1",
-		JwtSingingKey:       "",
-		CsrfTokenHashSalt:   "",
-		PaddleWebhookSecret: "",
+		PgHost:              os.Getenv("POSTGRES_HOST"),
+		PgUsername:          os.Getenv("POSTGRES_USERNAME"),
+		PgPassword:          os.Getenv("POSTGRES_PASSWORD"),
+		PgDatabaseName:      os.Getenv("POSTGRES_DATABASE_NAME"),
+		RedisHost:           os.Getenv("REDIS_HOST"),
+		JwtSingingKey:       os.Getenv("JWT_SIGNING_KEY"),
+		CsrfTokenHashSalt:   os.Getenv("CSRF_TOKEN_HASH_SALT"),
+		PaddleWebhookSecret: os.Getenv("PADDLE_WEBHOOK_SECRET"),
 		ProductIDs: ProductIDs{
-			StudentSubscriptionProductID:   "",
-			TeamSubscriptionProductID:      "",
-			CommunitySubscriptionProductID: "",
+			StudentSubscriptionProductID:   os.Getenv("STUDENT_SUBSCRIPTION_PRODUCT_ID"),
+			TeamSubscriptionProductID:      os.Getenv("TEAM_SUBSCRIPTION_PRODUCT_ID"),
+			CommunitySubscriptionProductID: os.Getenv("COMMUNITY_SUBSCRIPTION_PRODUCT_ID"),
 		},
-		PaddleAPIKey:                "",
-		GrpcUserServiceClientTarget: "localhost:2000",
+		PaddleAPIKey:                os.Getenv("PADDLE_API_KEY"),
+		GrpcUserServiceClientTarget: os.Getenv("GRPC_USER_SERVICE_CLIENT_TARGET"),
 	}
 
 	env := os.Getenv("ENVIRONMENT")
@@ -61,22 +59,6 @@ func LoadAppConfig() *AppConfig {
 	if env == "dev" {
 		appConfig.Environment = EnvironmentDev
 	}
-
-	appConfig.PgHost = os.Getenv("POSTGRES_HOST")
-	appConfig.PgUsername = os.Getenv("POSTGRES_USERNAME")
-	appConfig.PgPassword = os.Getenv("POSTGRES_PASSWORD")
-	appConfig.PgDatabaseName = os.Getenv("POSTGRES_DATABASE_NAME")
-	appConfig.RedisHost = os.Getenv("REDIS_HOST")
-	appConfig.JwtSingingKey = os.Getenv("JWT_SIGNING_KEY")
-	appConfig.CsrfTokenHashSalt = os.Getenv("CSRF_TOKEN_HASH_SALT")
-	appConfig.PaddleWebhookSecret = os.Getenv("PADDLE_WEBHOOK_SECRET")
-	appConfig.ProductIDs = ProductIDs{
-		StudentSubscriptionProductID:   os.Getenv("STUDENT_SUBSCRIPTION_PRODUCT_ID"),
-		TeamSubscriptionProductID:      os.Getenv("TEAM_SUBSCRIPTION_PRODUCT_ID"),
-		CommunitySubscriptionProductID: os.Getenv("COMMUNITY_SUBSCRIPTION_PRODUCT_ID"),
-	}
-	appConfig.PaddleAPIKey = os.Getenv("PADDLE_API_KEY")
-	appConfig.GrpcUserServiceClientTarget = os.Getenv("GRPC_USER_SERVICE_CLIENT_TARGET")
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {
 		var pgPort uint16

@@ -12,27 +12,27 @@ const (
 )
 
 type AppConfig struct {
-	Environment       string
-	PgHost            string
-	PgPort            uint16
-	PgUsername        string
-	PgPassword        string
-	PgDatabaseName    string
-	GeminiAPIKey      string
-	JwtSingingKey     string
-	CsrfTokenHashSalt string
+	Environment                string
+	PgHost                     string
+	PgPort                     uint16
+	PgUsername                 string
+	PgPassword                 string
+	PgDatabaseName             string
+	JwtSingingKey              string
+	GrpcLLMServiceClientTarget string
+	CsrfTokenHashSalt          string
 }
 
 func LoadAppConfig() *AppConfig {
 	appConfig := &AppConfig{
-		Environment:       EnvironmentProd,
-		PgHost:            os.Getenv("POSTGRES_HOST"),
-		PgUsername:        os.Getenv("POSTGRES_USERNAME"),
-		PgPassword:        os.Getenv("POSTGRES_PASSWORD"),
-		PgDatabaseName:    os.Getenv("POSTGRES_DATABASE_NAME"),
-		GeminiAPIKey:      os.Getenv("GEMINI_API_KEY"),
-		JwtSingingKey:     os.Getenv("JWT_SIGNING_KEY"),
-		CsrfTokenHashSalt: os.Getenv("CSRF_TOKEN_HASH_SALT"),
+		Environment:                EnvironmentProd,
+		PgHost:                     os.Getenv("POSTGRES_HOST"),
+		PgUsername:                 os.Getenv("POSTGRES_USERNAME"),
+		PgPassword:                 os.Getenv("POSTGRES_PASSWORD"),
+		PgDatabaseName:             os.Getenv("POSTGRES_DATABASE_NAME"),
+		JwtSingingKey:              os.Getenv("JWT_SIGNING_KEY"),
+		CsrfTokenHashSalt:          os.Getenv("CSRF_TOKEN_HASH_SALT"),
+		GrpcLLMServiceClientTarget: os.Getenv("GRPC_LLM_SERVICE_CLIENT_TARGET"),
 	}
 
 	env := os.Getenv("ENVIRONMENT")

@@ -4,18 +4,20 @@ import (
 	"database/sql"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
-	"github.com/compendium-tech/compendium/common/pkg/auth"
-	"github.com/compendium-tech/compendium/common/pkg/log"
-	commonMiddleware "github.com/compendium-tech/compendium/common/pkg/middleware"
-	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
-	"github.com/compendium-tech/compendium/subscription-service/internal/config"
-	v1 "github.com/compendium-tech/compendium/subscription-service/internal/controller/v1"
-	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
-	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
-	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+
+	"github.com/compendium-tech/compendium/common/pkg/auth"
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/middleware"
+
+	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
+	"github.com/compendium-tech/compendium/subscription-service/internal/config"
+	httpv1 "github.com/compendium-tech/compendium/subscription-service/internal/delivery/http/v1"
+	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
+	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
+	"github.com/compendium-tech/compendium/subscription-service/internal/service"
 )
 
 type Dependencies struct {
@@ -42,14 +44,14 @@ func NewApp(deps Dependencies) *gin.Engine {
 		billingLockRepository, subscriptionRepository)
 
 	r := gin.Default()
-	r.Use(commonMiddleware.RequestIDMiddleware{AllowToSet: false}.Handle)
+	r.Use(middleware.RequestIDMiddleware{AllowToSet: false}.Handle)
 	r.Use(auth.Middleware{TokenManager: deps.TokenManager}.Handle)
-	r.Use(commonMiddleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
+	r.Use(middleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 
-	v1.NewBillingWebhookController(
+	httpv1.NewBillingWebhookController(
 		subscriptionService,
 		paddle.NewWebhookVerifier(deps.Config.PaddleWebhookSecret)).MakeRoutes(r)
-	v1.NewSubscriptionController(subscriptionService).MakeRoutes(r)
+	httpv1.NewSubscriptionController(subscriptionService).MakeRoutes(r)
 
 	return r
 }

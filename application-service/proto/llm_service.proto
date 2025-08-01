@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package llm_service.v1;
+
+option go_package = "internal/proto/v1";
+
+import "google/protobuf/any.proto";
+
+enum Role {
+  SYSTEM = 0;
+  USER = 1;
+  ASSISTANT = 2;
+}
+
+message Type { string value = 1; }
+
+message ToolCall {
+  string id = 1;
+  string name = 2;
+  map<string, google.protobuf.Any> parameters = 3;
+}
+
+message Message {
+  Role role = 1;
+  string text = 2;
+  repeated ToolCall tool_calls = 3;
+}
+
+message ToolParameter {
+  Type type = 1;
+  string name = 2;
+  string description = 3;
+  bool is_required = 4;
+  repeated string enum = 5;
+}
+
+message ToolDefinition {
+  string name = 1;
+  string description = 2;
+  Schema parameters_schema = 3;
+}
+
+message Schema {
+  Type type = 1;
+  string description = 2;
+  map<string, Schema> properties = 3;
+  Schema items = 4;
+  int64 max_items = 5;
+  int64 min_items = 6;
+  repeated string required = 7;
+}
+
+message GenerateResponseRequest {
+  repeated Message chat_history = 1;
+  repeated ToolDefinition tools = 2;
+  Schema structured_output_schema = 3;
+}
+
+message GenerateResponseResponse { Message message = 1; }
+
+service LLMService {
+  rpc GenerateResponse(GenerateResponseRequest)
+      returns (GenerateResponseResponse);
+}

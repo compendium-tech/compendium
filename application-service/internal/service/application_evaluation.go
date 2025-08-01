@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/compendium-tech/compendium/application-service/internal/context"
+	localcontext "github.com/compendium-tech/compendium/application-service/internal/context"
 	"github.com/compendium-tech/compendium/application-service/internal/domain"
+	"github.com/compendium-tech/compendium/application-service/internal/interop"
 	"github.com/compendium-tech/compendium/application-service/internal/model"
 	"github.com/compendium-tech/compendium/application-service/internal/repository"
-	llmdomain "github.com/compendium-tech/compendium/llm-common/pkg/domain"
-	"github.com/compendium-tech/compendium/llm-common/pkg/service"
 )
 
 type ApplicationEvaluationService interface {
@@ -20,12 +19,12 @@ type ApplicationEvaluationService interface {
 
 type applicationEvaluationService struct {
 	applicationRepository repository.ApplicationRepository
-	llmService            service.LLMService
+	llmService            interop.LLMService
 }
 
 func NewApplicationEvaluateService(
 	applicationRepository repository.ApplicationRepository,
-	llmService service.LLMService) ApplicationEvaluationService {
+	llmService interop.LLMService) ApplicationEvaluationService {
 	return &applicationEvaluationService{
 		applicationRepository: applicationRepository,
 		llmService:            llmService,
@@ -108,9 +107,9 @@ func (s *applicationEvaluationService) evaluateActivities(ctx context.Context, a
 		prompt += fmt.Sprintf("Grade levels: %s\n", strings.Join(gradeStrings, ", "))
 	}
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []llmdomain.Message{
+	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
-			Role: llmdomain.RoleSystem,
+			Role: domain.RoleSystem,
 			Text: prompt,
 		},
 	}, nil, &activitiesEvaluationSchema)
@@ -131,7 +130,7 @@ func (s *applicationEvaluationService) evaluateHonors(ctx context.Context, honor
 	prompt := honorsEvaluationPromptBase
 
 	for idx, honor := range honors {
-		prompt += fmt.Sprintf("%d. %s - %s\n", idx+1, honor.Title)
+		prompt += fmt.Sprintf("%d. %s\n", idx+1, honor.Title)
 
 		if honor.Description != nil {
 			prompt += "Description: " + *honor.Description
@@ -141,9 +140,9 @@ func (s *applicationEvaluationService) evaluateHonors(ctx context.Context, honor
 		prompt += fmt.Sprintf("Grade: %s\n", honor.Grade)
 	}
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []llmdomain.Message{
+	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
-			Role: llmdomain.RoleSystem,
+			Role: domain.RoleSystem,
 			Text: prompt,
 		},
 	}, nil, &honorsEvaluationSchema)
@@ -164,15 +163,15 @@ func (s *applicationEvaluationService) evaluateEssays(ctx context.Context, essay
 	prompt := essaysEvaluationPromptBase
 
 	for idx, essay := range essays {
-		prompt += fmt.Sprintf("%d. %s (type: %s)", idx+1, essay.Type)
+		prompt += fmt.Sprintf("%d. Type: %s", idx+1, essay.Type)
 		prompt += essay.Content + "\n\n\n"
 	}
 
 	structuredOutputSchema := generateEssaysEvaluationSchema(len(essays))
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []llmdomain.Message{
+	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
-			Role: llmdomain.RoleSystem,
+			Role: domain.RoleSystem,
 			Text: prompt,
 		},
 	}, nil, &structuredOutputSchema)
@@ -199,9 +198,9 @@ func (s *applicationEvaluationService) evaluateSupplementalEssays(ctx context.Co
 
 	structuredOutputSchema := generateSupplementalEssaysEvaluationSchema(len(essays))
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []llmdomain.Message{
+	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
-			Role: llmdomain.RoleSystem,
+			Role: domain.RoleSystem,
 			Text: prompt,
 		},
 	}, nil, &structuredOutputSchema)

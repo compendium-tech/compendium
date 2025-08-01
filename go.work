@@ -6,7 +6,7 @@ use (
 	./user-service
 	./application-service
 	./common
-	./llm-common
+	./llm-service
 )
 
 replace github.com/compendium-tech/compendium/common v0.0.0 => ./common

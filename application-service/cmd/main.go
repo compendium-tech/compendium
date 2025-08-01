@@ -1,16 +1,18 @@
-package cmd
+package main
 
 import (
 	"context"
 	"fmt"
-	"github.com/compendium-tech/compendium/application-service/internal/app"
-	"github.com/compendium-tech/compendium/application-service/internal/config"
+
+	"github.com/joho/godotenv"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
-	llmservice "github.com/compendium-tech/compendium/llm-common/pkg/service"
-	"github.com/joho/godotenv"
-	"google.golang.org/genai"
+
+	"github.com/compendium-tech/compendium/application-service/internal/app"
+	"github.com/compendium-tech/compendium/application-service/internal/config"
+	"github.com/compendium-tech/compendium/application-service/internal/interop"
 )
 
 func main() {
@@ -36,12 +38,9 @@ func main() {
 		return
 	}
 
-	geminiAPI, err := llmservice.NewGeminiClient(ctx, &genai.ClientConfig{
-		APIKey:  cfg.GeminiAPIKey,
-		Backend: genai.BackendGeminiAPI,
-	})
+	llmService, err := interop.NewGrpcLLMServiceClient(cfg.GrpcLLMServiceClientTarget)
 	if err != nil {
-		fmt.Printf("Failed to initialize gemini client, cause: %s\n", err)
+		fmt.Printf("Failed to initialize llm service client, cause: %s\n", err)
 		return
 	}
 
@@ -49,7 +48,7 @@ func main() {
 		Config:       cfg,
 		TokenManager: tokenManager,
 		PgDB:         pgDB,
-		LLMService:   geminiAPI,
+		LLMService:   llmService,
 	}
 
 	_ = app.NewApp(deps).Run()

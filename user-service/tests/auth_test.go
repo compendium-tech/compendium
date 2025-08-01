@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/compendium-tech/compendium/user-service/internal/email"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/mock"
 )
 
 func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCode() {

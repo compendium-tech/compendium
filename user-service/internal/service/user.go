@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
+
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
-	"github.com/compendium-tech/compendium/user-service/internal/error"
+	myerror "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
-	"github.com/google/uuid"
 )
 
 // UserService defines the interface for managing user accounts.

@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
+
+	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 )
 
 // SubscriptionRepository defines the interface for data access operations related to subscriptions and their members.

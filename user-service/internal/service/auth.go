@@ -3,22 +3,24 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/random"
 	"github.com/compendium-tech/compendium/common/pkg/ratelimit"
+
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
-	"github.com/compendium-tech/compendium/user-service/internal/error"
+	myerror "github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/compendium-tech/compendium/user-service/internal/repository"
 	"github.com/compendium-tech/compendium/user-service/internal/ua"
-	"github.com/google/uuid"
 )
 
 // AuthService defines the interface for user authentication and session management.

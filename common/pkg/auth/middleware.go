@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/compendium-tech/compendium/common/pkg/log"
 )
 
 type _isCsrfKey struct{}

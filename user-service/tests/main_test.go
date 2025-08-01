@@ -7,20 +7,22 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
+
 	"github.com/compendium-tech/compendium/user-service/internal/app"
 	"github.com/compendium-tech/compendium/user-service/internal/config"
 	"github.com/compendium-tech/compendium/user-service/internal/email"
 	"github.com/compendium-tech/compendium/user-service/internal/geoip"
 	"github.com/compendium-tech/compendium/user-service/internal/hash"
 	"github.com/compendium-tech/compendium/user-service/internal/ua"
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
-	"github.com/stretchr/testify/suite"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type APITestSuite struct {

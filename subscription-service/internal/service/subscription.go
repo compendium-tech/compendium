@@ -3,20 +3,22 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/compendium-tech/compendium/common/pkg/error"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/random"
+
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
-	"github.com/compendium-tech/compendium/subscription-service/internal/error"
+	myerror "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/compendium-tech/compendium/subscription-service/internal/repository"
-	"github.com/google/uuid"
 )
 
 type SubscriptionService interface {

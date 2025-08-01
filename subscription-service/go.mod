@@ -2,7 +2,7 @@ module github.com/compendium-tech/compendium/subscription-service
 
 go 1.24.5
 
-require github.com/PaddleHQ/paddle-go-sdk/v4 v4.0.0
+require github.com/PaddleHQ/paddle-go-sdk/v4 v4.1.0
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
@@ -27,16 +27,16 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
-	github.com/ggicci/httpin v0.20.0 // indirect
+	github.com/ggicci/httpin v0.20.1 // indirect
 	github.com/ggicci/owl v0.8.2 // indirect
 	github.com/gin-gonic/gin v1.10.1
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect

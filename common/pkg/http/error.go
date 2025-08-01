@@ -2,12 +2,14 @@ package httputils
 
 import (
 	"errors"
-	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/compendium-tech/compendium/common/pkg/validate"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/ztrue/tracerr"
-	"net/http"
+
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	"github.com/compendium-tech/compendium/common/pkg/validate"
 )
 
 // ErrorHandler is a default solution to centralizing error handling for Gin handlers.
@@ -16,18 +18,18 @@ type ErrorHandler struct{}
 
 type HandlerFuncWithError func(c *gin.Context) error
 
-// Handle intercepts errors, categorizes them using `errors.As`, and sends appropriate HTTP
+type CustomError interface {
+	ErrorType() int
+	ErrorDetails() any
+	HttpStatus() int
+}
+
+// Handle intercepts errors, categorizes them using errors.As, and sends appropriate HTTP
 // status codes and JSON responses to the client, while logging internal server errors.
 //
 // # Usage with Custom Errors
 //
-// To be handled gracefully by this middleware, your custom error types should implement the following interface (or a struct with methods matching it):
-//
-//	type HandledError interface {
-//	  ErrorType() int     // Returns an application-specific integer code for the error category.
-//	  ErrorDetails() any  // Returns any additional, structured data relevant to the error (e.g., validation messages, specific IDs).
-//	  HttpStatus() int    // Returns the appropriate HTTP status code (e.g., http.StatusBadRequest, http.StatusNotFound).
-//	}
+// To be handled gracefully by this middleware, your custom error types should implement CustomError.
 //
 // # Example
 //
@@ -107,42 +109,50 @@ func (h ErrorHandler) Handle(f HandlerFuncWithError) gin.HandlerFunc {
 		err := f(c)
 
 		if err != nil {
-			status, ty, details := func() (int, int, any) {
-				var myErr interface {
-					ErrorType() int
-					ErrorDetails() any
-					HttpStatus() int
-				}
+			var customErr CustomError
+			var validationErrs validator.ValidationErrors
 
-				var validationErrs validator.ValidationErrors
-				var trcErr tracerr.Error
-
-				if errors.As(err, &myErr) {
-					return myErr.HttpStatus(), myErr.ErrorType(), myErr.ErrorDetails()
-				} else if errors.As(err, &validationErrs) {
-					var validationMessages []string
-					for _, ve := range validationErrs {
-						validationMessages = append(validationMessages, validate.BuildErrorMessage(ve))
-					}
-
-					return http.StatusBadRequest, 1, map[string][]string{
-						"reasons": validationMessages,
-					}
-				} else {
-					if errors.As(err, &trcErr) {
-						log.L(c.Request.Context()).Printf("Cause of internal server error: %s\nStacktrace: %s", trcErr, trcErr.StackTrace())
-					} else {
-						log.L(c.Request.Context()).Printf("Cause of internal server error: %s", err)
-					}
-
-					return http.StatusInternalServerError, 0, nil
-				}
-			}()
-
-			c.AbortWithStatusJSON(status, map[string]any{
-				"errorDetails": details,
-				"errorType":    ty,
-			})
+			if errors.As(err, &customErr) {
+				h.handleCustomError(c, customErr)
+			} else if errors.As(err, &validationErrs) {
+				h.handleValidationErrors(c, validationErrs)
+			} else {
+				h.handleISE(c, err)
+			}
 		}
 	}
+}
+
+func (h ErrorHandler) handleCustomError(c *gin.Context, err CustomError) {
+	h.abort(c, err.HttpStatus(), err.ErrorType(), err.ErrorDetails())
+}
+
+func (h ErrorHandler) handleValidationErrors(c *gin.Context, errs validator.ValidationErrors) {
+	var validationMessages []string
+	for _, err := range errs {
+		validationMessages = append(validationMessages, validate.BuildErrorMessage(err))
+	}
+
+	h.abort(c, http.StatusBadRequest, 1, map[string][]string{
+		"reasons": validationMessages,
+	})
+}
+
+func (h ErrorHandler) handleISE(c *gin.Context, err error) {
+	var trcErr tracerr.Error
+
+	if errors.As(err, &trcErr) {
+		log.L(c.Request.Context()).Printf("Cause of internal server error: %s\nStacktrace: %s", trcErr, trcErr.StackTrace())
+	} else {
+		log.L(c.Request.Context()).Printf("Cause of internal server error: %s", err)
+	}
+
+	h.abort(c, http.StatusInternalServerError, 0, nil)
+}
+
+func (h ErrorHandler) abort(c *gin.Context, httpStatus int, ty int, details any) {
+	c.AbortWithStatusJSON(httpStatus, map[string]any{
+		"errorDetails": details,
+		"errorType":    ty,
+	})
 }

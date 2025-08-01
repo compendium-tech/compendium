@@ -14,3 +14,9 @@ packages:
     github.com/compendium-tech/compendium/user-service/internal/geoip:
         interfaces:
             GeoIP:
+    github.com/compendium-tech/compendium/subscription-service/internal/interop:
+        interfaces:
+            UserService:
+    github.com/compendium-tech/compendium/application-service/internal/interop:
+        interfaces:
+            LLMService:

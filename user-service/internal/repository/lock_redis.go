@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/bsm/redislock"
-	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/compendium-tech/compendium/user-service/internal/error"
 	"github.com/redis/go-redis/v9"
 	"github.com/ztrue/tracerr"
+
+	"github.com/compendium-tech/compendium/common/pkg/log"
+	myerror "github.com/compendium-tech/compendium/user-service/internal/error"
 )
 
 const authLockTtl = 60 * time.Second

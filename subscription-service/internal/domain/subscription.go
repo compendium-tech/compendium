@@ -3,8 +3,9 @@ package domain
 import (
 	"time"
 
-	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 	"github.com/google/uuid"
+
+	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 )
 
 const (

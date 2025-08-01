@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/compendium-tech/compendium/user-service/internal/model"
 )
 
 const (

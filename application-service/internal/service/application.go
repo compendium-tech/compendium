@@ -4,14 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/compendium-tech/compendium/application-service/internal/context"
-	"github.com/compendium-tech/compendium/application-service/internal/domain"
-	"github.com/compendium-tech/compendium/application-service/internal/error"
-	"github.com/compendium-tech/compendium/application-service/internal/model"
-	"github.com/compendium-tech/compendium/application-service/internal/repository"
+	"github.com/google/uuid"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/google/uuid"
+
+	localcontext "github.com/compendium-tech/compendium/application-service/internal/context"
+	"github.com/compendium-tech/compendium/application-service/internal/domain"
+	myerror "github.com/compendium-tech/compendium/application-service/internal/error"
+	"github.com/compendium-tech/compendium/application-service/internal/model"
+	"github.com/compendium-tech/compendium/application-service/internal/repository"
 )
 
 type ApplicationService interface {

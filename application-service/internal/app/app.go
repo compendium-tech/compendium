@@ -2,23 +2,26 @@ package app
 
 import (
 	"database/sql"
-	"github.com/compendium-tech/compendium/application-service/internal/config"
-	v1 "github.com/compendium-tech/compendium/application-service/internal/controller/v1"
-	"github.com/compendium-tech/compendium/application-service/internal/repository"
-	"github.com/compendium-tech/compendium/application-service/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/middleware"
-	llmservice "github.com/compendium-tech/compendium/llm-common/pkg/service"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+
+	"github.com/compendium-tech/compendium/application-service/internal/config"
+	httpv1 "github.com/compendium-tech/compendium/application-service/internal/controller/http/v1"
+	"github.com/compendium-tech/compendium/application-service/internal/interop"
+	"github.com/compendium-tech/compendium/application-service/internal/repository"
+	"github.com/compendium-tech/compendium/application-service/internal/service"
 )
 
 type Dependencies struct {
 	Config       *config.AppConfig
 	PgDB         *sql.DB
 	TokenManager auth.TokenManager
-	LLMService   llmservice.LLMService
+	LLMService   interop.LLMService
 }
 
 func NewApp(deps Dependencies) *gin.Engine {
@@ -37,8 +40,8 @@ func NewApp(deps Dependencies) *gin.Engine {
 	r.Use(auth.Middleware{TokenManager: deps.TokenManager}.Handle)
 	r.Use(middleware.LoggerMiddleware{LogProcessedRequests: true, LogFinishedRequests: true}.Handle)
 
-	v1.NewApplicationController(applicationService).MakeRoutes(r)
-	v1.NewApplicationEvaluationController(applicationService, applicationEvaluationService).MakeRoutes(r)
+	httpv1.NewApplicationController(applicationService).MakeRoutes(r)
+	httpv1.NewApplicationEvaluationController(applicationService, applicationEvaluationService).MakeRoutes(r)
 
 	return r
 }

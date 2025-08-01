@@ -3,7 +3,8 @@ package pg
 import (
 	"database/sql"
 	"errors"
-	"github.com/compendium-tech/compendium/common/pkg/error"
+
+	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
 	"github.com/ztrue/tracerr"
 )
 

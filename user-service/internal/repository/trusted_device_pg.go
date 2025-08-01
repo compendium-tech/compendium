@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"github.com/compendium-tech/compendium/common/pkg/pg"
-	"github.com/compendium-tech/compendium/user-service/internal/model"
+
 	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
+
+	"github.com/compendium-tech/compendium/common/pkg/pg"
+	"github.com/compendium-tech/compendium/user-service/internal/model"
 )
 
 const maxDevicesPerUser = 10

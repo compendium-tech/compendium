@@ -15,5 +15,5 @@ type RefreshTokenRepository interface {
 	RemoveAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error
 
 	GetAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) ([]model.RefreshToken, error)
-	GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool, error) // New method
+	GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool, error)
 }

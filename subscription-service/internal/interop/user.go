@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
-	pb "github.com/compendium-tech/compendium/subscription-service/internal/proto/v1"
 	"github.com/google/uuid"
 	"github.com/ztrue/tracerr"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
+	pb "github.com/compendium-tech/compendium/subscription-service/internal/proto/v1"
 )
 
 type userServiceGrpcClient struct {
@@ -34,11 +36,9 @@ func NewGrpcUserServiceClient(target string) (UserService, error) {
 }
 
 func (u *userServiceGrpcClient) GetAccount(ctx context.Context, id uuid.UUID) (*domain.Account, error) {
-	req := &pb.GetAccountRequest{
+	resp, err := u.client.GetAccount(ctx, &pb.GetAccountRequest{
 		Id: id.String(),
-	}
-
-	resp, err := u.client.GetAccount(ctx, req)
+	})
 	if err != nil {
 		return nil, tracerr.Errorf("failed to get account: %w", err)
 	}
