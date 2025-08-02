@@ -5,10 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/compendium-tech/compendium/application-service/internal/middleware"
-	"github.com/compendium-tech/compendium/application-service/internal/service"
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	httputils "github.com/compendium-tech/compendium/common/pkg/http"
+
+	"github.com/compendium-tech/compendium/application-service/internal/middleware"
+	"github.com/compendium-tech/compendium/application-service/internal/service"
 )
 
 type ApplicationEvaluationController struct {

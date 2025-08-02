@@ -11,7 +11,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/middleware"
 
 	"github.com/compendium-tech/compendium/application-service/internal/config"
-	httpv1 "github.com/compendium-tech/compendium/application-service/internal/controller/http/v1"
+	httpv1 "github.com/compendium-tech/compendium/application-service/internal/delivery/http/v1"
 	"github.com/compendium-tech/compendium/application-service/internal/interop"
 	"github.com/compendium-tech/compendium/application-service/internal/repository"
 	"github.com/compendium-tech/compendium/application-service/internal/service"
