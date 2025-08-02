@@ -2,6 +2,121 @@ package service
 
 import "github.com/compendium-tech/compendium/application-service/internal/domain"
 
+const applicationEvaluationPromptBase = `
+You are an expert college admissions consultant. Evaluate the entire college application, including academics,
+character, extracurricular activities, essays (personal statement, teacher recommendations, counselor recommendation),
+honors, supplemental essays, and authenticity/fit with the target college. Provide a detailed analysis for each
+section based on the specified criteria, ensuring each section is evaluated distinctly. Identify any overlaps between
+sections (e.g., essays repeating activities or honors) to avoid redundancy. Synthesize the assessments into a
+cohesive overall picture of the student, highlighting their strengths, weaknesses, and alignment with the
+college’s expectations. The number of evaluations for each section must match the number of items provided
+(e.g., one evaluation per essay type, one for academics, etc.), and the order of evaluations must correspond
+to the order of the input items.
+
+# Criteria
+
+## Character
+
+- Does the application present a clear, consistent picture of the student’s character (e.g., resilience, empathy, leadership)?
+- Are there specific examples of positive traits (e.g., integrity, perseverance) across essays, activities, or recommendations?
+- How does character come through in the personal statement, activities, and recommendations?
+- Are there inconsistencies or gaps raising questions (e.g., unexplained activity gaps, conflicting narratives)?
+- Does the application reflect authenticity and self-awareness?
+
+## Extracurricular Activities
+
+### Depth vs. Breadth:
+- Does the student have deep involvement in a few activities (e.g., multiple years, significant roles) or superficial involvement in many?
+- Are there activities with multi-year commitment (2-4 years)?
+
+### Leadership and Impact:
+- Has the student held leadership roles (e.g., captain, president)?
+- What specific contributions or achievements are highlighted (e.g., organizing events)?
+- Are there awards or outcomes showing impact (e.g., team wins, community recognition)?
+
+### Relevance:
+- Do activities align with the student’s interests, goals, or intended major?
+- Do they show progression (e.g., member to leader)?
+
+### Order and Presentation:
+- Are the most impressive activities listed first?
+- Are descriptions clear, concise, and impactful?
+
+## Essays (Personal Statement, Teacher Recommendations, Counselor Recommendation)
+
+### Personal Statement:
+- What is the main theme or story?
+- Does it provide new insights into the student’s background or aspirations?
+- Are there overused or clichéd topics?
+- Does it avoid restating activities or honors?
+- Is the writing clear, engaging, and free of errors?
+- Does it feel genuine, with a unique voice?
+
+### Teacher Recommendations:
+- Do they provide specific examples of strengths (e.g., academic curiosity)?
+- Are there details beyond general praise?
+- Do they convey enthusiasm and knowledge of the student?
+- Do they align with and complement the application without repetition?
+
+### Counselor Recommendation:
+- Do they provide specific examples of character or contributions?
+- Are there details beyond general praise?
+- Do they convey enthusiasm and knowledge of the student in a school context?
+- Do they align with and complement the application?
+
+## Honors
+
+- What honors are received, and at what level (school, regional, national, international)?
+- Are they relevant to the student’s interests or major?
+- Do they demonstrate exceptional achievement (e.g., scholarships, competitions)?
+- Are there gaps where honors are expected but missing?
+- Are honors listed in order of prestige?
+
+## Supplemental Essays
+
+- What is the prompt, and how well is it addressed?
+- Do they provide specific reasons for wanting to attend the college (e.g., programs, faculty)?
+- Do they offer new information not covered elsewhere?
+- Are they tailored to the college, or generic?
+- Is the writing clear, engaging, and error-free?
+
+## Authenticity and Fit
+
+- Does the application show genuine interest in the college (e.g., specific programs, values)?
+- Are there inconsistencies raising questions (e.g., essays mentioning passions not in activities)?
+- Does the student demonstrate clear goals and how the college supports them?
+- Is there evidence of demonstrated interest (e.g., campus visits) if required?
+- Does the application reflect an authentic voice, or is it overly polished?
+`
+
+func generateApplicationEvaluationSchema(essaysCount int, supplementalEssaysCount int) domain.LLMSchema {
+	return domain.LLMSchema{
+		Type: domain.TypeObject,
+		Properties: map[string]domain.LLMSchema{
+			"suggestions": {
+				Type:        domain.TypeString,
+				Description: `A list of actionable recommendations to improve the overall application, synthesizing suggestions across all sections (academics, character, activities, essays, honors, supplemental essays, interview, and authenticity/fit) to enhance cohesiveness, alignment with the college’s expectations, or address gaps and weaknesses.`,
+			},
+			"strengths": {
+				Type:        domain.TypeString,
+				Description: `A list of key strengths across the entire application, highlighting standout qualities such as exceptional academic performance, leadership, compelling narratives, or strong alignment with the college’s values and programs.`,
+			},
+			"weaknesses": {
+				Type:        domain.TypeString,
+				Description: `A list of weaknesses across the entire application, identifying areas such as inconsistencies, lack of depth, overlap between sections, or misalignment with the student’s goals or the college’s expectations.`,
+			},
+			"summary": {
+				Type:        domain.TypeString,
+				Description: `A concise summary of the overall quality of the application, synthesizing the cohesiveness, strengths, weaknesses, and alignment with the college’s culture and expectations, presenting a holistic picture of the student’s character, achievements, and fit.`,
+			},
+			"activitiesEvaluation":         activitiesEvaluationSchema,
+			"honorsEvaluation":             honorsEvaluationSchema,
+			"essaysEvaluation":             generateEssaysEvaluationSchema(essaysCount),
+			"supplementalEssaysEvaluation": generateSupplementalEssaysEvaluationSchema(supplementalEssaysCount),
+		},
+	}
+}
+
 var activitiesEvaluationSchema = domain.LLMSchema{
 	Type: domain.TypeObject,
 	Properties: map[string]domain.LLMSchema{

@@ -401,7 +401,7 @@ func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID u
 func (r *pgApplicationRepository) GetSupplementalEssays(ctx context.Context, applicationID uuid.UUID) (_ []model.SupplementalEssay, finalErr error) {
 	var supplementalEssays []model.SupplementalEssay
 	query := `
-		SELECT index, title, content FROM supplemental_essays
+		SELECT index, prompt, content FROM supplemental_essays
 		WHERE application_id = $1 ORDER BY index`
 	rows, err := r.db.QueryContext(ctx, query, applicationID)
 	if err != nil {
@@ -414,7 +414,7 @@ func (r *pgApplicationRepository) GetSupplementalEssays(ctx context.Context, app
 		supplementalEssay := model.SupplementalEssay{}
 		err := rows.Scan(
 			&supplementalEssay.ID,
-			&supplementalEssay.Title,
+			&supplementalEssay.Prompt,
 			&supplementalEssay.Content,
 		)
 		if err != nil {
@@ -449,7 +449,7 @@ func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, app
 	}
 
 	insertQuery := `
-		INSERT INTO supplemental_essays (index, application_id, title, content)
+		INSERT INTO supplemental_essays (index, application_id, prompt, content)
 		VALUES ($1, $2, $3, $4)
 	`
 	for i, supplementalEssay := range supplementalEssays {
@@ -458,7 +458,7 @@ func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, app
 			insertQuery,
 			i,
 			applicationID,
-			supplementalEssay.Title,
+			supplementalEssay.Prompt,
 			supplementalEssay.Content,
 		)
 		if err != nil {

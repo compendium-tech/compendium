@@ -57,37 +57,17 @@ func (s *applicationEvaluationService) EvaluateCurrentApplication(ctx context.Co
 		return nil, err
 	}
 
-	activitiesEvaluation, err := s.evaluateActivities(ctx, activities)
-	if err != nil {
-		return nil, err
-	}
-
-	honorsEvaluation, err := s.evaluateHonors(ctx, honors)
-	if err != nil {
-		return nil, err
-	}
-
-	essaysEvaluation, err := s.evaluateEssays(ctx, essays)
-	if err != nil {
-		return nil, err
-	}
-
-	supplementalEssaysEvaluation, err := s.evaluateSupplementalEssays(ctx, supplementalEssays)
-	if err != nil {
-		return nil, err
-	}
-
-	return &domain.ApplicationEvaluationResponse{
-		ActivitiesEvaluationResponse:         *activitiesEvaluation,
-		HonorsEvaluationResponse:             *honorsEvaluation,
-		EssaysEvaluationResponse:             *essaysEvaluation,
-		SupplementalEssaysEvaluationResponse: *supplementalEssaysEvaluation,
-	}, nil
+	return s.evaluateApplication(ctx, activities, honors, essays, supplementalEssays)
 }
 
-func (s *applicationEvaluationService) evaluateActivities(ctx context.Context, activities []model.Activity) (*domain.ActivitiesEvaluationResponse, error) {
-	prompt := activitiesEvaluationPromptBase
+func (s *applicationEvaluationService) evaluateApplication(
+	ctx context.Context, activities []model.Activity,
+	honors []model.Honor, essays []model.Essay,
+	supplementalEssays []model.SupplementalEssay) (*domain.ApplicationEvaluationResponse, error) {
+	prompt := applicationEvaluationPromptBase
+	structuredOutputSchema := generateApplicationEvaluationSchema(len(essays), len(supplementalEssays))
 
+	prompt += "# Application to evaluate\n\n## Extracurricular activities"
 	for idx, activity := range activities {
 		prompt += fmt.Sprintf("%d. %s - %s\n", idx+1, activity.Role, activity.Name)
 
@@ -107,28 +87,7 @@ func (s *applicationEvaluationService) evaluateActivities(ctx context.Context, a
 		prompt += fmt.Sprintf("Grade levels: %s\n", strings.Join(gradeStrings, ", "))
 	}
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
-		{
-			Role: domain.RoleSystem,
-			Text: prompt,
-		},
-	}, nil, &activitiesEvaluationSchema)
-	if err != nil {
-		return nil, err
-	}
-
-	var response domain.ActivitiesEvaluationResponse
-	err = json.Unmarshal([]byte(llmResponse.Text), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
-func (s *applicationEvaluationService) evaluateHonors(ctx context.Context, honors []model.Honor) (*domain.HonorsEvaluationResponse, error) {
-	prompt := honorsEvaluationPromptBase
-
+	prompt += "## Honors\n"
 	for idx, honor := range honors {
 		prompt += fmt.Sprintf("%d. %s\n", idx+1, honor.Title)
 
@@ -140,64 +99,18 @@ func (s *applicationEvaluationService) evaluateHonors(ctx context.Context, honor
 		prompt += fmt.Sprintf("Grade: %s\n", honor.Grade)
 	}
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
-		{
-			Role: domain.RoleSystem,
-			Text: prompt,
-		},
-	}, nil, &honorsEvaluationSchema)
-	if err != nil {
-		return nil, err
-	}
-
-	var response domain.HonorsEvaluationResponse
-	err = json.Unmarshal([]byte(llmResponse.Text), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
-func (s *applicationEvaluationService) evaluateEssays(ctx context.Context, essays []model.Essay) (*domain.EssaysEvaluationResponse, error) {
-	prompt := essaysEvaluationPromptBase
-
+	prompt += "## Essays\n"
 	for idx, essay := range essays {
 		prompt += fmt.Sprintf("%d. Type: %s", idx+1, essay.Type)
 		prompt += essay.Content + "\n\n\n"
 	}
 
-	structuredOutputSchema := generateEssaysEvaluationSchema(len(essays))
-
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
-		{
-			Role: domain.RoleSystem,
-			Text: prompt,
-		},
-	}, nil, &structuredOutputSchema)
-	if err != nil {
-		return nil, err
-	}
-
-	var response domain.EssaysEvaluationResponse
-	err = json.Unmarshal([]byte(llmResponse.Text), &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
-func (s *applicationEvaluationService) evaluateSupplementalEssays(ctx context.Context, essays []model.SupplementalEssay) (*domain.SupplementalEssaysEvaluationResponse, error) {
-	prompt := supplementalEssaysEvaluationPromptBase
-
-	for idx, essay := range essays {
-		prompt += fmt.Sprintf("%d. %s\n", idx+1, essay.Title)
+	prompt += "## Supplemental essays\n"
+	for idx, essay := range supplementalEssays {
+		prompt += fmt.Sprintf("%d. Prompt: %s\n", idx+1, essay.Prompt)
 		prompt += essay.Content + "\n\n\n"
 	}
 
-	structuredOutputSchema := generateSupplementalEssaysEvaluationSchema(len(essays))
-
 	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
 			Role: domain.RoleSystem,
@@ -208,7 +121,7 @@ func (s *applicationEvaluationService) evaluateSupplementalEssays(ctx context.Co
 		return nil, err
 	}
 
-	var response domain.SupplementalEssaysEvaluationResponse
+	var response domain.ApplicationEvaluationResponse
 	err = json.Unmarshal([]byte(llmResponse.Text), &response)
 	if err != nil {
 		return nil, err

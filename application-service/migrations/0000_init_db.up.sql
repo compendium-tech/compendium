@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS essays (
 CREATE TABLE IF NOT EXISTS supplemental_essays (
   index INTEGER NOT NULL,
   application_id UUID PRIMARY KEY REFERENCES applications (id),
-  title TEXT NOT NULL,
+  prompt TEXT NOT NULL,
   content TEXT NOT NULL,
 
   UNIQUE (application_id, index)

@@ -348,7 +348,7 @@ func (a *applicationService) GetSupplementalEssays(ctx context.Context) ([]domai
 	for _, supplementalEssay := range supplementalEssays {
 		supplementalEssayResponses = append(supplementalEssayResponses, domain.SupplementalEssayResponse{
 			ID:      supplementalEssay.ID,
-			Title:   supplementalEssay.Title,
+			Title:   supplementalEssay.Prompt,
 			Content: supplementalEssay.Content,
 		})
 	}
@@ -370,7 +370,7 @@ func (a *applicationService) PutSupplementalEssays(ctx context.Context, suppleme
 	for _, supplementalEssayRequest := range supplementalEssayRequests {
 		supplementalEssays = append(supplementalEssays, model.SupplementalEssay{
 			ID:      uuid.New(),
-			Title:   supplementalEssayRequest.Title,
+			Prompt:  supplementalEssayRequest.Title,
 			Content: supplementalEssayRequest.Content,
 		})
 	}

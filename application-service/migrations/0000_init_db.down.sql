@@ -8,4 +8,3 @@ DROP TYPE IF EXISTS activity_category;
 DROP TYPE IF EXISTS honor_level;
 DROP TYPE IF EXISTS grade;
 DROP TYPE IF EXISTS essay_type;
-

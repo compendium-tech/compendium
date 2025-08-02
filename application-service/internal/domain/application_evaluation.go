@@ -5,6 +5,10 @@ type ApplicationEvaluationResponse struct {
 	HonorsEvaluationResponse             `json:"honorsEvaluation"`
 	EssaysEvaluationResponse             `json:"essaysEvaluation"`
 	SupplementalEssaysEvaluationResponse `json:"supplementalEssaysEvaluation"`
+	Suggestions                          []string `json:"suggestions"`
+	Strengths                            []string `json:"strengths"`
+	Weaknesses                           []string `json:"weaknesses"`
+	Summary                              string   `json:"summary"`
 }
 
 type ActivitiesEvaluationResponse struct {

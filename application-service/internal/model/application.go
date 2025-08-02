@@ -42,7 +42,7 @@ type Essay struct {
 
 type SupplementalEssay struct {
 	ID      uuid.UUID
-	Title   string
+	Prompt  string
 	Content string
 }
 
