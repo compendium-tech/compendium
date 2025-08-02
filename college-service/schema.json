@@ -1,0 +1,124 @@
+{
+  "name": "Harvard University",
+  "location": "Cambridge, MA, USA",
+  "college_board_code": 3434,
+  "admissions": {
+    "acceptance_rate_percentage": 4,
+    "sat_range": null,
+    "act_composite_range": {
+      "min": 34,
+      "max": 36
+    },
+    "deadlines": [
+      {
+        "name": "Early Action Application Due",
+        "date": "Nov 1"
+      },
+      {
+        "name": "Regular Application Due",
+        "date": "Jan 1"
+      }
+    ]
+  },
+  "academics": {
+    "student_to_faculty_ration": "7:1",
+    "retention_rate_percentage": 98,
+    "degrees": ["bachelors", "masters", "doctoral"],
+    "special_programs": [
+      "Cross-Registration",
+      "Double Major",
+      "Honors Program",
+      "Independent Study",
+      "ROTC, Air Force",
+      "ROTC, Army",
+      "ROTC, Navy",
+      "Student-Designed Major",
+      "Study Abroad",
+      "Undergraduate Research",
+      "Visiting/Exchange Student Program"
+    ]
+  },
+  "costs": {
+    "tuition": 59320,
+    "housing": 22130,
+    "books_and_supplies": 1000,
+    "personal_expenses": 2500,
+    "transportation": 900,
+    "financial_aid": {
+      "distribution_details": {
+        "students_receiving_aid_percentage": 54,
+        "freshmen_with_need_and_received_aid_percentage": 100,
+        "need_met_percentage": 100
+      },
+      "package_details": {
+        "average_aid_packages_awarded": 74387,
+        "need_based_scholarship_or_grant_award": 69755,
+        "need_based_loan_amount": 3774,
+        "non_need_based_aid": 5569,
+        "debt_at_graduation": 22262
+      },
+      "dates": [
+        {
+          "name": "Application Due",
+          "description": "The last day to apply for financial aid or turn in related paperwork.",
+          "date": "Feb 1"
+        },
+        {
+          "name": "Priority Application Due",
+          "description": "Applications received prior to this date will be given the strongest consideration. Still apply for financial aid if you don’t make this due date.",
+          "date": "Feb 1"
+        },
+        {
+          "name": "Notification Date",
+          "description": "When students receive a letter with the amount and types of aid the college is offering.",
+          "date": "Apr 1"
+        },
+        {
+          "name": "Response Due",
+          "description": "The deadline for students to respond to the college’s aid offer."
+        }
+      ]
+    }
+  },
+  "campus_life": {
+    "setting": "urban",
+    "housing_cost": 22130,
+    "housing_options": [
+      "Apartments For Married Students",
+      "Apartments For Single Students",
+      "Coed Housing",
+      "Cooperative Housing",
+      "Special Housing For Disabled Students"
+    ],
+    "student_body": {
+      "undergraduate_students": 6979,
+      "graduate_students": 4752
+    },
+    "activities": [
+      "Air Force ROTC",
+      "Army ROTC",
+      "Campus Ministries",
+      "Choral Groups",
+      "Concert Band",
+      "Dance",
+      "Drama/Theater",
+      "Film",
+      "International Student Organization",
+      "Jazz Band",
+      "Literary Magazine",
+      "Marching Band",
+      "Model UN",
+      "Music Ensembles",
+      "Musical Theater",
+      "Naval ROTC",
+      "Opera",
+      "Pep Band",
+      "Radio Station",
+      "Student Government",
+      "Student Newspaper",
+      "Symphony Orchestra",
+      "Television Station",
+      "Yearbook"
+    ]
+  }
+}
