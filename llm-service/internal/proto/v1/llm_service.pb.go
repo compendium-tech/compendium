@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: proto/llm_service.proto
+// source: llm-service/proto/llm_service.proto
 
 package v1
 
@@ -55,11 +55,11 @@ func (x Role) String() string {
 }
 
 func (Role) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_llm_service_proto_enumTypes[0].Descriptor()
+	return file_llm_service_proto_llm_service_proto_enumTypes[0].Descriptor()
 }
 
 func (Role) Type() protoreflect.EnumType {
-	return &file_proto_llm_service_proto_enumTypes[0]
+	return &file_llm_service_proto_llm_service_proto_enumTypes[0]
 }
 
 func (x Role) Number() protoreflect.EnumNumber {
@@ -68,7 +68,7 @@ func (x Role) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Role.Descriptor instead.
 func (Role) EnumDescriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{0}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{0}
 }
 
 type Type struct {
@@ -80,7 +80,7 @@ type Type struct {
 
 func (x *Type) Reset() {
 	*x = Type{}
-	mi := &file_proto_llm_service_proto_msgTypes[0]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -92,7 +92,7 @@ func (x *Type) String() string {
 func (*Type) ProtoMessage() {}
 
 func (x *Type) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[0]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -105,7 +105,7 @@ func (x *Type) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Type.ProtoReflect.Descriptor instead.
 func (*Type) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{0}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Type) GetValue() string {
@@ -126,7 +126,7 @@ type ToolCall struct {
 
 func (x *ToolCall) Reset() {
 	*x = ToolCall{}
-	mi := &file_proto_llm_service_proto_msgTypes[1]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +138,7 @@ func (x *ToolCall) String() string {
 func (*ToolCall) ProtoMessage() {}
 
 func (x *ToolCall) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[1]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +151,7 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
 func (*ToolCall) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{1}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ToolCall) GetId() string {
@@ -186,7 +186,7 @@ type Message struct {
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_proto_llm_service_proto_msgTypes[2]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +198,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[2]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,7 +211,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{2}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Message) GetRole() Role {
@@ -248,7 +248,7 @@ type ToolParameter struct {
 
 func (x *ToolParameter) Reset() {
 	*x = ToolParameter{}
-	mi := &file_proto_llm_service_proto_msgTypes[3]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -260,7 +260,7 @@ func (x *ToolParameter) String() string {
 func (*ToolParameter) ProtoMessage() {}
 
 func (x *ToolParameter) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[3]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,7 +273,7 @@ func (x *ToolParameter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolParameter.ProtoReflect.Descriptor instead.
 func (*ToolParameter) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{3}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ToolParameter) GetType() *Type {
@@ -322,7 +322,7 @@ type ToolDefinition struct {
 
 func (x *ToolDefinition) Reset() {
 	*x = ToolDefinition{}
-	mi := &file_proto_llm_service_proto_msgTypes[4]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -334,7 +334,7 @@ func (x *ToolDefinition) String() string {
 func (*ToolDefinition) ProtoMessage() {}
 
 func (x *ToolDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[4]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -347,7 +347,7 @@ func (x *ToolDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolDefinition.ProtoReflect.Descriptor instead.
 func (*ToolDefinition) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{4}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ToolDefinition) GetName() string {
@@ -386,7 +386,7 @@ type Schema struct {
 
 func (x *Schema) Reset() {
 	*x = Schema{}
-	mi := &file_proto_llm_service_proto_msgTypes[5]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -398,7 +398,7 @@ func (x *Schema) String() string {
 func (*Schema) ProtoMessage() {}
 
 func (x *Schema) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[5]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -411,7 +411,7 @@ func (x *Schema) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Schema.ProtoReflect.Descriptor instead.
 func (*Schema) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{5}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Schema) GetType() *Type {
@@ -474,7 +474,7 @@ type GenerateResponseRequest struct {
 
 func (x *GenerateResponseRequest) Reset() {
 	*x = GenerateResponseRequest{}
-	mi := &file_proto_llm_service_proto_msgTypes[6]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -486,7 +486,7 @@ func (x *GenerateResponseRequest) String() string {
 func (*GenerateResponseRequest) ProtoMessage() {}
 
 func (x *GenerateResponseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[6]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -499,7 +499,7 @@ func (x *GenerateResponseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateResponseRequest.ProtoReflect.Descriptor instead.
 func (*GenerateResponseRequest) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{6}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GenerateResponseRequest) GetChatHistory() []*Message {
@@ -532,7 +532,7 @@ type GenerateResponseResponse struct {
 
 func (x *GenerateResponseResponse) Reset() {
 	*x = GenerateResponseResponse{}
-	mi := &file_proto_llm_service_proto_msgTypes[7]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +544,7 @@ func (x *GenerateResponseResponse) String() string {
 func (*GenerateResponseResponse) ProtoMessage() {}
 
 func (x *GenerateResponseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_llm_service_proto_msgTypes[7]
+	mi := &file_llm_service_proto_llm_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +557,7 @@ func (x *GenerateResponseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateResponseResponse.ProtoReflect.Descriptor instead.
 func (*GenerateResponseResponse) Descriptor() ([]byte, []int) {
-	return file_proto_llm_service_proto_rawDescGZIP(), []int{7}
+	return file_llm_service_proto_llm_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GenerateResponseResponse) GetMessage() *Message {
@@ -567,11 +567,11 @@ func (x *GenerateResponseResponse) GetMessage() *Message {
 	return nil
 }
 
-var File_proto_llm_service_proto protoreflect.FileDescriptor
+var File_llm_service_proto_llm_service_proto protoreflect.FileDescriptor
 
-const file_proto_llm_service_proto_rawDesc = "" +
+const file_llm_service_proto_llm_service_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/llm_service.proto\x12\x0ellm_service.v1\x1a\x19google/protobuf/any.proto\"\x1c\n" +
+	"#llm-service/proto/llm_service.proto\x12\x0ellm_service.v1\x1a\x19google/protobuf/any.proto\"\x1c\n" +
 	"\x04Type\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\"\xcd\x01\n" +
 	"\bToolCall\x12\x0e\n" +
@@ -628,20 +628,20 @@ const file_proto_llm_service_proto_rawDesc = "" +
 	"\x10GenerateResponse\x12'.llm_service.v1.GenerateResponseRequest\x1a(.llm_service.v1.GenerateResponseResponseB\x13Z\x11internal/proto/v1b\x06proto3"
 
 var (
-	file_proto_llm_service_proto_rawDescOnce sync.Once
-	file_proto_llm_service_proto_rawDescData []byte
+	file_llm_service_proto_llm_service_proto_rawDescOnce sync.Once
+	file_llm_service_proto_llm_service_proto_rawDescData []byte
 )
 
-func file_proto_llm_service_proto_rawDescGZIP() []byte {
-	file_proto_llm_service_proto_rawDescOnce.Do(func() {
-		file_proto_llm_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_llm_service_proto_rawDesc), len(file_proto_llm_service_proto_rawDesc)))
+func file_llm_service_proto_llm_service_proto_rawDescGZIP() []byte {
+	file_llm_service_proto_llm_service_proto_rawDescOnce.Do(func() {
+		file_llm_service_proto_llm_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_llm_service_proto_llm_service_proto_rawDesc), len(file_llm_service_proto_llm_service_proto_rawDesc)))
 	})
-	return file_proto_llm_service_proto_rawDescData
+	return file_llm_service_proto_llm_service_proto_rawDescData
 }
 
-var file_proto_llm_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_llm_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_proto_llm_service_proto_goTypes = []any{
+var file_llm_service_proto_llm_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_llm_service_proto_llm_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_llm_service_proto_llm_service_proto_goTypes = []any{
 	(Role)(0),                        // 0: llm_service.v1.Role
 	(*Type)(nil),                     // 1: llm_service.v1.Type
 	(*ToolCall)(nil),                 // 2: llm_service.v1.ToolCall
@@ -655,7 +655,7 @@ var file_proto_llm_service_proto_goTypes = []any{
 	nil,                              // 10: llm_service.v1.Schema.PropertiesEntry
 	(*anypb.Any)(nil),                // 11: google.protobuf.Any
 }
-var file_proto_llm_service_proto_depIdxs = []int32{
+var file_llm_service_proto_llm_service_proto_depIdxs = []int32{
 	9,  // 0: llm_service.v1.ToolCall.parameters:type_name -> llm_service.v1.ToolCall.ParametersEntry
 	0,  // 1: llm_service.v1.Message.role:type_name -> llm_service.v1.Role
 	2,  // 2: llm_service.v1.Message.tool_calls:type_name -> llm_service.v1.ToolCall
@@ -679,27 +679,27 @@ var file_proto_llm_service_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_proto_llm_service_proto_init() }
-func file_proto_llm_service_proto_init() {
-	if File_proto_llm_service_proto != nil {
+func init() { file_llm_service_proto_llm_service_proto_init() }
+func file_llm_service_proto_llm_service_proto_init() {
+	if File_llm_service_proto_llm_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_llm_service_proto_rawDesc), len(file_proto_llm_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_llm_service_proto_llm_service_proto_rawDesc), len(file_llm_service_proto_llm_service_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_llm_service_proto_goTypes,
-		DependencyIndexes: file_proto_llm_service_proto_depIdxs,
-		EnumInfos:         file_proto_llm_service_proto_enumTypes,
-		MessageInfos:      file_proto_llm_service_proto_msgTypes,
+		GoTypes:           file_llm_service_proto_llm_service_proto_goTypes,
+		DependencyIndexes: file_llm_service_proto_llm_service_proto_depIdxs,
+		EnumInfos:         file_llm_service_proto_llm_service_proto_enumTypes,
+		MessageInfos:      file_llm_service_proto_llm_service_proto_msgTypes,
 	}.Build()
-	File_proto_llm_service_proto = out.File
-	file_proto_llm_service_proto_goTypes = nil
-	file_proto_llm_service_proto_depIdxs = nil
+	File_llm_service_proto_llm_service_proto = out.File
+	file_llm_service_proto_llm_service_proto_goTypes = nil
+	file_llm_service_proto_llm_service_proto_depIdxs = nil
 }

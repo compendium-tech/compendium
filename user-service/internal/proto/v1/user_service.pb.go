@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: proto/user_service.proto
+// source: user-service/proto/user_service.proto
 
 package v1
 
@@ -34,7 +34,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_proto_user_service_proto_msgTypes[0]
+	mi := &file_user_service_proto_user_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_user_service_proto_msgTypes[0]
+	mi := &file_user_service_proto_user_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_proto_user_service_proto_rawDescGZIP(), []int{0}
+	return file_user_service_proto_user_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Account) GetId() string {
@@ -99,7 +99,7 @@ type GetAccountRequest struct {
 
 func (x *GetAccountRequest) Reset() {
 	*x = GetAccountRequest{}
-	mi := &file_proto_user_service_proto_msgTypes[1]
+	mi := &file_user_service_proto_user_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -111,7 +111,7 @@ func (x *GetAccountRequest) String() string {
 func (*GetAccountRequest) ProtoMessage() {}
 
 func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_user_service_proto_msgTypes[1]
+	mi := &file_user_service_proto_user_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -124,7 +124,7 @@ func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccountRequest.ProtoReflect.Descriptor instead.
 func (*GetAccountRequest) Descriptor() ([]byte, []int) {
-	return file_proto_user_service_proto_rawDescGZIP(), []int{1}
+	return file_user_service_proto_user_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetAccountRequest) GetId() string {
@@ -134,11 +134,11 @@ func (x *GetAccountRequest) GetId() string {
 	return ""
 }
 
-var File_proto_user_service_proto protoreflect.FileDescriptor
+var File_user_service_proto_user_service_proto protoreflect.FileDescriptor
 
-const file_proto_user_service_proto_rawDesc = "" +
+const file_user_service_proto_user_service_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/user_service.proto\x12\x0fuser_service.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"~\n" +
+	"%user-service/proto/user_service.proto\x12\x0fuser_service.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"~\n" +
 	"\aAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -152,24 +152,24 @@ const file_proto_user_service_proto_rawDesc = "" +
 	"GetAccount\x12\".user_service.v1.GetAccountRequest\x1a\x18.user_service.v1.AccountB\x13Z\x11internal/proto/v1b\x06proto3"
 
 var (
-	file_proto_user_service_proto_rawDescOnce sync.Once
-	file_proto_user_service_proto_rawDescData []byte
+	file_user_service_proto_user_service_proto_rawDescOnce sync.Once
+	file_user_service_proto_user_service_proto_rawDescData []byte
 )
 
-func file_proto_user_service_proto_rawDescGZIP() []byte {
-	file_proto_user_service_proto_rawDescOnce.Do(func() {
-		file_proto_user_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_user_service_proto_rawDesc), len(file_proto_user_service_proto_rawDesc)))
+func file_user_service_proto_user_service_proto_rawDescGZIP() []byte {
+	file_user_service_proto_user_service_proto_rawDescOnce.Do(func() {
+		file_user_service_proto_user_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_user_service_proto_user_service_proto_rawDesc), len(file_user_service_proto_user_service_proto_rawDesc)))
 	})
-	return file_proto_user_service_proto_rawDescData
+	return file_user_service_proto_user_service_proto_rawDescData
 }
 
-var file_proto_user_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_user_service_proto_goTypes = []any{
+var file_user_service_proto_user_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_user_service_proto_user_service_proto_goTypes = []any{
 	(*Account)(nil),               // 0: user_service.v1.Account
 	(*GetAccountRequest)(nil),     // 1: user_service.v1.GetAccountRequest
 	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
-var file_proto_user_service_proto_depIdxs = []int32{
+var file_user_service_proto_user_service_proto_depIdxs = []int32{
 	2, // 0: user_service.v1.Account.created_at:type_name -> google.protobuf.Timestamp
 	1, // 1: user_service.v1.UserService.GetAccount:input_type -> user_service.v1.GetAccountRequest
 	0, // 2: user_service.v1.UserService.GetAccount:output_type -> user_service.v1.Account
@@ -180,26 +180,26 @@ var file_proto_user_service_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_proto_user_service_proto_init() }
-func file_proto_user_service_proto_init() {
-	if File_proto_user_service_proto != nil {
+func init() { file_user_service_proto_user_service_proto_init() }
+func file_user_service_proto_user_service_proto_init() {
+	if File_user_service_proto_user_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_user_service_proto_rawDesc), len(file_proto_user_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_service_proto_user_service_proto_rawDesc), len(file_user_service_proto_user_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_user_service_proto_goTypes,
-		DependencyIndexes: file_proto_user_service_proto_depIdxs,
-		MessageInfos:      file_proto_user_service_proto_msgTypes,
+		GoTypes:           file_user_service_proto_user_service_proto_goTypes,
+		DependencyIndexes: file_user_service_proto_user_service_proto_depIdxs,
+		MessageInfos:      file_user_service_proto_user_service_proto_msgTypes,
 	}.Build()
-	File_proto_user_service_proto = out.File
-	file_proto_user_service_proto_goTypes = nil
-	file_proto_user_service_proto_depIdxs = nil
+	File_user_service_proto_user_service_proto = out.File
+	file_user_service_proto_user_service_proto_goTypes = nil
+	file_user_service_proto_user_service_proto_depIdxs = nil
 }
