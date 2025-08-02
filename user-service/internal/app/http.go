@@ -10,6 +10,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/middleware"
+	netapp "github.com/compendium-tech/compendium/common/pkg/net"
 	"github.com/compendium-tech/compendium/common/pkg/ratelimit"
 
 	"github.com/compendium-tech/compendium/user-service/internal/config"
@@ -34,7 +35,7 @@ type GinAppDependencies struct {
 	UserAgentParser     ua.UserAgentParser
 }
 
-func NewGinApp(deps GinAppDependencies) *gin.Engine {
+func NewGinApp(deps GinAppDependencies) netapp.GinApp {
 	logrus.SetFormatter(&log.LogFormatter{
 		Program:     "user-service",
 		Environment: deps.Config.Environment,
@@ -64,5 +65,5 @@ func NewGinApp(deps GinAppDependencies) *gin.Engine {
 	httpv1.NewAuthController(authService).MakeRoutes(r)
 	httpv1.NewUserController(userService).MakeRoutes(r)
 
-	return r
+	return netapp.NewGinApp(r)
 }

@@ -1,8 +1,10 @@
-package v1
+package grpcv1
 
 import (
 	"context"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	pbhelp "github.com/compendium-tech/compendium/common/pkg/pb"
@@ -17,11 +19,16 @@ type LLMServiceServer struct {
 	llmService service.LLMService
 }
 
-func NewLLMServiceServer(llmService service.LLMService) *LLMServiceServer {
-	return &LLMServiceServer{llmService: llmService}
+func NewLLMServiceServer(llmService service.LLMService) LLMServiceServer {
+	return LLMServiceServer{llmService: llmService}
 }
 
-func (s *LLMServiceServer) GenerateResponse(ctx context.Context, req *pb.GenerateResponseRequest) (*pb.GenerateResponseResponse, error) {
+func (s LLMServiceServer) Register(server *grpc.Server) {
+	pb.RegisterLLMServiceServer(server, s)
+	reflection.Register(server)
+}
+
+func (s LLMServiceServer) GenerateResponse(ctx context.Context, req *pb.GenerateResponseRequest) (*pb.GenerateResponseResponse, error) {
 	chatHistory := make([]domain.Message, len(req.ChatHistory))
 	for i, msg := range req.ChatHistory {
 		toolCalls := make([]domain.ToolCall, len(msg.ToolCalls))

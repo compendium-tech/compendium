@@ -131,7 +131,7 @@ Ask the right folks to review your code, and add any labels or milestones if nee
 
 We leverage a mix of programming languages, databases, caching mechanisms, external APIs, and cloud services:
 - **Go**: Chosen for the core microservices (application service, course service, user service, college service, subscription service, email delivery service).
-- **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience. 
+- **Vite, Vue 3**: Provide a modern and efficient development environment for our Frontend SPA, allowing for rapid development and a highly interactive user experience.
 - **PostgreSQL**: Serves as the primary persistent data store for various application domains: Course data, Application data, User data, and Subscription data.
 - **Redis**: Employed for high-speed data caching to manage authentication state and caching in some microservices.
 - [**Paddle**](https://paddle.com/): An external platform integrated for handling Subscription management and payment processing.
@@ -148,6 +148,8 @@ When you run everything on your local machine, here's which port each service ha
 | **User Service** | HTTP     | `1000`  | Handles user-related operations over HTTP.    |
 | **User Service** | gRPC     | `2000`  | Provides user-related operations over gRPC.   |
 | **Subscription Service**| HTTP     | `1001`  | Manages user subscriptions.                   |
+| **LLM Service** | gRPC     | `2001`  | Provides LLM-related operations over gRPC.   |
+| **Application Service**| HTTP     | `1002`  | Provides LLM-based assistance with applications and manages applications data. |
 | **API Gateway / Nginx** | HTTP     | `8080`  | Entry point for all external requests.        |
 | **Vue Application** | HTTP     | `5173`  | Frontend application serving the UI.          |
 | **Redis** | TCP     | `6379`  | Cache storage.          |
@@ -180,9 +182,9 @@ We need to create three specific subscription prices in your Paddle sandbox, whi
 
     Add product IDs to `.env`: Open the `.env` file and add the following lines, replacing the placeholder values with the actual product IDs you copied from your Paddle sandbox.
     ```env
-    PADDLE_STUDENT_SUBSCRIPTION_PRODUCT_ID=pro_...
-    PADDLE_TEAM_SUBSCRIPTION_PRODUCT_ID=pro_...
-    PADDLE_COMMUNITY_SUBSCRIPTION_PRODUCT_ID=pro_...
+    STUDENT_SUBSCRIPTION_PRODUCT_ID=pro_...
+    TEAM_SUBSCRIPTION_PRODUCT_ID=pro_...
+    COMMUNITY_SUBSCRIPTION_PRODUCT_ID=pro_...
     ```
 
     Your subscription service is now configured with the correct Paddle product IDs and ready for development and testing!
@@ -314,17 +316,28 @@ make protoc
 ```bash
 git clone github.com/compendium-tech/compendium
 
-# Email delivery service
+# Email delivery microservice
 cd ./email-delivery-service
 go run cmd/main.go # run kafka consumer
 
-# User service
+# User microservice
 cd ../user-service
+go test ./...      # test
+go run cmd/main.go -mode http # run http server
+go run cmd/main.go -mode grpc # run grpc server
+
+# Subscription microservice
+cd ../subscription-service
 go test ./...      # test
 go run cmd/main.go # run server
 
-# Subscription service
-cd ../subscription-service
+# LLM microservice
+cd ../llm-service
+go test ./...      # test
+go run cmd/main.go # run server
+
+# Application microservice
+cd ../application-service
 go test ./...      # test
 go run cmd/main.go # run server
 ```
@@ -343,7 +356,7 @@ import (
 func (s *service) GetUniversity() (*domain.University, error) {
     ...
     logger := log.L(ctx).WithField("universityId", universityID)
-    
+
     if university == nil {
         logger.Errorf("University was not found")
         return ...

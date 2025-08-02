@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	netapp "github.com/compendium-tech/compendium/common/pkg/net"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
@@ -33,17 +34,27 @@ func main() {
 		fmt.Printf("Failed to load .env file, using environmental variables instead: %v\n", err)
 	}
 
+	var app netapp.App
 	switch *appMode {
 	case "http":
-		runHttpApp(ctx)
+		app = createHttpApp(ctx)
 	case "grpc":
-		runGrpcApp(ctx)
+		app = createGrpcApp(ctx)
 	default:
 		fmt.Printf("Invalid application mode specified: %s. Please use 'http' or 'grpc'.\n", *appMode)
 	}
+
+	if app == nil {
+		return
+	}
+
+	err = app.Run()
+	if err != nil {
+		fmt.Printf("Failed to start user service, cause: %v\n", err)
+	}
 }
 
-func runHttpApp(ctx context.Context) {
+func createHttpApp(ctx context.Context) netapp.App {
 	fmt.Println("Starting Gin (HTTP) application...")
 
 	cfg := config.LoadGinAppConfig()
@@ -51,19 +62,19 @@ func runHttpApp(ctx context.Context) {
 	tokenManager, err := auth.NewJwtBasedTokenManager(cfg.JwtSingingKey)
 	if err != nil {
 		fmt.Printf("Failed to initialize token manager, cause: %s\n", err)
-		return
+		return nil
 	}
 
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
 		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
-		return
+		return nil
 	}
 
 	redisClient, err := redis.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
 	if err != nil {
 		fmt.Printf("Failed to connect to Redis, cause: %s\n", err)
-		return
+		return nil
 	}
 
 	kafkaEmailSender := email.NewKafkaEmailMessageProducer(cfg.EmailDeliveryKafkaBroker, cfg.EmailDeliveryKafkaTopic)
@@ -71,7 +82,7 @@ func runHttpApp(ctx context.Context) {
 	emailMessageBuilder, err := email.NewMessageBuilder()
 	if err != nil {
 		fmt.Printf("Failed to initialize email builder, cause: %s\n", err)
-		return
+		return nil
 	}
 
 	geoIP := geoip.NewGeoIP2Client(cfg.GeoIP2AccountID, cfg.GeoIP2LicenseKey, cfg.GeoIP2Host)
@@ -90,10 +101,10 @@ func runHttpApp(ctx context.Context) {
 		PasswordHasher:      hash.NewBcryptPasswordHasher(bcrypt.DefaultCost),
 	}
 
-	_ = app.NewGinApp(deps).Run()
+	return app.NewGinApp(deps)
 }
 
-func runGrpcApp(ctx context.Context) {
+func createGrpcApp(ctx context.Context) netapp.App {
 	fmt.Println("Starting gRPC application...")
 
 	cfg := config.LoadGrpcAppConfig()
@@ -101,7 +112,7 @@ func runGrpcApp(ctx context.Context) {
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
 		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
-		return
+		return nil
 	}
 
 	deps := app.GrpcAppDependencies{
@@ -109,5 +120,5 @@ func runGrpcApp(ctx context.Context) {
 		Config: cfg,
 	}
 
-	_ = app.NewGrpcApp(deps).Run()
+	return app.NewGrpcApp(deps)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
+
 	"github.com/compendium-tech/compendium/subscription-service/internal/app"
 	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
@@ -57,7 +58,7 @@ func main() {
 		return
 	}
 
-	app.NewApp(app.Dependencies{
+	err = app.NewApp(app.Dependencies{
 		PgDB:            pgDB,
 		RedisClient:     redisClient,
 		Config:          cfg,
@@ -65,4 +66,7 @@ func main() {
 		UserService:     userService,
 		PaddleAPIClient: *paddleAPIClient,
 	}).Run()
+	if err != nil {
+		fmt.Printf("Failed to run subscription service, cause: %v\n", err)
+	}
 }

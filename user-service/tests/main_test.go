@@ -7,12 +7,12 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
+	netapp "github.com/compendium-tech/compendium/common/pkg/net"
 	"github.com/compendium-tech/compendium/common/pkg/pg"
 	"github.com/compendium-tech/compendium/common/pkg/redis"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
@@ -29,7 +29,7 @@ type APITestSuite struct {
 	suite.Suite
 	app.GinAppDependencies
 	ctx                     context.Context
-	app                     *gin.Engine
+	app                     netapp.GinApp
 	mockEmailMessageBuilder *email.MockMessageBuilder
 	mockEmailSender         *email.MockSender
 	mockGeoIP               *geoip.MockGeoIP

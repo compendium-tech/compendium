@@ -9,6 +9,7 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/middleware"
+	netapp "github.com/compendium-tech/compendium/common/pkg/net"
 
 	"github.com/compendium-tech/compendium/application-service/internal/config"
 	httpv1 "github.com/compendium-tech/compendium/application-service/internal/delivery/http/v1"
@@ -24,7 +25,7 @@ type Dependencies struct {
 	LLMService   interop.LLMService
 }
 
-func NewApp(deps Dependencies) *gin.Engine {
+func NewApp(deps Dependencies) netapp.GinApp {
 	logrus.SetFormatter(&log.LogFormatter{
 		Program:     "application-service",
 		Environment: deps.Config.Environment,
@@ -43,5 +44,5 @@ func NewApp(deps Dependencies) *gin.Engine {
 	httpv1.NewApplicationController(applicationService).MakeRoutes(r)
 	httpv1.NewApplicationEvaluationController(applicationService, applicationEvaluationService).MakeRoutes(r)
 
-	return r
+	return netapp.NewGinApp(r)
 }

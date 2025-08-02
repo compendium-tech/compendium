@@ -51,5 +51,8 @@ func main() {
 		LLMService:   llmService,
 	}
 
-	_ = app.NewApp(deps).Run()
+	err = app.NewApp(deps).Run()
+	if err != nil {
+		fmt.Printf("Failed to run application service, cause: %v\n", err)
+	}
 }
