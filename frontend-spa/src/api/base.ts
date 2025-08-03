@@ -23,7 +23,7 @@ export class ApiError extends Error {
   type: ApiErrorType
 
   constructor(type: ApiErrorType) {
-    super("API error")
+    super("Unexpected error happened...")
     this.name = "ApiError"
     this.type = type
     Object.setPrototypeOf(this, ApiError.prototype)
@@ -34,34 +34,16 @@ export function handleAxiosError(error: any): Promise<never> {
   if (error.response) {
     const { data } = error.response
 
-    if (
-      data &&
-      typeof data === "object" &&
-      "errorType" in data
-    ) {
+    if (data && typeof data === "object" && "errorType" in data) {
       return Promise.reject(
-        new ApiError(
-          (data as any).errorType as ApiErrorType
-        )
+        new ApiError((data as any).errorType as ApiErrorType)
       )
     } else {
-      return Promise.reject(
-        new ApiError(
-          ApiErrorType.InternalServerError,
-        )
-      )
+      return Promise.reject(new ApiError(ApiErrorType.InternalServerError))
     }
   } else if (error.request) {
-    return Promise.reject(
-      new ApiError(
-        ApiErrorType.InternalServerError,
-      )
-    )
+    return Promise.reject(new ApiError(ApiErrorType.InternalServerError))
   } else {
-    return Promise.reject(
-      new ApiError(
-        ApiErrorType.InternalServerError,
-      )
-    )
+    return Promise.reject(new ApiError(ApiErrorType.InternalServerError))
   }
 }
