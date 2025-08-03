@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
+	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/ztrue/tracerr"
 )
 
@@ -31,21 +32,31 @@ func (pb *paddleBilling) GetCustomer(ctx context.Context, customerID string) (Cu
 	}, nil
 }
 
-func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) error {
+func (pb *paddleBilling) IsSubscriptionCanceled(ctx context.Context, subscriptionID string) (bool, error) {
 	subscription, err := pb.sdk.GetSubscription(ctx, &paddle.GetSubscriptionRequest{
 		SubscriptionID: subscriptionID,
 	})
+	if err != nil {
+		log.L(ctx).
+			WithField("subscriptionId", subscriptionID).
+			Warnf("Could not get subscription information: %s", err.Error())
+		return false, err
+	}
 
-	if subscription == nil && err == nil {
-		return nil
+	if subscription == nil {
+		return true, nil
 	}
 
 	if subscription.Status == paddle.SubscriptionStatusCanceled {
-		return nil
+		return true, nil
 	}
 
+	return false, nil
+}
+
+func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) error {
 	immediately := paddle.EffectiveFromImmediately
-	_, err = pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
+	_, err := pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
 		SubscriptionID: subscriptionID,
 		EffectiveFrom:  &immediately,
 	})

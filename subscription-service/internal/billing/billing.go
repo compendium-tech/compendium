@@ -9,5 +9,6 @@ type Customer struct {
 
 type BillingAPI interface {
 	GetCustomer(ctx context.Context, customerID string) (Customer, error)
-	CancelSubscription(ctx context.Context, subscriptionId string) error
+	IsSubscriptionCanceled(ctx context.Context, subscriptionID string) (bool, error)
+	CancelSubscription(ctx context.Context, subscriptionID string) error
 }

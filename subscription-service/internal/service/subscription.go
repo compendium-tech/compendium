@@ -341,10 +341,18 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 			itemLogger.Errorf("Unknown product ID %s, skipping this item", item.ProductID)
 
 			if len(request.Items) == 1 {
-				err := s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
+				isCanceled, err := s.billingAPI.IsSubscriptionCanceled(ctx, request.SubscriptionID)
 				if err != nil {
 					return err
 				}
+
+				if !isCanceled {
+					err = s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
+					if err != nil {
+						return err
+					}
+				}
+
 				return myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("Unknown product ID: %s", item.ProductID))
 			}
 			continue
@@ -363,9 +371,16 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 		if existingSubscription != nil {
 			itemLogger.Infof("Existing subscription %s found, cancelling it before upserting new item", existingSubscription.ID)
 
-			err := s.billingAPI.CancelSubscription(ctx, existingSubscription.ID)
+			isCanceled, err := s.billingAPI.IsSubscriptionCanceled(ctx, existingSubscription.ID)
 			if err != nil {
 				return err
+			}
+
+			if !isCanceled {
+				err = s.billingAPI.CancelSubscription(ctx, existingSubscription.ID)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
