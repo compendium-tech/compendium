@@ -1,0 +1,10 @@
+PUT /colleges
+{
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "semantic_text"
+      }
+    }
+  }
+}
