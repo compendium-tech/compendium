@@ -149,7 +149,8 @@ When you run everything on your local machine, here's which port each service ha
 | **User Service** | gRPC     | `2000`  | Provides user-related operations over gRPC.   |
 | **Subscription Service**| HTTP     | `1001`  | Manages user subscriptions.                   |
 | **LLM Service** | gRPC     | `2001`  | Provides LLM-related operations over gRPC.   |
-| **Application Service**| HTTP     | `1002`  | Provides LLM-based assistance with applications and manages applications data. |
+| **Application Service**| HTTP     | `1002`  | Provides an authenticated LLM-based assistance with applications and manages saved applications (subscription is required). |
+| **College Service**| HTTP     | `1003`  | Provides an authenticated search API over college database (subscription is required). |
 | **API Gateway / Nginx** | HTTP     | `8080`  | Entry point for all external requests.        |
 | **Vue Application** | HTTP     | `5173`  | Frontend application serving the UI.          |
 | **Redis** | TCP     | `6379`  | Cache storage.          |

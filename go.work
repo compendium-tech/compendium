@@ -5,6 +5,7 @@ use (
 	./subscription-service
 	./user-service
 	./application-service
+	./college-service
 	./common
 	./llm-service
 )
