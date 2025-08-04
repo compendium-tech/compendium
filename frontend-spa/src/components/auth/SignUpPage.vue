@@ -7,8 +7,10 @@
           <div class="mt-2">
             <BaseInput id="name" type="text" v-model.trim="name" required autocomplete="name" placeholder="John Doe"
               @input="validateField('name')" />
-            <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}
-            </p>
+            <BaseTransitioningText>
+              <p v-if="validationErrors.name" class="mt-2 text-sm text-red-600">{{ validationErrors.name }}
+              </p>
+            </BaseTransitioningText>
           </div>
         </div>
 
@@ -17,8 +19,10 @@
           <div class="mt-2">
             <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
               placeholder="johndoe@gmail.com" input="validateField('email')" />
-            <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}
-            </p>
+            <BaseTransitioningText>
+              <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}
+              </p>
+            </BaseTransitioningText>
           </div>
         </div>
 
@@ -27,8 +31,10 @@
           <div class="mt-2">
             <BaseInput id="password" type="password" v-model="password" required autocomplete="new-password"
               placeholder="A strong password" @input="validateField('password')" />
-            <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
-              validationErrors.password }}</p>
+            <BaseTransitioningText>
+              <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
+                validationErrors.password }}</p>
+            </BaseTransitioningText>
           </div>
         </div>
 

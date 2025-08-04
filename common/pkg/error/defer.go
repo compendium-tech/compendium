@@ -14,10 +14,9 @@ type DeferFuncWithContext func(ctx context.Context) error
 //
 //	func locked() (finalErr error) {
 //	  lock, err := Acquire()
-//	  if err != nil { return nil }
+//	  if err != nil { return err }
 //
-//	  defer error.DeferTry(&finalErr, lock.Release)
-//	}
+//	  defer errorutils.DeferTry(&finalErr, lock.Release)
 func DeferTry(e *error, f DeferFunc) {
 	err := f()
 
@@ -34,10 +33,9 @@ func DeferTry(e *error, f DeferFunc) {
 //
 //	func locked(ctx context.Context) (finalErr error) {
 //	  lock, err := Acquire(ctx)
-//	  if err != nil { return nil }
+//	  if err != nil { return err }
 //
-//	  defer error.DeferTryWithContext(ctx, &finalErr, lock.Release)
-//	}
+//	  defer errorutils.DeferTryWithContext(ctx, &finalErr, lock.Release)
 func DeferTryWithContext(ctx context.Context, e *error, f DeferFuncWithContext) {
 	DeferTry(e, func() error { return f(ctx) })
 }

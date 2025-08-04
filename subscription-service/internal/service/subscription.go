@@ -440,8 +440,10 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 		return nil, err
 	}
 
+	logger.Info(members)
 	membersResponse := make([]domain.SubscriptionMember, 0, len(members))
 	for _, member := range members {
+		logger.Info(member)
 		user, err := s.userService.GetAccount(ctx, member.UserID)
 		if err != nil {
 			logger.Errorf("Failed to get account details for subscription member %s: %v", member.UserID, err)
@@ -464,6 +466,7 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 			logger.Debugf("Added inactive member %s to response", member.UserID)
 			continue
 		}
+		logger.Info(membersResponse)
 
 		membersResponse = append(membersResponse, domain.SubscriptionMember{
 			UserID:          member.UserID,
@@ -473,7 +476,9 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 			IsAccountActive: true,
 		})
 		logger.Debugf("Added active member %s to response", member.UserID)
+		logger.Info(membersResponse)
 	}
+	logger.Info(membersResponse)
 
 	logger.Debug("Successfully converted subscription to response format")
 

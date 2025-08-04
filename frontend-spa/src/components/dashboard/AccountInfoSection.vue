@@ -63,10 +63,16 @@
               <label class="block text-sm font-medium text-gray-700">Subscription Level</label>
               <p class="mt-1 text-lg text-gray-900">{{ formatTier(subscriptionResponse.subscription.tier) }}</p>
             </div>
+            <div v-if="!isPayer">
+              <label class="block text-sm font-medium text-gray-700">Paid by</label>
+              <p class="mt-1 text-lg text-gray-900" v-if="payerInfo">{{ payerInfo.name }} &lt;{{ payerInfo.email }}&gt;
+              </p>
+              <p v-else class="mt-1 text-lg text-gray-900">Unknown</p>
+            </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Active Since</label>
               <p class="mt-1 text-lg text-gray-900">{{ formatSubscriptionDate(subscriptionResponse.subscription.since)
-                }}
+              }}
               </p>
             </div>
             <div class="col-span-1 md:col-span-2">
@@ -75,10 +81,72 @@
               </p>
             </div>
           </div>
-          <div class="mt-6 text-right">
+          <div class="mt-6 text-right" v-if="isPayer">
             <BaseButton @click="handleCancelSubscription" variant="secondary" :is-loading="isCancelling">
               Cancel Subscription
             </BaseButton>
+          </div>
+
+          <div v-if="hasTeamFeatures" class="mt-8 pt-6 border-t border-gray-200">
+            <div class="mb-6">
+              <h3 class="text-xl font-medium text-gray-800 mb-4">Invitation Code</h3>
+              <div v-if="isLoadingInvitationCode" class="flex items-center space-x-2 text-primary-600">
+                <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary-600"></div>
+                <span>Loading code...</span>
+              </div>
+              <div v-else-if="invitationCode">
+                <div class="flex items-center space-x-4 mb-4">
+                  <p class="text-2xl font-bold tracking-widest text-gray-700 bg-gray-100 px-4 py-2 rounded-lg">
+                    {{ invitationCode }}
+                  </p>
+                  <BaseButton variant="outline" class="flex" size="sm" @click="updateInvitationCode"
+                    :is-loading="isUpdatingInvitationCode" hover-effect="scale">
+                    <Icon icon="mdi:refresh" class="h-5 w-5 mr-2" />
+                    <span>Update</span>
+                  </BaseButton>
+                  <BaseButton variant="secondary" class="flex" size="sm" @click="removeInvitationCode"
+                    :is-loading="isRemovingInvitationCode">
+                    <Icon icon="mdi:delete" class="h-5 w-5 mr-2" />
+                    <span>Remove</span>
+                  </BaseButton>
+                </div>
+              </div>
+              <div v-else>
+                <p class="text-gray-600 mb-4">No active invitation code. Generate one to invite members to your plan.
+                </p>
+                <BaseButton @click="updateInvitationCode" class="flex" :is-loading="isUpdatingInvitationCode" size="sm">
+                  <Icon icon="mdi:refresh" class="h-5 w-5 mr-2" />
+                  Generate
+                </BaseButton>
+              </div>
+              <div v-if="invitationCodeError" class="mt-2 text-red-600 text-sm">
+                {{ invitationCodeError }}
+              </div>
+            </div>
+
+            <div
+              v-if="subscriptionResponse.subscription.members && subscriptionResponse.subscription.members.length > 0">
+              <h3 class="text-xl font-medium text-gray-800 mb-4">Members</h3>
+              <ul class="space-y-4">
+                <li v-for="member in subscriptionResponse.subscription.members" :key="member.userId"
+                  class="flex items-center justify-between p-4 bg-gray-100 rounded-md">
+                  <div class="flex items-center justify-between space-x-2">
+                    <p class="font-semibold text-gray-900">{{ member.name }} <span v-if="member.email">&lt;{{
+                      member.email }}&gt;</span></p>
+
+                    <span class="text-xs font-medium text-primary-600 bg-primary-100 px-2 py-1 rounded-full mt-1">
+                      {{ member.role }}
+                    </span>
+                  </div>
+                  <div v-if="member.role === 'member'">
+                    <BaseButton @click="handleRemoveMember(member.userId)" variant="secondary" size="sm"
+                      :is-loading="isRemovingMember === member.userId">
+                      Remove
+                    </BaseButton>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -88,6 +156,24 @@
         <div class="my-8">
           <p class="text-lg text-gray-700">You don't have an active subscription. Choose a plan to get started!</p>
         </div>
+
+        <div class="mt-8 bg-white rounded-lg p-6 shadow-sm border border-primary-200">
+          <h3 class="text-xl font-medium text-gray-800 mb-4">Join a collective plan</h3>
+          <p class="text-gray-600 mb-4">If you've been invited to a collective plan, enter your invitation code below.
+          </p>
+          <div class="flex items-center space-x-2">
+            <BaseInput v-model="joinInvitationCode" type="text" placeholder="Enter invitation code"
+              :disabled="isJoiningSubscription" />
+            <BaseButton @click="handleJoinSubscription" class="flex" :is-loading="isJoiningSubscription" size="sm">
+              <Icon icon="mdi:human-hello-variant" class="h-5 w-5 mr-2" />
+              Join
+            </BaseButton>
+          </div>
+          <div v-if="joinSubscriptionError" class="mt-2 text-red-600 text-sm">
+            {{ joinSubscriptionError }}
+          </div>
+        </div>
+
         <section class="py-20 px-4">
           <div class="max-w-6xl mx-auto">
             <div class="flex justify-center mb-8">
@@ -128,8 +214,9 @@
 
                     <ul class="space-y-4 mb-8 flex-grow">
                       <li v-for="(feature, i) in plan.features" :key="i" class="flex items-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 mr-2 flex-shrink-0 mt-0.5"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)"
+                          class="h-6 w-6 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
+                          stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         <span>{{ feature }}</span>
@@ -152,42 +239,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, Ref } from 'vue'
-import { userService, AccountDetails } from '../../api/user'
-import { subscriptionService, SubscriptionResponse, Tier } from '../../api/subscription.ts'
-import { Icon } from '@iconify/vue'
-import BaseInput from '../ui/BaseInput.vue'
-import BaseButton from '../ui/BaseButton.vue'
-import BaseTransitioningText from '../ui/BaseTransitioningText.vue'
+import { ref, onMounted, computed, Ref } from 'vue';
+import { userService, AccountDetails } from '../../api/user';
+import { subscriptionService, SubscriptionResponse, Tier, SubscriptionRole, SubscriptionMember } from '../../api/subscription.ts';
+import { Icon } from '@iconify/vue';
+import BaseInput from '../ui/BaseInput.vue';
+import BaseButton from '../ui/BaseButton.vue';
+import BaseTransitioningText from '../ui/BaseTransitioningText.vue';
 
-const user: Ref<AccountDetails | null> = ref(null)
-const isLoadingAccount = ref(true)
-const accountError: Ref<string | null> = ref(null)
-const isEditingName = ref(false)
-const editableName = ref('')
-const nameUpdateMessage = ref('')
-const nameUpdateSuccess = ref(false)
-const isSavingName = ref(false)
+const user: Ref<AccountDetails | null> = ref(null);
+const isLoadingAccount = ref(true);
+const accountError: Ref<string | null> = ref(null);
+const isEditingName = ref(false);
+const editableName = ref('');
+const nameUpdateMessage = ref('');
+const nameUpdateSuccess = ref(false);
+const isSavingName = ref(false);
 
-const subscriptionResponse: Ref<SubscriptionResponse | null> = ref(null)
-const isLoadingSubscription = ref(true)
-const subscriptionError: Ref<string | null> = ref(null)
-const globalError: Ref<string | null> = ref(null)
-const isCancelling = ref(false)
+const subscriptionResponse: Ref<SubscriptionResponse | null> = ref(null);
+const isLoadingSubscription = ref(true);
+const subscriptionError: Ref<string | null> = ref(null);
+const globalError: Ref<string | null> = ref(null);
+const isCancelling = ref(false);
 
 const selectedBillingCycle: Ref<'monthly' | 'yearly'> = ref('monthly');
+const invitationCode: Ref<string | undefined> = ref(undefined);
+const isLoadingInvitationCode = ref(true);
+const invitationCodeError: Ref<string | null> = ref(null);
+const isUpdatingInvitationCode = ref(false);
+const isRemovingInvitationCode = ref(false);
+const joinInvitationCode = ref('');
+const isJoiningSubscription = ref(false);
+const joinSubscriptionError: Ref<string | null> = ref(null);
+const isRemovingMember: Ref<string | null> = ref(null);
 
-const w: any = window
-const paddle: any = w.Paddle
+const w: any = window;
+const paddle: any = w.Paddle;
 
 interface PricingCard {
-  name: string
-  priceMonthly: string
-  priceYearly: string
-  priceOneTime?: string
-  description: string
-  features: string[]
-  highlight: boolean
+  name: string;
+  priceMonthly: string;
+  priceYearly: string;
+  priceOneTime?: string;
+  description: string;
+  features: string[];
+  highlight: boolean;
 }
 
 const pricing: PricingCard[] = [
@@ -228,7 +324,7 @@ const pricing: PricingCard[] = [
     ],
     highlight: false
   }
-]
+];
 
 const productMap: Record<string, { monthly: string, annually: string, onetime?: string }> = {
   Student: {
@@ -251,74 +347,163 @@ const formattedCreationDate = computed(() => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    })
+    });
   }
-  return 'N/A'
-})
+  return 'N/A';
+});
+
+const isPayer = computed(() => {
+  return subscriptionResponse.value?.subscription?.role === 'payer';
+});
+
+const payerInfo = computed(() => {
+  return subscriptionResponse.value?.subscription?.members?.find(
+    member => member.role === 'payer'
+  );
+});
+
+const hasTeamFeatures = computed(() => {
+  const tier = subscriptionResponse.value?.subscription?.tier;
+  return isPayer.value && (tier === 'team' || tier === 'community');
+});
 
 const fetchUserData = async () => {
-  isLoadingAccount.value = true
-  accountError.value = null
+  isLoadingAccount.value = true;
+  accountError.value = null;
   try {
-    const data = await userService.getAccountDetails()
-    user.value = data
-    editableName.value = data.name
+    const data = await userService.getAccountDetails();
+    user.value = data;
+    editableName.value = data.name;
   } catch (err: any) {
-    accountError.value = err.message || 'Failed to fetch user data.'
+    accountError.value = err.message || 'Failed to fetch user data.';
   } finally {
-    isLoadingAccount.value = false
+    isLoadingAccount.value = false;
   }
-}
+};
 
 const toggleEditName = async () => {
-  if (!user.value) return
+  if (!user.value) return;
 
   if (isEditingName.value) {
-    isSavingName.value = true
+    isSavingName.value = true;
     try {
-      const updatedUser = await userService.updateName(editableName.value)
-      user.value.name = updatedUser.name
-      nameUpdateMessage.value = 'Name updated successfully!'
-      nameUpdateSuccess.value = true
+      const updatedUser = await userService.updateName(editableName.value);
+      user.value.name = updatedUser.name;
+      nameUpdateMessage.value = 'Name updated successfully!';
+      nameUpdateSuccess.value = true;
     } catch (err: any) {
-      nameUpdateMessage.value = 'Failed to update name: ' + (err.message || 'Unknown error')
-      nameUpdateSuccess.value = false
+      nameUpdateMessage.value = 'Failed to update name: ' + (err.message || 'Unknown error');
+      nameUpdateSuccess.value = false;
     } finally {
-      isSavingName.value = false
+      isSavingName.value = false;
       setTimeout(() => {
-        nameUpdateMessage.value = ''
+        nameUpdateMessage.value = '';
       }, 3000);
     }
   }
-  isEditingName.value = !isEditingName.value
-}
+  isEditingName.value = !isEditingName.value;
+};
 
 const fetchSubscription = async () => {
-  isLoadingSubscription.value = true
-  subscriptionError.value = null
+  isLoadingSubscription.value = true;
+  subscriptionError.value = null;
   try {
-    const data = await subscriptionService.getSubscription()
-    subscriptionResponse.value = data
+    const data = await subscriptionService.getSubscription();
+    subscriptionResponse.value = data;
   } catch (err: any) {
-    subscriptionError.value = err.message || 'Failed to fetch subscription details.'
+    subscriptionError.value = err.message || 'Failed to fetch subscription details.';
     subscriptionResponse.value = { isActive: false };
   } finally {
-    isLoadingSubscription.value = false
+    isLoadingSubscription.value = false;
   }
-}
+};
+
+const fetchInvitationCode = async () => {
+  isLoadingInvitationCode.value = true;
+  invitationCodeError.value = null;
+  try {
+    const data = await subscriptionService.getSubscriptionInvitationCode();
+    invitationCode.value = data.invitationCode;
+  } catch (err: any) {
+    invitationCodeError.value = err.message || 'Failed to fetch invitation code.';
+    invitationCode.value = undefined;
+  } finally {
+    isLoadingInvitationCode.value = false;
+  }
+};
+
+const updateInvitationCode = async () => {
+  isUpdatingInvitationCode.value = true;
+  invitationCodeError.value = null;
+  try {
+    const data = await subscriptionService.updateSubscriptionInvitationCode();
+    invitationCode.value = data.invitationCode;
+  } catch (err: any) {
+    invitationCodeError.value = err.message || 'Failed to update invitation code.';
+  } finally {
+    isUpdatingInvitationCode.value = false;
+  }
+};
+
+const removeInvitationCode = async () => {
+  isRemovingInvitationCode.value = true;
+  invitationCodeError.value = null;
+  try {
+    await subscriptionService.removeSubscriptionInvitationCode();
+    invitationCode.value = undefined;
+  } catch (err: any) {
+    invitationCodeError.value = err.message || 'Failed to remove invitation code.';
+  } finally {
+    isRemovingInvitationCode.value = false;
+  }
+};
+
+const handleJoinSubscription = async () => {
+  if (!joinInvitationCode.value) {
+    joinSubscriptionError.value = 'Please enter an invitation code.';
+    return;
+  }
+  isJoiningSubscription.value = true;
+  joinSubscriptionError.value = null;
+  try {
+    const data = await subscriptionService.joinSubscription(joinInvitationCode.value);
+    subscriptionResponse.value = data;
+  } catch (err: any) {
+    joinSubscriptionError.value = err.message || 'Failed to join subscription. Check the code and try again.';
+  } finally {
+    isJoiningSubscription.value = false;
+  }
+};
+
+const handleRemoveMember = async (memberId: string) => {
+  isRemovingMember.value = memberId;
+  try {
+    await subscriptionService.removeSubscriptionMember(memberId);
+    // Optimistically update the member list
+    if (subscriptionResponse.value?.subscription?.members) {
+      subscriptionResponse.value.subscription.members = subscriptionResponse.value.subscription.members.filter(
+        (member) => member.userId !== memberId
+      );
+    }
+  } catch (err: any) {
+    subscriptionError.value = err.message || 'Failed to remove member.';
+  } finally {
+    isRemovingMember.value = null;
+  }
+};
 
 const formatTier = (tier: Tier): string => {
   switch (tier) {
     case 'student':
-      return 'Student Tier'
+      return 'Student Tier';
     case 'team':
-      return 'Team Tier'
+      return 'Team Tier';
     case 'community':
-      return 'Community Tier'
+      return 'Community Tier';
     default:
-      return 'Unknown Tier'
+      return 'Unknown Tier';
   }
-}
+};
 
 const formatSubscriptionDate = (dateString: string): string => {
   try {
@@ -326,11 +511,11 @@ const formatSubscriptionDate = (dateString: string): string => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    })
+    });
   } catch (e) {
-    return 'N/A'
+    return 'N/A';
   }
-}
+};
 
 const handleSubscribe = (planName: string, billingCycle: 'monthly' | 'yearly') => {
   let priceId: string | undefined;
@@ -375,38 +560,43 @@ const handleSubscribe = (planName: string, billingCycle: 'monthly' | 'yearly') =
       closeCallback: () => {
         console.log('Paddle checkout closed.');
       },
-    })
+    });
   } else {
     console.error('Paddle.js not loaded!');
     globalError.value = 'Billing service is not available. Please try again later.';
   }
-}
+};
 
 const handleCancelSubscription = async () => {
   isCancelling.value = true;
   try {
-    await subscriptionService.cancelSubscription()
-    await fetchSubscription()
+    await subscriptionService.cancelSubscription();
+    await fetchSubscription();
   } catch (err: any) {
     subscriptionError.value = err.message || 'Failed to cancel subscription.';
   } finally {
     isCancelling.value = false;
   }
-}
+};
 
-onMounted(() => {
-  fetchUserData()
-  fetchSubscription()
+onMounted(async () => {
+  await fetchUserData();
+  await fetchSubscription();
+
+  // If the user has a subscription and is the payer, fetch the invitation code
+  if (hasTeamFeatures.value) {
+    await fetchInvitationCode();
+  }
 
   if (paddle) {
-    paddle.Environment.set('sandbox')
+    paddle.Environment.set('sandbox');
     paddle.Setup({
       token: 'test_bf5c18ea62fd1d30c00bc5c2821',
       debug: true,
-    })
+    });
   } else {
-    console.error('Paddle.js script not found. Make sure it is included in your index.html')
-    globalError.value = 'Billing service initialization failed.'
+    console.error('Paddle.js script not found. Make sure it is included in your index.html');
+    globalError.value = 'Billing service initialization failed.';
   }
-})
+});
 </script>

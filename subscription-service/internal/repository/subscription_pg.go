@@ -33,96 +33,64 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 
 	defer pg.DeferRollback(&finalErr, tx)
 
-	// Check if the user is a subscription payer or member
-	var existingSubscriptionID string
-	var existingSubscriptionBackedBy uuid.UUID
-	var inviteCodeSQL sql.NullString
-	query := `
-        SELECT s.id, s.backed_by
-        FROM subscriptions s
-        JOIN subscription_members sm ON s.id = sm.subscription_id
-        WHERE sm.user_id = $1`
+	// Check for an existing subscription with the same ID.
+	var existingID string
+	query := `SELECT id FROM subscriptions WHERE id = $1`
 
-	log.L(ctx).Infof("Checking for existing subscription or membership for user ID %s", sub.BackedBy)
-	err = tx.QueryRowContext(ctx, query, sub.BackedBy).Scan(
-		&existingSubscriptionID,
-		&existingSubscriptionBackedBy,
-		&inviteCodeSQL,
-	)
+	err = tx.QueryRowContext(ctx, query, sub.ID).Scan(&existingID)
 
 	if err == nil {
-		log.L(ctx).Infof("Found existing subscription or membership for user ID %s", sub.BackedBy)
+		// A subscription with this ID already exists. Update it and its membership.
+		log.L(ctx).Infof("Found existing subscription with ID %s. Updating it.", sub.ID)
 
-		// Check if the user is the payer (backed_by)
-		if existingSubscriptionBackedBy == sub.BackedBy {
-			// User is the payer, delete the subscription (cascade will remove members)
-			log.L(ctx).Infof("User is subscription payer, deleting subscription %s", existingSubscriptionID)
-			deleteQuery := `DELETE FROM subscriptions WHERE id = $1`
-			result, err := tx.ExecContext(ctx, deleteQuery, existingSubscriptionID)
-			if err != nil {
-				return tracerr.Errorf("failed to delete existing subscription for user ID %s: %v", sub.BackedBy, err)
-			}
+		// Update the existing subscription's details.
+		updateQuery := `
+            UPDATE subscriptions
+            SET backed_by = $2, tier = $3, till = $4, since = $5, invitation_code = $6
+            WHERE id = $1`
 
-			// Verify at least one row was deleted
-			rowsAffected, err := result.RowsAffected()
-			if err != nil {
-				return tracerr.Errorf("failed to check rows affected: %v", err)
-			}
-			if rowsAffected == 0 {
-				return tracerr.Errorf("no subscription was deleted for user ID %s", sub.BackedBy)
-			}
-
-			log.L(ctx).Infof("Successfully deleted subscription for user ID %s", sub.BackedBy)
-		} else {
-			// User is just a member, delete only their membership
-
-			log.L(ctx).Infof("User is subscription member, deleting membership for subscription %s", existingSubscriptionID)
-			deleteMemberQuery := `DELETE FROM subscription_members WHERE subscription_id = $1 AND user_id = $2`
-			result, err := tx.ExecContext(ctx, deleteMemberQuery, existingSubscriptionID, sub.BackedBy)
-			if err != nil {
-				return tracerr.Errorf("failed to delete subscription member for user ID %s: %v", sub.BackedBy, err)
-			}
-
-			// Verify at least one row was deleted
-			rowsAffected, err := result.RowsAffected()
-			if err != nil {
-				return tracerr.Errorf("failed to check rows affected: %v", err)
-			}
-			if rowsAffected == 0 {
-				return tracerr.Errorf("no subscription member was deleted for user ID %s", sub.BackedBy)
-			}
-
-			log.L(ctx).Infof("Successfully deleted subscription member for user ID %s", sub.BackedBy)
+		_, err = tx.ExecContext(ctx, updateQuery, sub.ID, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
+		if err != nil {
+			return tracerr.Errorf("failed to update subscription with ID %s: %w", sub.ID, err)
 		}
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		// Other database error during check
-		return tracerr.Errorf("failed to check for existing subscription or membership: %v", err)
+
+		// Now, update the membership record for the payer.
+		// We use UPSERT logic here to handle cases where the payer might have been removed.
+		upsertMemberQuery := `
+            INSERT INTO subscription_members (subscription_id, user_id, since)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (subscription_id, user_id) DO UPDATE SET since = EXCLUDED.since`
+
+		_, err = tx.ExecContext(ctx, upsertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
+		if err != nil {
+			return tracerr.Errorf("failed to upsert subscription member: %w", err)
+		}
+
+	} else if errors.Is(err, sql.ErrNoRows) {
+		// No subscription with this ID exists. Insert a new one.
+		log.L(ctx).Infof("No existing subscription found with ID %s. Inserting a new one.", sub.ID)
+
+		// Insert new subscription
+		insertSubscriptionQuery := `
+            INSERT INTO subscriptions (id, backed_by, tier, till, since, invitation_code)
+            VALUES ($1, $2, $3, $4, $5, $6)`
+
+		_, err = tx.ExecContext(ctx, insertSubscriptionQuery, sub.ID, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
+		if err != nil {
+			return tracerr.Errorf("failed to insert subscription: %w", err)
+		}
+
+		// Insert the payer into the subscription_members table.
+		insertMemberQuery := `
+            INSERT INTO subscription_members (subscription_id, user_id, since)
+            VALUES ($1, $2, $3)`
+
+		_, err = tx.ExecContext(ctx, insertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
+		if err != nil {
+			return tracerr.Errorf("failed to insert subscription member: %w", err)
+		}
 	} else {
-		log.L(ctx).Infof("No existing subscription or membership found for user ID %s", sub.BackedBy)
-	}
-
-	// Insert new subscription
-	log.L(ctx).Infof("Inserting new subscription for user ID %s", sub.BackedBy)
-	insertQuery := `
-        INSERT INTO subscriptions (id, backed_by, tier, till, since, invitation_code)
-        VALUES ($1, $2, $3, $4, $5, $6)`
-
-	_, err = tx.ExecContext(ctx, insertQuery, sub.ID, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
-	if err != nil {
-		return tracerr.Errorf("failed to insert subscription: %w", err)
-	}
-
-	log.L(ctx).Infof("Successfully inserted subscription for user ID %s", sub.BackedBy)
-
-	// Insert into subscription_members table
-	log.L(ctx).Infof("Inserting subscription member for user ID %s", sub.BackedBy)
-	insertMemberQuery := `
-        INSERT INTO subscription_members (subscription_id, user_id, since)
-        VALUES ($1, $2, $3)`
-
-	_, err = tx.ExecContext(ctx, insertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
-	if err != nil {
-		return tracerr.Errorf("failed to insert subscription member: %w", err)
+		return tracerr.Errorf("failed to check for existing subscription: %v", err)
 	}
 
 	err = tx.Commit()
@@ -130,6 +98,7 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 		return tracerr.Errorf("failed to commit transaction: %w", err)
 	}
 
+	log.L(ctx).Infof("Successfully completed UpsertSubscription for ID %s", sub.ID)
 	return nil
 }
 
