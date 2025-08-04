@@ -17,7 +17,7 @@ type geminiClient struct {
 func NewGeminiClient(ctx context.Context, cfg *genai.ClientConfig) (LLMService, error) {
 	client, err := genai.NewClient(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
+		return nil, fmt.Errorf("failed to create Gemini client: %v", err)
 	}
 
 	return &geminiClient{client: client}, nil
@@ -63,7 +63,7 @@ func (g *geminiClient) GenerateResponse(
 
 	result, err := g.client.Models.GenerateContent(ctx, "gemini-2.0-flash", contents, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate content: %w", err)
+		return nil, fmt.Errorf("failed to generate content: %v", err)
 	}
 
 	message := domain.Message{

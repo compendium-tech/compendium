@@ -28,19 +28,19 @@ func main() {
 
 	tokenManager, err := auth.NewJwtBasedTokenManager(cfg.JwtSingingKey)
 	if err != nil {
-		fmt.Printf("Failed to initialize token manager, cause: %s\n", err)
+		fmt.Printf("Failed to initialize token manager, cause: %v\n", err)
 		return
 	}
 
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
-		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
+		fmt.Printf("Failed to connect to PostgreSQL, cause: %v\n", err)
 		return
 	}
 
 	llmService, err := interop.NewGrpcLLMServiceClient(cfg.GrpcLLMServiceClientTarget)
 	if err != nil {
-		fmt.Printf("Failed to initialize llm service client, cause: %s\n", err)
+		fmt.Printf("Failed to initialize llm service client, cause: %v\n", err)
 		return
 	}
 

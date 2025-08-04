@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/ztrue/tracerr"
 
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 )
@@ -70,7 +71,7 @@ func (r *redisRefreshTokenRepository) CreateRefreshToken(ctx context.Context, to
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to add refresh token: %w", err)
+		return tracerr.Errorf("failed to add refresh token: %w", err)
 	}
 
 	return nil
@@ -80,7 +81,7 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 	tokenKey := refreshTokenKeyPrefix + tokenString
 	details, err := r.client.HGetAll(ctx, tokenKey).Result()
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to get refresh token details: %w", err)
+		return nil, false, tracerr.Errorf("failed to get refresh token details: %w", err)
 	}
 
 	if len(details) == 0 {
@@ -109,7 +110,7 @@ func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Con
 		return nil, false, nil
 	}
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to get token string by session ID: %w", err)
+		return nil, false, tracerr.Errorf("failed to get token string by session ID: %w", err)
 	}
 
 	return r.GetRefreshToken(ctx, tokenString)
@@ -122,7 +123,7 @@ func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, to
 
 	details, err := r.client.HGetAll(ctx, tokenKey).Result()
 	if err != nil {
-		return fmt.Errorf("failed to get refresh token details before removal: %w", err)
+		return tracerr.Errorf("failed to get refresh token details before removal: %w", err)
 	}
 	sessionID := details[sessionIDHashField]
 
@@ -138,7 +139,7 @@ func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, to
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to remove refresh token: %w", err)
+		return tracerr.Errorf("failed to remove refresh token: %w", err)
 	}
 	return nil
 }
@@ -148,7 +149,7 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 
 	tokens, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
 	if err != nil {
-		return fmt.Errorf("failed to get all tokens for user %s: %w", userID.String(), err)
+		return tracerr.Errorf("failed to get all tokens for user %s: %w", userID.String(), err)
 	}
 
 	if len(tokens) == 0 {
@@ -175,7 +176,7 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err)
+		return tracerr.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err)
 	}
 	return nil
 }
@@ -184,7 +185,7 @@ func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Con
 	userTokensKey := userTokensKeyPrefix + userID.String()
 	tokenStrings, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get refresh token strings for user %s: %w", userID.String(), err)
+		return nil, tracerr.Errorf("failed to get refresh token strings for user %s: %w", userID.String(), err)
 	}
 
 	var refreshTokens []model.RefreshToken
@@ -216,22 +217,22 @@ func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Con
 func (r *redisRefreshTokenRepository) parseRefreshTokenDetails(details map[string]string) (*model.RefreshToken, error) {
 	userID, err := uuid.Parse(details[userIDHashField])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse userID: %w", err)
+		return nil, tracerr.Errorf("failed to parse userID: %w", err)
 	}
 
 	sessionID, err := uuid.Parse(details[sessionIDHashField])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse sessionID: %w", err)
+		return nil, tracerr.Errorf("failed to parse sessionID: %w", err)
 	}
 
 	expiresAtUnix, err := strconv.ParseInt(details[expiresAtHashField], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse expiresAt: %w", err)
+		return nil, tracerr.Errorf("failed to parse expiresAt: %w", err)
 	}
 
 	createdAtUnix, err := strconv.ParseInt(details[sessionCreatedAtHashField], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse createdAt: %w", err)
+		return nil, tracerr.Errorf("failed to parse createdAt: %w", err)
 	}
 
 	return &model.RefreshToken{

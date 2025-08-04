@@ -7,5 +7,6 @@ import (
 )
 
 type CollegeRepository interface {
-	SearchColleges(ctx context.Context, queryText, stateOrCountry string) ([]model.College, error)
+	SearchColleges(ctx context.Context, semanticSearchText,
+		stateOrCountry string, pageIndex, pageSize int) ([]model.College, error)
 }

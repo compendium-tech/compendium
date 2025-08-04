@@ -8,7 +8,6 @@ import (
 
 type GrpcAppConfig struct {
 	Environment    string
-	GrpcPort       uint16
 	PgHost         string
 	PgPort         uint16
 	PgUsername     string
@@ -33,17 +32,6 @@ func LoadGrpcAppConfig() GrpcAppConfig {
 	default:
 		log.Printf("Unknown `environment` variable: %s, defaulting to dev", env)
 		appConfig.Environment = EnvironmentDev
-	}
-
-	if port := os.Getenv("GRPC_PORT"); port != "" {
-		var grpcPort uint16
-		_, err := fmt.Sscan(port, &grpcPort)
-
-		if err == nil {
-			appConfig.GrpcPort = grpcPort
-		} else {
-			log.Printf("Failed to parse GRPC port: %s", port)
-		}
 	}
 
 	if port := os.Getenv("POSTGRES_PORT"); port != "" {

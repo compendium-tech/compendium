@@ -43,7 +43,7 @@ func (s *smtpEmailSender) SendMessage(msg Message) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		return fmt.Errorf("failed to send email: %v", err)
 	}
 
 	return nil

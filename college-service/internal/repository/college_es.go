@@ -4,30 +4,37 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/compendium-tech/compendium/college-service/internal/model"
 	common "github.com/compendium-tech/compendium/common/pkg"
 	"github.com/elastic/go-elasticsearch/v9"
+	"github.com/ztrue/tracerr"
 )
 
 type elasticSearchCollegeRepository struct {
 	client *elasticsearch.Client
 }
 
-func NewElasticsearchCollegeRepository(cfg elasticsearch.Config, index string) (CollegeRepository, error) {
-	client, err := elasticsearch.NewClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Elasticsearch client: %v", err)
-	}
-
+func NewElasticsearchCollegeRepository(client *elasticsearch.Client) CollegeRepository {
 	return &elasticSearchCollegeRepository{
 		client: client,
-	}, nil
+	}
 }
 
-func (a *elasticSearchCollegeRepository) SearchColleges(ctx context.Context, queryText, stateOrCountry string) ([]model.College, error) {
+func (a *elasticSearchCollegeRepository) SearchColleges(
+	ctx context.Context, semanticSearchText,
+	stateOrCountry string, pageIndex, pageSize int) ([]model.College, error) {
+	// Set default pagination values if they are invalid.
+	if pageIndex < 0 {
+		pageIndex = 0
+	}
+	if pageSize < 1 {
+		pageSize = 10 // A reasonable default page size
+	}
+
+	from := pageIndex * pageSize
+
 	var query common.H
 
 	// Build a dynamic query using a `bool` query with a `must` clause.
@@ -35,11 +42,11 @@ func (a *elasticSearchCollegeRepository) SearchColleges(ctx context.Context, que
 	boolQuery := make(map[string]any)
 	var must []map[string]any
 
-	if queryText != "" {
+	if semanticSearchText != "" {
 		must = append(must, common.H{
 			"semantic": common.H{
 				"field": "description",
-				"query": queryText,
+				"query": semanticSearchText,
 			},
 		})
 	}
@@ -67,6 +74,8 @@ func (a *elasticSearchCollegeRepository) SearchColleges(ctx context.Context, que
 
 	searchBody, _ := json.Marshal(common.H{
 		"query": query,
+		"from":  from,
+		"size":  pageSize,
 	})
 
 	searchRes, err := a.client.Search(
@@ -75,17 +84,17 @@ func (a *elasticSearchCollegeRepository) SearchColleges(ctx context.Context, que
 		a.client.Search.WithBody(bytes.NewReader(searchBody)),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to perform search: %w", err)
+		return nil, tracerr.Errorf("failed to perform search: %v", err)
 	}
 	defer searchRes.Body.Close()
 
 	if searchRes.IsError() {
-		return nil, fmt.Errorf("error searching: %s", searchRes.String())
+		return nil, tracerr.Errorf("error searching: %s", searchRes.String())
 	}
 
 	var searchResult map[string]any
 	if err := json.NewDecoder(searchRes.Body).Decode(&searchResult); err != nil {
-		return nil, fmt.Errorf("failed to decode search response: %w", err)
+		return nil, tracerr.Errorf("failed to decode search response: %v", err)
 	}
 
 	var colleges []model.College

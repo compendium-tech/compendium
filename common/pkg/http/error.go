@@ -142,9 +142,9 @@ func (h ErrorHandler) handleISE(c *gin.Context, err error) {
 	var trcErr tracerr.Error
 
 	if errors.As(err, &trcErr) {
-		log.L(c.Request.Context()).Printf("Cause of internal server error: %s\nStacktrace: %s", trcErr, trcErr.StackTrace())
+		log.L(c.Request.Context()).Printf("Cause of internal server error: %v\nStacktrace: %s", trcErr, trcErr.StackTrace())
 	} else {
-		log.L(c.Request.Context()).Printf("Cause of internal server error: %s", err)
+		log.L(c.Request.Context()).Printf("Cause of internal server error: %v", err)
 	}
 
 	h.abort(c, http.StatusInternalServerError, 0, nil)

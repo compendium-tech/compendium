@@ -13,12 +13,12 @@ func NewPgClient(ctx context.Context, host string, port uint16, username, passwo
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable", username, password, host, port, databaseName,
 	))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database connection: %w", err)
+		return nil, fmt.Errorf("failed to open database connection: %v", err)
 	}
 
 	err = db.PingContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
 	return db, nil

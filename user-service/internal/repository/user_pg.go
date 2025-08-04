@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/compendium-tech/compendium/user-service/internal/model"
@@ -120,7 +119,7 @@ func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	`
 	res, err := r.db.ExecContext(ctx, query, isEmailVerified, email)
 	if err != nil {
-		return fmt.Errorf("failed to update is_email_verified for user %s: %w", email, err)
+		return tracerr.Errorf("failed to update is_email_verified for user %s: %v", email, err)
 	}
 
 	rowsAffected, err := res.RowsAffected()

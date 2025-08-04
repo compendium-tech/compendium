@@ -1,7 +1,6 @@
 package email
 
 import (
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -25,7 +24,7 @@ func NewMessageBuilder() (MessageBuilder, error) {
 	}
 
 	if templates == nil {
-		return nil, fmt.Errorf("email templates were not initialized correctly. perhaps `templates` folder doesn't exist")
+		return nil, tracerr.Errorf("email templates were not initialized correctly. perhaps `templates` folder doesn't exist")
 	}
 
 	return &emailMessageBuilder{

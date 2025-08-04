@@ -61,19 +61,19 @@ func createHttpApp(ctx context.Context) netapp.App {
 
 	tokenManager, err := auth.NewJwtBasedTokenManager(cfg.JwtSingingKey)
 	if err != nil {
-		fmt.Printf("Failed to initialize token manager, cause: %s\n", err)
+		fmt.Printf("Failed to initialize token manager, cause: %v\n", err)
 		return nil
 	}
 
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
-		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
+		fmt.Printf("Failed to connect to PostgreSQL, cause: %v\n", err)
 		return nil
 	}
 
 	redisClient, err := redis.NewRedisClient(ctx, cfg.RedisHost, cfg.RedisPort)
 	if err != nil {
-		fmt.Printf("Failed to connect to Redis, cause: %s\n", err)
+		fmt.Printf("Failed to connect to Redis, cause: %v\n", err)
 		return nil
 	}
 
@@ -81,7 +81,7 @@ func createHttpApp(ctx context.Context) netapp.App {
 
 	emailMessageBuilder, err := email.NewMessageBuilder()
 	if err != nil {
-		fmt.Printf("Failed to initialize email builder, cause: %s\n", err)
+		fmt.Printf("Failed to initialize email builder, cause: %v\n", err)
 		return nil
 	}
 
@@ -111,7 +111,7 @@ func createGrpcApp(ctx context.Context) netapp.App {
 
 	pgDB, err := pg.NewPgClient(ctx, cfg.PgHost, cfg.PgPort, cfg.PgUsername, cfg.PgPassword, cfg.PgDatabaseName)
 	if err != nil {
-		fmt.Printf("Failed to connect to PostgreSQL, cause: %s\n", err)
+		fmt.Printf("Failed to connect to PostgreSQL, cause: %v\n", err)
 		return nil
 	}
 

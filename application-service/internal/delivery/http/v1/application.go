@@ -50,8 +50,8 @@ func (a ApplicationController) MakeRoutes(e *gin.Engine) {
 				application.GET("/essays", eh.Handle(a.getEssays))
 				application.PUT("/essays", auth.RequireCsrf, eh.Handle(a.putEssays))
 
-				application.GET("/supplemental-essays", eh.Handle(a.getSupplementalEssays))
-				application.PUT("/supplemental-essays", auth.RequireCsrf, eh.Handle(a.putSupplementalEssays))
+				application.GET("/supplementalEssays", eh.Handle(a.getSupplementalEssays))
+				application.PUT("/supplementalEssays", auth.RequireCsrf, eh.Handle(a.putSupplementalEssays))
 			}
 		}
 	}
