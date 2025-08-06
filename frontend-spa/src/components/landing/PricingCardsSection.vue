@@ -46,8 +46,8 @@
               <p class="text-gray-600 mb-6">{{ plan.description }}</p>
 
               <ul class="space-y-4 mb-8 flex-grow">
-                <li v-for="(feature, i) in plan.features" :key="i" class="flex items-start">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 mr-2 flex-shrink-0 mt-0.5"
+                <li v-for="(feature, i) in plan.features" :key="i" class="flex space-x-2 items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>

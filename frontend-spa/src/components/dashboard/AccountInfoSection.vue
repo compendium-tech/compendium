@@ -22,9 +22,9 @@
           <label class="block text-sm font-medium text-gray-700">Name</label>
           <div class="flex space-x-2">
             <BaseInput v-model="editableName" type="text" id="name" class="text-lg" :disabled="!isEditingName" />
-            <BaseButton :variant="isEditingName ? 'primary' : 'outline'" class="px-2 flex items-center"
+            <BaseButton :variant="isEditingName ? 'primary' : 'outline'" class="space-x-2 flex items-center"
               @click="toggleEditName" hover-effect="scale" :is-loading="isSavingName">
-              <Icon :icon="isEditingName ? 'mdi:content-save' : 'mdi:pencil'" class="h-5 w-5 mr-2" />
+              <Icon :icon="isEditingName ? 'mdi:content-save' : 'mdi:pencil'" class="h-5 w-5" />
               <span>{{ isEditingName ? 'Save' : 'Edit' }}</span>
             </BaseButton>
           </div>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, Ref } from 'vue'
+import { ref, onMounted, Ref } from 'vue'
 import { userService, AccountDetails } from '../../api/user.ts'
 import { Icon } from '@iconify/vue'
 import BaseInput from '../ui/BaseInput.vue'

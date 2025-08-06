@@ -42,9 +42,10 @@
           <h3 class="text-lg font-semibold text-white mb-6">Solutions</h3>
           <ul class="space-y-4">
             <li v-for="solution in solutionLinks" :key="solution.name">
-              <a :href="solution.link" class="hover:text-primary-400 transition-colors duration-300 flex items-center">
-                <Icon icon="mdi:chevron-right" class="h-4 w-4 mr-2 text-primary-500" />
-                {{ solution.name }}
+              <a :href="solution.link"
+                class="hover:text-primary-400 transition-colors duration-300 flex space-x-2 items-center">
+                <Icon icon="mdi:chevron-right" class="h-4 w-4 text-primary-500" />
+                <span>{{ solution.name }}</span>
               </a>
             </li>
           </ul>
@@ -54,9 +55,10 @@
           <h3 class="text-lg font-semibold text-white mb-6">Resources</h3>
           <ul class="space-y-4">
             <li v-for="resource in resourceLinks" :key="resource.name">
-              <a :href="resource.link" class="hover:text-primary-400 transition-colors duration-300 flex items-center">
-                <Icon icon="mdi:chevron-right" class="h-4 w-4 mr-2 text-primary-500" />
-                {{ resource.name }}
+              <a :href="resource.link"
+                class="hover:text-primary-400 transition-colors duration-300 flex space-x-2 items-center">
+                <Icon icon="mdi:chevron-right" class="h-4 w-4 text-primary-500" />
+                <span>{{ resource.name }}</span>
               </a>
             </li>
           </ul>

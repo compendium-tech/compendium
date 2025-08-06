@@ -14,22 +14,24 @@
       <li v-for="session in sessions" :key="session.id"
         class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div class="flex-1">
-          <div class="text-gray-900 flex space-x-4 items-center">
-            <span>{{ session.name }}</span>
-            <span v-if="session.isCurrent"
-              class="text-sm py-2 px-3 font-semibold text-green-800 bg-green-100 rounded-lg flex space-x-2">
-              <Icon icon="material-symbols-light:ar-on-you-outline" class="h-5 w-5" />
-              <span>Current</span>
-            </span>
-            <BaseButton v-if="!session.isCurrent" @click="removeSession(session.id)" variant="secondary"
-              class="flex space-x-2" :is-loading="removingSessionId === session.id">
-              <Icon icon="mdi:close-circle-outline" class="h-5 w-5" />
-              <span>Remove</span>
-            </BaseButton>
-            <BaseButton v-else @click="logout" variant="secondary" class="flex space-x-2">
-              <Icon icon="mdi:logout" class="h-5 w-5" />
-              <span>Logout</span>
-            </BaseButton>
+          <div class="text-gray-900 md:flex space-x-4 items-center">
+            <span class="text-lg">{{ session.name }}</span>
+            <div class="flex space-x-2 md:my-0 my-2">
+              <span v-if="session.isCurrent"
+                class="text-sm py-2 px-3 font-semibold text-green-800 bg-green-100 rounded-lg flex space-x-2">
+                <Icon icon="material-symbols-light:ar-on-you-outline" class="h-5 w-5" />
+                <span>Current</span>
+              </span>
+              <BaseButton v-if="!session.isCurrent" @click="removeSession(session.id)" variant="secondary"
+                class="flex space-x-2" :is-loading="removingSessionId === session.id">
+                <Icon icon="mdi:close-circle-outline" class="h-5 w-5" />
+                <span>Remove</span>
+              </BaseButton>
+              <BaseButton v-else @click="logout" variant="secondary" class="flex space-x-2">
+                <Icon icon="mdi:logout" class="h-5 w-5" />
+                <span>Logout</span>
+              </BaseButton>
+            </div>
           </div>
           <p class="text-sm text-gray-600">IP address: {{ session.ipAddress }}</p>
           <p class="text-sm text-gray-600">Operating System: {{ session.os ? session.os : 'Unknown' }}</p>

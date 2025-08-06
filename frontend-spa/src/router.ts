@@ -4,6 +4,7 @@ import SignUpPage from "./components/auth/SignUpPage.vue"
 import SignInPage from "./components/auth/SignInPage.vue"
 import NotFoundPage from "./components/NotFoundPage.vue"
 import DashboardPage from "./components/dashboard/DashboardPage.vue"
+import CollegeSearchPage from "./components/search/CollegeSearchPage.vue"
 import { useAuthStore } from "./stores/auth.ts"
 
 const routes = [
@@ -15,6 +16,15 @@ const routes = [
       title: "Welcome",
       requiresAuth: false,
       redirectIfAuthenticated: false,
+    },
+  },
+  {
+    path: "/search",
+    name: "search",
+    component: CollegeSearchPage,
+    meta: {
+      title: "College Search",
+      requiresAuth: true,
     },
   },
   {
