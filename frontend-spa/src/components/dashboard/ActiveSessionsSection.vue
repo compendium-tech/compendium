@@ -35,7 +35,7 @@
           <p class="text-sm text-gray-600">Operating System: {{ session.os ? session.os : 'Unknown' }}</p>
           <p class="text-sm text-gray-600">Device: {{ session.device ? session.device : 'Unknown' }}</p>
           <p class="text-sm text-gray-600">Location: {{ session.location ? session.location : 'Unknown' }}</p>
-          <p class="text-sm text-gray-600">Logged in: {{ formatSessionDate(session.createdAt) }}</p>
+          <p class="text-sm text-gray-600">Logged in: {{ dateToString(session.createdAt) }}</p>
         </div>
       </li>
     </ul>
@@ -49,6 +49,7 @@ import { sessionService, Session } from '../../api/auth'
 import { Icon } from '@iconify/vue'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseTransitioningText from '../ui/BaseTransitioningText.vue'
+import { dateToString } from "../../utils/date"
 
 const sessions: Ref<Session[]> = ref([])
 const isLoading = ref(true)
@@ -56,20 +57,6 @@ const sessionsError: Ref<string | null> = ref(null)
 const removingSessionId = ref<string | null>(null)
 
 const authStore = useAuthStore()
-
-const formatSessionDate = (dateString: string): string => {
-  try {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch (e) {
-    return 'Invalid Date'
-  }
-}
 
 const fetchSessions = async () => {
   isLoading.value = true
@@ -106,7 +93,5 @@ const logout = async () => {
   }
 }
 
-onMounted(() => {
-  fetchSessions()
-})
+onMounted(fetchSessions)
 </script>

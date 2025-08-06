@@ -1,4 +1,4 @@
-import { apiClient, handleAxiosError } from "./base"
+import { apiClient } from "./base"
 
 export interface AccountDetails {
   createdAt: Date
@@ -14,21 +14,9 @@ interface UserService {
 
 export const userService: UserService = {
   getAccountDetails: async () => {
-    try {
-      const response = await apiClient.get("/account")
-
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.get("/account")).data
   },
   updateName: async (name) => {
-    try {
-      const response = await apiClient.put("/account", { name })
-
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.put("/account", { name })).data
   },
 }

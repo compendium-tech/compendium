@@ -7,9 +7,9 @@
           <p class="mt-2 text-lg text-gray-600">Manage your account and active sessions.</p>
         </div>
 
-        <AccountInfo />
-
-        <div class="mt-8">
+        <div class="flex flex-col space-y-8">
+          <AccountInfo />
+          <SubscriptionSection />
           <ActiveSessions />
         </div>
       </div>
@@ -21,4 +21,5 @@
 import StandardLayout from '../layout/StandardLayout.vue'
 import AccountInfo from './AccountInfoSection.vue'
 import ActiveSessions from './ActiveSessionsSection.vue'
+import SubscriptionSection from './SubscriptionSection.vue'
 </script>

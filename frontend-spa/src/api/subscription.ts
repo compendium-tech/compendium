@@ -1,4 +1,4 @@
-import { apiClient, handleAxiosError } from "./base"
+import { apiClient } from "./base"
 
 export interface Subscription {
   role: SubscriptionRole
@@ -40,59 +40,28 @@ interface SubscriptionService {
 
 export const subscriptionService: SubscriptionService = {
   getSubscription: async () => {
-    try {
-      const response = await apiClient.get("/subscription")
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.get("/subscription")).data
   },
   cancelSubscription: async () => {
-    try {
-      await apiClient.delete("/subscription")
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    await apiClient.delete("/subscription")
   },
   getSubscriptionInvitationCode: async () => {
-    try {
-      const response = await apiClient.get("/subscription/invitationCode")
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.get("/subscription/invitationCode")).data
   },
   updateSubscriptionInvitationCode: async () => {
-    try {
-      const response = await apiClient.put("/subscription/invitationCode", {})
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.put("/subscription/invitationCode", {})).data
   },
   removeSubscriptionInvitationCode: async () => {
-    try {
-      const response = await apiClient.delete("/subscription/invitationCode")
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    return (await apiClient.delete("/subscription/invitationCode")).data
   },
   joinSubscription: async (invitationCode: string) => {
-    try {
-      const response = await apiClient.post("/subscription/members/me", null, {
+    return (
+      await apiClient.post("/subscription/members/me", null, {
         params: { invitationCode },
       })
-      return response.data
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    ).data
   },
   removeSubscriptionMember: async (memberId: string) => {
-    try {
-      await apiClient.delete(`/subscription/members/${memberId}`)
-    } catch (error) {
-      return handleAxiosError(error)
-    }
+    await apiClient.delete(`/subscription/members/${memberId}`)
   },
 }

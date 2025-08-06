@@ -93,8 +93,7 @@ import AuthLayout, { AuthFormKind } from "../layout/AuthLayout.vue"
 import { authService } from "../../api/auth"
 import { ApiError } from "../../api/base"
 import { useAuthStore } from "../../stores/auth"
-import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validationUtils"
-import { handleApiError } from "./handleAuthErrorUtil"
+import { isEmailValid, isPasswordValid, isSixDigitCodeValid } from "../../utils/validation"
 import BaseInput from "../ui/BaseInput.vue"
 import BaseButton from "../ui/BaseButton.vue"
 import BaseTransitioningText from "../ui/BaseTransitioningText.vue"
@@ -258,7 +257,7 @@ const handleSubmit = async (): Promise<void> => {
     startCountdown()
   } catch (error) {
     if (error instanceof ApiError)
-      handleApiError(error, globalError)
+      globalError.value = error.message
   } finally {
     isLoading.value = false
   }
@@ -279,7 +278,7 @@ const verifyMfa = async (): Promise<void> => {
     router.push("/dashboard")
   } catch (error) {
     if (error instanceof ApiError)
-      handleApiError(error, globalError)
+      globalError.value = error.message
   } finally {
     isLoadingMfa.value = false
   }
@@ -298,15 +297,11 @@ const resendOtp = async (): Promise<void> => {
     startCountdown()
   } catch (error) {
     if (error instanceof ApiError)
-      handleApiError(error, globalError)
+      globalError.value = error.message
   } finally {
     isLoading.value = false
   }
 }
 
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-  }
-})
+onUnmounted(() => clearInterval(countdownTimer))
 </script>
