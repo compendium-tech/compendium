@@ -56,7 +56,7 @@
               </ul>
 
               <RouterLink to="/auth/signin" class="mt-auto">
-                <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'" class="w-full">
+                <BaseButton :variant="plan.highlight ? 'primary' : 'secondary'" class="w-full" size="md">
                   Get Started
                 </BaseButton>
               </RouterLink>

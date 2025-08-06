@@ -1,9 +1,8 @@
 <template>
   <div class="space-y-4">
-    <div v-for="(item, index) in items" :key="index"
-      class="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+    <div v-for="(item, index) in items" :key="index" class="overflow-hidden">
       <button
-        class="flex justify-between items-center w-full p-4 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 ease-in-out"
+        class="flex justify-between items-center w-full p-4 hover:bg-gray-100 transition-colors duration-200 ease-in-out"
         @click="toggleItem(index)" :aria-expanded="openIndex === index ? 'true' : 'false'"
         :aria-controls="`accordion-content-${index}`">
         <span class="text-xl text-left flex-grow font-medium text-gray-700">{{ item.title }}</span>
@@ -14,7 +13,7 @@
       </button>
 
       <div v-if="openIndex === index" :id="`accordion-content-${index}`" role="region"
-        class="p-4 bg-white text-gray-600 border-t border-gray-200 animate-fade-in text-lg">
+        class="p-4 bg-white text-gray-600 animate-fade-in text-lg">
         {{ item.content }}
       </div>
     </div>

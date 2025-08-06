@@ -1,6 +1,6 @@
 <template>
   <div class="relative w-full">
-    <input :type="currentInputType" :class="mergedClasses" v-bind="$attrs" @input="updateValue" />
+    <input :type="currentInputType" :class="mergedClasses" v-bind="$attrs" :value="modelValue" @input="updateValue" />
     <button v-if="isPasswordType" type="button" @click="togglePasswordVisibility"
       class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
       aria-label="Toggle password visibility">
@@ -21,20 +21,15 @@ import BaseTransitioningText from "./BaseTransitioningText.vue"
 interface Props {
   error?: string
   type?: string
+  modelValue?: string // Explicitly define modelValue for v-model
 }
 
 const props = defineProps<Props>()
 const attrs = useAttrs()
 
-const { error, type } = toRefs(props)
+const { error, type, modelValue } = toRefs(props)
 
 const isPasswordVisible = ref(false)
-
-const baseInputClasses = [
-  "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900",
-  "outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400",
-  "focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6",
-]
 
 const emit = defineEmits(["update:modelValue", "input"])
 
@@ -66,4 +61,10 @@ const mergedClasses = computed<string>(() => {
 const togglePasswordVisibility = (): void => {
   isPasswordVisible.value = !isPasswordVisible.value
 }
+
+const baseInputClasses = [
+  "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900",
+  "outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400",
+  "focus:outline-2 focus:-outline-offset-2 focus:outline-primary-600 sm:text-sm/6",
+]
 </script>

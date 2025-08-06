@@ -20,7 +20,7 @@ interface BaseButtonProps {
 const props = withDefaults(defineProps<BaseButtonProps>(), {
   type: "button",
   variant: "primary",
-  size: "md",
+  size: "sm",
   disabled: false,
   hoverEffect: "translate",
 })

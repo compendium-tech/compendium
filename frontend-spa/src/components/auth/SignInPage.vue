@@ -19,7 +19,7 @@
         </div>
 
         <div>
-          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoading || !isCredentialsFormValid">
+          <BaseButton class="w-full" type="submit" :disabled="isLoading || !isCredentialsFormValid">
             Sign In
             <span v-if="isLoading"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
@@ -43,7 +43,7 @@
           </div>
         </div>
         <div>
-          <BaseButton class="w-full" size="sm" type="submit" :disabled="isLoadingMfa || !isMfaFormValid">
+          <BaseButton class="w-full" type="submit" :disabled="isLoadingMfa || !isMfaFormValid">
             Verify Account
             <span v-if="isLoadingMfa"
               class="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-2 border-white border-t-transparent self-center"></span>
@@ -55,12 +55,11 @@
       </form>
 
       <div class="mt-6 space-x-3 flex">
-        <BaseButton variant="secondary" size="sm" @click="resendOtp" :disabled="countdown > 0 || isLoading">
+        <BaseButton variant="secondary" @click="resendOtp" :disabled="countdown > 0 || isLoading">
           Resend Code <span v-if="countdown > 0">({{
             countdown }}s)</span>
         </BaseButton>
-        <BaseButton variant="outline" size="sm" @click="goBackToForm"
-          class="font-semibold text-gray-600 hover:text-gray-500">Go
+        <BaseButton variant="outline" @click="goBackToForm" class="font-semibold text-gray-600 hover:text-gray-500">Go
           Back</BaseButton>
       </div>
     </template>

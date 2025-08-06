@@ -9,7 +9,7 @@
       </p>
       <div class="flex flex-col sm:flex-row justify-center gap-4">
         <RouterLink to="/auth/signin">
-          <BaseButton variant="outline" class="text-white hover:text-primary-400">
+          <BaseButton variant="outline" class="text-white hover:text-primary-400" size="md">
             Let's do this!
           </BaseButton>
         </RouterLink>

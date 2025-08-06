@@ -21,12 +21,12 @@
               <Icon icon="material-symbols-light:ar-on-you-outline" class="h-5 w-5" />
               <span>Current</span>
             </span>
-            <BaseButton v-if="!session.isCurrent" @click="removeSession(session.id)" size="sm" variant="secondary"
+            <BaseButton v-if="!session.isCurrent" @click="removeSession(session.id)" variant="secondary"
               class="flex space-x-2" :is-loading="removingSessionId === session.id">
               <Icon icon="mdi:close-circle-outline" class="h-5 w-5" />
               <span>Remove</span>
             </BaseButton>
-            <BaseButton v-else @click="logout" size="sm" variant="secondary" class="flex space-x-2">
+            <BaseButton v-else @click="logout" variant="secondary" class="flex space-x-2">
               <Icon icon="mdi:logout" class="h-5 w-5" />
               <span>Logout</span>
             </BaseButton>
