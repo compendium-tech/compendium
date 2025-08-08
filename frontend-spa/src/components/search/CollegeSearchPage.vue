@@ -1,29 +1,39 @@
 <template>
   <StandardLayout>
     <div class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-48">
-      <!-- Header -->
-      <header class="text-center mb-12">
-        <h1 class="text-5xl font-extrabold text-gray-900 mb-3">College Search</h1>
-        <p class="text-xl text-gray-600">Discover your dream college with our AI-powered search!</p>
-      </header>
-
       <!-- Search Form -->
       <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 mb-12">
-        <h2 class="text-3xl font-semibold text-gray-800 mb-8">Search Parameters</h2>
-        <form @submit.prevent="searchColleges" class="flex-col space-y-6">
-          <div class="relative">
-            <label for="semanticSearchText" class="block text-lg font-medium text-gray-700">AI-Powered Search</label>
-            <p class="text-sm text-gray-500 mb-3">Let our AI find colleges tailored to your dreams!</p>
-            <BaseInput id="semanticSearchText" v-model="form.semanticSearchText" type="text"
-              placeholder="Search by college name, program, or vibe" />
-            <span class="rainbow-text absolute -top-8 left-0 text-2xl font-bold animate-pulse">
-              AI Magic Search ✨
-            </span>
-          </div>
+        <form @submit.prevent="searchColleges" class="flex-col space-y-6 mt-2">
           <div>
-            <label for="stateOrCountry" class="block text-lg font-medium text-gray-700">State or Country</label>
-            <p class="text-sm text-gray-500 mb-3">e.g. "California", "USA"</p>
-            <BaseInput id="stateOrCountry" v-model="form.stateOrCountry" type="text" placeholder="Filter by location" />
+            <span class="warm-text text-xl font-bold animate-pulse">
+              Search colleges by smart prompting ✨
+            </span>
+            <textarea id="semanticSearchText" v-model="form.semanticSearchText"
+              class="border-warm-gradient rounded-lg outline-none focus:outline-none w-full p-2 resize-none"
+              placeholder="Discover your dream college with AI-powered prompts! Try 'top engineering schools' or 'vibrant campus life'"
+              rows="3"></textarea>
+          </div>
+          <div class="relative">
+            <div class="flex items-center">
+              <BaseButton type="button" variant="outline" size="md" @click="toggleLocationPopup" hover-effect="none"
+                class="w-full text-left pr-8">
+                {{ form.stateOrCountry || "Select Location" }}
+              </BaseButton>
+              <button v-if="form.stateOrCountry" type="button" @click="removeLocation" class="ml-2 p-1">
+                <Icon icon="material-symbols:close" class="text-gray-600 hover:text-red-500" width="20" height="20" />
+              </button>
+            </div>
+            <div v-if="showLocationPopup" class="absolute z-50 bg-white rounded-lg shadow-lg p-4 mt-2 w-72"
+              style="max-height: 300px; overflow-y: auto;">
+              <input v-model="locationSearch" type="text" placeholder="Search locations..."
+                class="w-full p-2 mb-2 border rounded-lg focus:outline-none" />
+              <ul>
+                <li v-for="location in filteredLocations" :key="location" @click="selectLocation(location)"
+                  class="cursor-pointer p-2 hover:bg-gray-100 rounded">
+                  {{ location }}
+                </li>
+              </ul>
+            </div>
           </div>
           <div class="flex justify-end space-x-4">
             <BaseButton type="button" variant="secondary" size="md" :disabled="!searchHistory.length"
@@ -63,7 +73,7 @@
             <p class="text-gray-700 line-clamp-3">{{ college.description }}</p>
           </div>
         </div>
-        <p v-else class="text-gray-500 text-center py-12">No colleges found. Try a different search query!</p>
+        <p v-else class="text-gray-500 text-center py-12">No colleges found. Try a different prompt!</p>
       </div>
 
       <!-- Popup for College Details -->
@@ -293,6 +303,35 @@ const markedDescription = computed(() => {
   return selectedCollege.value ? marked(selectedCollege.value.description) : "";
 });
 
+const showLocationPopup = ref(false);
+const locationSearch = ref("");
+const locations = [
+  ...["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"],
+  ...["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea (North)", "Korea (South)", "Kosovo", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"],
+];
+
+const filteredLocations = computed(() => {
+  return locations.filter(location =>
+    location.toLowerCase().includes(locationSearch.value.toLowerCase())
+  );
+});
+
+const toggleLocationPopup = () => {
+  showLocationPopup.value = !showLocationPopup.value;
+  if (showLocationPopup.value) {
+    locationSearch.value = "";
+  }
+};
+
+const selectLocation = (location: string) => {
+  form.stateOrCountry = location;
+  showLocationPopup.value = false;
+};
+
+const removeLocation = () => {
+  form.stateOrCountry = "";
+};
+
 const searchColleges = async () => {
   isLoading.value = true;
   error.value = null;
@@ -330,31 +369,53 @@ const goToPreviousSearch = () => {
 </script>
 
 <style scoped>
-.rainbow-text {
-  background: linear-gradient(90deg,
-      #ff0000,
-      #ff9900,
-      #33cc33,
-      #00ccff,
-      #cc00ff,
-      #ff0000);
+.warm-text {
+  background: linear-gradient(90deg, #ff8c00, #ffa500, #f5f5dc);
   background-size: 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: rainbow 8s ease infinite;
+  animation: warm-gradient 8s ease infinite;
 }
 
-@keyframes rainbow {
+.border-warm-gradient {
+  border: 4px solid;
+  border-image: linear-gradient(90deg, #ff8c00, #ffa500, #f5f5dc) 1;
+  border-image-slice: 1;
+  border-radius: 0.375rem;
+  /* Matches Tailwind's rounded-lg */
+  animation: warm-gradient 8s ease infinite;
+}
+
+/* Force the textarea to inherit the rounded corners and gradient */
+.border-warm-gradient textarea {
+  border-radius: 0.375rem !important;
+  /* Override any internal styles */
+  border: none !important;
+  /* Remove default border to avoid conflicts */
+  outline: none !important;
+  /* Ensure no outline interferes */
+  background: transparent !important;
+  /* Ensure gradient shows through */
+  width: 100%;
+  /* Ensure full width */
+  padding: 0.5rem;
+  /* Consistent padding */
+}
+
+@keyframes warm-gradient {
   0% {
     background-position: 0%;
+    border-image-source: linear-gradient(90deg, #ff8c00, #ffa500, #f5f5dc);
   }
 
   50% {
     background-position: 200%;
+    border-image-source: linear-gradient(90deg, #ffa500, #f5f5dc, #ff8c00);
   }
 
   100% {
     background-position: 0%;
+    border-image-source: linear-gradient(90deg, #ff8c00, #ffa500, #f5f5dc);
   }
 }
 
