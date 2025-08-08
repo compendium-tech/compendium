@@ -1,6 +1,5 @@
 <img width="1640" height="1014" alt="image" src="https://github.com/user-attachments/assets/ca0dd747-8f15-468c-a748-de92a73d8ad6" />
 
-
 # Table of Contents
 
 -   **[Welcome!](#welcome)**
@@ -17,6 +16,8 @@
         -   [Error Handling](#error-handling)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
     -   [Running Locally](#running-locally-1)
+
+***Quick links***: [Trello Board](https://trello.com/b/2TRdCGIg/compendium) [Linkedin](https://www.linkedin.com/company/compendium-tech) [Instagram](https://www.instagram.com/compendium_tech/).
 
 -----
 
