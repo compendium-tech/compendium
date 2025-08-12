@@ -21,7 +21,7 @@ type SubscriptionRepository interface {
 
 	GetSubscriptionMembers(ctx context.Context, subscriptionID string) ([]model.SubscriptionMember, error)
 
-	CreateSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error
+	CreateSubscriptionMemberAndCheckMemberCount(ctx context.Context, member model.SubscriptionMember, checkCount func(uint) error) error
 	RemoveSubscriptionMemberBySubscriptionAndUserID(ctx context.Context, subscriptionID string, userID uuid.UUID) error
 
 	RemoveSubscription(ctx context.Context, id string) error

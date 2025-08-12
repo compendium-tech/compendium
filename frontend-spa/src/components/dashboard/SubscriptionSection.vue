@@ -201,16 +201,7 @@ import BaseInput from '../ui/BaseInput.vue'
 import BaseButton from '../ui/BaseButton.vue'
 import { ApiError } from '../../api/base.ts'
 import { dateToString } from '../../utils/date'
-
-interface PricingCard {
-  name: string
-  priceMonthly: string
-  priceYearly: string
-  priceOneTime?: string
-  description: string
-  features: string[]
-  highlight: boolean
-}
+import { pricing } from '../../pricing.ts'
 
 interface ProductMap {
   [key: string]: {
@@ -237,45 +228,6 @@ const isLoading = ref({
 const selectedBillingCycle: Ref<'monthly' | 'annually'> = ref('monthly')
 const invitationCode: Ref<string | undefined> = ref(undefined)
 const joinInvitationCode = ref('')
-
-const pricing: PricingCard[] = [
-  {
-    name: "Student",
-    priceMonthly: "$5",
-    priceYearly: "$2.5",
-    description: "Perfect for individual students",
-    features: [
-      "University database access",
-      "Essay and extracurricular activity reviews",
-      "Exam preparation resources"
-    ],
-    highlight: false
-  },
-  {
-    name: "Team",
-    priceMonthly: "$10",
-    priceYearly: "$4.17",
-    description: "For small groups & counselors",
-    features: [
-      "Everything in Starter",
-      "Invite 15 students",
-      "Invite counselors and recommenders to your personalized workspace"
-    ],
-    highlight: true
-  },
-  {
-    name: "Community",
-    priceMonthly: "$30",
-    priceYearly: "$15",
-    description: "Schools & large organizations",
-    features: [
-      "Everything in Pro",
-      "Invite 150+ students",
-      "Advanced analytics"
-    ],
-    highlight: false
-  }
-]
 
 const productMap: ProductMap = {
   Student: {

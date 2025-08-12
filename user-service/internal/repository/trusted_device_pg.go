@@ -24,7 +24,7 @@ func NewPgTrustedDeviceRepository(db *sql.DB) TrustedDeviceRepository {
 func (r *pgTrustedDeviceRepository) UpsertDevice(ctx context.Context, device model.TrustedDevice) (finalErr error) {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return tracerr.Errorf("failed to begin transaction: %v", err)
+		return tracerr.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer pg.DeferRollback(&finalErr, tx)

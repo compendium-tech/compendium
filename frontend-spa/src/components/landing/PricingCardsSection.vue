@@ -70,58 +70,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink } from "vue-router"
-import BaseButton from "../ui/BaseButton.vue"
+import { RouterLink } from 'vue-router'
+import BaseButton from '../ui/BaseButton.vue'
+import { pricing } from '../../pricing'
 
 const selectedBillingCycle = ref('monthly');
-
-interface PricingCard {
-  name: string
-  priceMonthly: string
-  priceYearly: string
-  priceOneTime?: string
-  description: string
-  features: string[]
-  highlight: boolean
-}
-
-const pricing: PricingCard[] = [
-  {
-    name: "Student",
-    priceMonthly: "$5",
-    priceYearly: "$2.5",
-    description: "Perfect for individual students",
-    features: [
-      "University database access",
-      "Essay and extracurricular activity reviews",
-      "Exam preparation resources"
-    ],
-    highlight: false
-  },
-  {
-    name: "Team",
-    priceMonthly: "$10",
-    priceYearly: "$4.17",
-    description: "For small groups & counselors",
-    features: [
-      "Everything in Starter",
-      "Invite 15 students",
-      "Invite counselors and recommenders to your personalized workspace"
-    ],
-    highlight: true
-  },
-  {
-    name: "Community",
-    priceMonthly: "$30",
-    priceYearly: "$15",
-    priceOneTime: "$200",
-    description: "Schools & large organizations",
-    features: [
-      "Everything in Pro",
-      "Invite 150+ students",
-      "Advanced analytics"
-    ],
-    highlight: false
-  }
-]
 </script>

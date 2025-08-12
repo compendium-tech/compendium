@@ -27,7 +27,7 @@ func (a GrpcApp) Run() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
 	if err != nil {
-		return fmt.Errorf("failed to listen: %v", err)
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
 	logrus.Infof("Starting gRPC server on :%d", port)

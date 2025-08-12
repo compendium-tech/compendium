@@ -205,19 +205,51 @@ func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, s
 	return members, nil
 }
 
-func (r *pgSubscriptionRepository) CreateSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
-	query := `
+func (r *pgSubscriptionRepository) CreateSubscriptionMemberAndCheckMemberCount(
+	ctx context.Context,
+	member model.SubscriptionMember,
+	checkCount func(uint) error,
+) (finalErr error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return tracerr.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer pg.DeferRollback(&finalErr, tx)
+
+	var currentMembers uint
+	queryCountAndLock := `
+		SELECT count(sm.user_id)
+		FROM subscription_members AS sm
+		INNER JOIN subscriptions AS s ON s.id = sm.subscription_id
+		WHERE s.id = $1
+		FOR UPDATE OF s, sm`
+
+	row := tx.QueryRowContext(ctx, queryCountAndLock, member.SubscriptionID)
+	if err := row.Scan(&currentMembers); err != nil {
+		return tracerr.Errorf("failed to get member count and lock subscription: %w", err)
+	}
+
+	if err := checkCount(currentMembers); err != nil {
+		return err
+	}
+
+	queryInsert := `
 		INSERT INTO subscription_members (subscription_id, user_id, since)
 		VALUES ($1, $2, $3)`
 
-	_, err := r.db.ExecContext(ctx, query, member.SubscriptionID, member.UserID, member.Since)
+	_, err = tx.ExecContext(ctx, queryInsert, member.SubscriptionID, member.UserID, member.Since)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return myerror.New(myerror.AlreadySubscribedError)
 		}
+		return tracerr.Errorf("failed to add subscription member: %w", err)
+	}
 
-		return tracerr.Errorf("failed to add subscription member: %v", err)
+	err = tx.Commit()
+	if err != nil {
+		return tracerr.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

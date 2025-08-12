@@ -59,12 +59,12 @@ func runMigrations(ctx context.Context, db *sql.DB, migrationsDir string, suffix
 		// Read the content of the SQL file.
 		sqlContent, err := os.ReadFile(filePath)
 		if err != nil {
-			return fmt.Errorf("failed to read SQL file %s: %v", filePath, err)
+			return fmt.Errorf("failed to read SQL file %s: %w", filePath, err)
 		}
 
 		// Execute the SQL content against the database.
 		if _, err := db.ExecContext(ctx, string(sqlContent)); err != nil {
-			return fmt.Errorf("failed to execute SQL from %s: %v", filePath, err)
+			return fmt.Errorf("failed to execute SQL from %s: %w", filePath, err)
 		}
 	}
 

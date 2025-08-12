@@ -259,10 +259,24 @@ func (s *subscriptionService) JoinCollectiveSubscription(ctx context.Context, in
 		return nil, err
 	}
 
-	err = s.subscriptionRepository.CreateSubscriptionMember(ctx, model.SubscriptionMember{
+	err = s.subscriptionRepository.CreateSubscriptionMemberAndCheckMemberCount(ctx, model.SubscriptionMember{
 		SubscriptionID: subscription.ID,
 		UserID:         userID,
 		Since:          time.Now().UTC(),
+	}, func(memberCount uint) error {
+		var tierMemberLimits = map[model.Tier]uint{
+			model.TierStudent:   1,
+			model.TierTeam:      10,
+			model.TierCommunity: 40,
+		}
+
+		limit := tierMemberLimits[subscription.Tier]
+
+		if memberCount > limit {
+			return myerror.New(myerror.InvalidSubscriptionInvitationCode)
+		}
+
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -318,7 +332,6 @@ func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, req
 
 	lock, err := s.billingLockRepository.ObtainLock(ctx, request.UserID)
 	if err != nil {
-		logger.Errorf("Failed to obtain billing lock for customer %s: %v", request.UserID, err)
 		return err
 	}
 
@@ -436,7 +449,6 @@ func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID
 
 	members, err := s.subscriptionRepository.GetSubscriptionMembers(ctx, subscription.ID)
 	if err != nil {
-		logger.Errorf("Failed to get subscription members: %v", err)
 		return nil, err
 	}
 

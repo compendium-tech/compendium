@@ -26,7 +26,7 @@ type LLMService interface {
 func NewGrpcLLMServiceClient(target string) (LLMService, error) {
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to gRPC server: %v", err)
+		return nil, fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}
 
 	c := pb.NewLLMServiceClient(conn)
