@@ -3,10 +3,10 @@ package httputils
 import (
 	"errors"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/ztrue/tracerr"
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
@@ -143,13 +143,7 @@ func (h ErrorHandler) handleValidationErrors(c *gin.Context, errs validator.Vali
 }
 
 func (h ErrorHandler) handleISE(c *gin.Context, err error) {
-	var trcErr tracerr.Error
-
-	if errors.As(err, &trcErr) {
-		log.L(c.Request.Context()).Printf("Cause of internal server error: %v\nStacktrace: %s", trcErr, trcErr.StackTrace())
-	} else {
-		log.L(c.Request.Context()).Printf("Cause of internal server error: %v", err)
-	}
+	log.L(c.Request.Context()).Printf("Cause of internal server error: %v\nStacktrace: %s", err, debug.Stack())
 
 	h.abort(c, http.StatusInternalServerError, 0, nil)
 }
