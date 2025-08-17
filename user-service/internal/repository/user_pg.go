@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/compendium-tech/compendium/user-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/ztrue/tracerr"
 )
 
 type pgUserRepository struct {
@@ -22,7 +22,7 @@ func NewPgUserRepository(db *sql.DB) UserRepository {
 	}
 }
 
-func (r *pgUserRepository) GetUser(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *pgUserRepository) GetUser(ctx context.Context, id uuid.UUID) *model.User {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_admin, password_hash, created_at
@@ -41,18 +41,18 @@ func (r *pgUserRepository) GetUser(ctx context.Context, id uuid.UUID) (*model.Us
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
 	user.IsEmailVerified = true
 
-	return user, nil
+	return user
 }
 
-func (r *pgUserRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *pgUserRepository) FindUserByEmail(ctx context.Context, email string) *model.User {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_email_verified, is_admin, password_hash, created_at
@@ -72,16 +72,16 @@ func (r *pgUserRepository) FindUserByEmail(ctx context.Context, email string) (*
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return user, nil
+	return user
 }
 
-func (r *pgUserRepository) FindUserByVerifiedEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *pgUserRepository) FindUserByVerifiedEmail(ctx context.Context, email string) *model.User {
 	user := &model.User{}
 	query := `
 		SELECT id, name, email, is_admin, password_hash, created_at
@@ -100,18 +100,18 @@ func (r *pgUserRepository) FindUserByVerifiedEmail(ctx context.Context, email st
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
 	user.IsEmailVerified = true
 
-	return user, nil
+	return user
 }
 
-func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) error {
+func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, email string, isEmailVerified bool) {
 	query := `
 		UPDATE users
 		SET is_email_verified = $1
@@ -119,29 +119,27 @@ func (r *pgUserRepository) UpdateIsEmailVerifiedByEmail(ctx context.Context, ema
 	`
 	res, err := r.db.ExecContext(ctx, query, isEmailVerified, email)
 	if err != nil {
-		return tracerr.Errorf("failed to update is_email_verified for user %s: %w", email, err)
+		panic(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no user found with email %s to update IsEmailVerified", email)
+		panic(fmt.Errorf("no user found with email %s to update IsEmailVerified", email))
 	}
-
-	return nil
 }
 
-func (r *pgUserRepository) UpdateUserName(ctx context.Context, id uuid.UUID, name string) (*model.User, error) {
+func (r *pgUserRepository) UpdateUserName(ctx context.Context, id uuid.UUID, name string) model.User {
 	query := `
 		UPDATE users
 		SET name = $1
 		WHERE id = $2
 		RETURNING id, name, email, is_email_verified, is_admin, password_hash, created_at
 	`
-	user := &model.User{}
+	user := model.User{}
 	row := r.db.QueryRowContext(ctx, query, name, id)
 
 	err := row.Scan(
@@ -155,15 +153,16 @@ func (r *pgUserRepository) UpdateUserName(ctx context.Context, id uuid.UUID, nam
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, tracerr.Errorf("no user found with ID %s to update name", id)
+			panic(fmt.Errorf("no user found with ID %s to update name", id))
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
-	return user, nil
+
+	return user
 }
 
-func (r *pgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) error {
+func (r *pgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID, passwordHash []byte) {
 	query := `
 		UPDATE users
 		SET password_hash = $1
@@ -171,22 +170,20 @@ func (r *pgUserRepository) UpdatePasswordHash(ctx context.Context, id uuid.UUID,
 	`
 	res, err := r.db.ExecContext(ctx, query, passwordHash, id)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no user %s found to update PasswordHash and CreatedAt", id)
+		panic(fmt.Errorf("no user %s found to update PasswordHash and CreatedAt", id))
 	}
-
-	return nil
 }
 
-func (r *pgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) error {
+func (r *pgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, id uuid.UUID, passwordHash []byte, createdAt time.Time) {
 	query := `
 		UPDATE users
 		SET password_hash = $1, created_at = $2
@@ -194,22 +191,20 @@ func (r *pgUserRepository) UpdatePasswordHashAndCreatedAt(ctx context.Context, i
 	`
 	res, err := r.db.ExecContext(ctx, query, passwordHash, createdAt, id)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no user %s found to update PasswordHash and CreatedAt", id)
+		panic(fmt.Errorf("no user %s found to update PasswordHash and CreatedAt", id))
 	}
-
-	return nil
 }
 
-func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User, isEmailTaken *bool) error {
+func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User, isEmailTaken *bool) {
 	query := `
 		INSERT INTO users (id, name, email, is_email_verified, is_admin, password_hash, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -234,8 +229,6 @@ func (r *pgUserRepository) CreateUser(ctx context.Context, user model.User, isEm
 			}
 		}
 
-		return tracerr.Wrap(err)
+		panic(err)
 	}
-
-	return nil
 }

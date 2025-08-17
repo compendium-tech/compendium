@@ -11,7 +11,7 @@ import "context"
 // It returns an AuthLock instance if the lock is successfully obtained,
 // or an error if the lock cannot be acquired (e.g., if it's already held).
 type AuthLockRepository interface {
-	ObtainLock(ctx context.Context, email string) (AuthLock, error)
+	ObtainLock(ctx context.Context, email string) AuthLock
 }
 
 // AuthLock represents an acquired authentication lock.
@@ -19,5 +19,5 @@ type AuthLockRepository interface {
 //
 // Release manually releases the lock. Returns error if lock is no longer held.
 type AuthLock interface {
-	Release(ctx context.Context) error
+	Release(ctx context.Context)
 }

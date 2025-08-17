@@ -4,15 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/ztrue/tracerr"
 
-	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/compendium-tech/compendium/common/pkg/pg"
 	myerror "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/model"
 )
@@ -25,13 +23,13 @@ func NewPgSubscriptionRepository(db *sql.DB) SubscriptionRepository {
 	return &pgSubscriptionRepository{db: db}
 }
 
-func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub model.Subscription) (finalErr error) {
+func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub model.Subscription) {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return tracerr.Errorf("failed to begin transaction: %v", err)
+		panic(fmt.Errorf("failed to begin transaction: %v", err))
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	// Check for an existing subscription with the same ID.
 	var existingID string
@@ -51,7 +49,7 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 
 		_, err = tx.ExecContext(ctx, updateQuery, sub.ID, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
 		if err != nil {
-			return tracerr.Errorf("failed to update subscription with ID %s: %w", sub.ID, err)
+			panic(fmt.Errorf("failed to update subscription with ID %s: %w", sub.ID, err))
 		}
 
 		// Now, update the membership record for the payer.
@@ -63,7 +61,7 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 
 		_, err = tx.ExecContext(ctx, upsertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
 		if err != nil {
-			return tracerr.Errorf("failed to upsert subscription member: %w", err)
+			panic(fmt.Errorf("failed to upsert subscription member: %w", err))
 		}
 
 	} else if errors.Is(err, sql.ErrNoRows) {
@@ -77,7 +75,7 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 
 		_, err = tx.ExecContext(ctx, insertSubscriptionQuery, sub.ID, sub.BackedBy, sub.Tier, sub.Till, sub.Since, sub.InvitationCode)
 		if err != nil {
-			return tracerr.Errorf("failed to insert subscription: %w", err)
+			panic(fmt.Errorf("failed to insert subscription: %w", err))
 		}
 
 		// Insert the payer into the subscription_members table.
@@ -87,22 +85,21 @@ func (r *pgSubscriptionRepository) UpsertSubscription(ctx context.Context, sub m
 
 		_, err = tx.ExecContext(ctx, insertMemberQuery, sub.ID, sub.BackedBy, time.Now().UTC())
 		if err != nil {
-			return tracerr.Errorf("failed to insert subscription member: %w", err)
+			panic(fmt.Errorf("failed to insert subscription member: %w", err))
 		}
 	} else {
-		return tracerr.Errorf("failed to check for existing subscription: %v", err)
+		panic(fmt.Errorf("failed to check for existing subscription: %v", err))
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return tracerr.Errorf("failed to commit transaction: %w", err)
+		panic(fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
 	log.L(ctx).Infof("Successfully completed UpsertSubscription for ID %s", sub.ID)
-	return nil
 }
 
-func (r *pgSubscriptionRepository) FindSubscriptionByInvitationCode(ctx context.Context, invitationCode string) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByInvitationCode(ctx context.Context, invitationCode string) *model.Subscription {
 	query := `
 		SELECT id, backed_by, tier, till, since
 		FROM subscriptions
@@ -112,17 +109,18 @@ func (r *pgSubscriptionRepository) FindSubscriptionByInvitationCode(ctx context.
 	err := r.db.QueryRowContext(ctx, query, invitationCode).Scan(&sub.ID, &sub.BackedBy, &sub.Tier, &sub.Till, &sub.Since)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
-		return nil, tracerr.Errorf("failed to get subscription by invitation code %s: %w", invitationCode, err)
+
+		panic(fmt.Errorf("failed to get subscription by invitation code %s: %w", invitationCode, err))
 	}
 
 	sub.InvitationCode = &invitationCode
 
-	return &sub, nil
+	return &sub
 }
 
-func (r *pgSubscriptionRepository) FindSubscriptionByMemberUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByMemberUserID(ctx context.Context, userID uuid.UUID) *model.Subscription {
 	query := `
 		SELECT s.id, s.backed_by, s.tier, s.till, s.since, s.invitation_code
 		FROM subscriptions s
@@ -134,10 +132,10 @@ func (r *pgSubscriptionRepository) FindSubscriptionByMemberUserID(ctx context.Co
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Errorf("failed to get subscription for user ID %s: %w", userID, err)
+		panic(fmt.Errorf("failed to get subscription for user ID %s: %w", userID, err))
 	}
 
 	if inviteCodeSQL.Valid {
@@ -146,10 +144,10 @@ func (r *pgSubscriptionRepository) FindSubscriptionByMemberUserID(ctx context.Co
 		sub.InvitationCode = nil
 	}
 
-	return &sub, nil
+	return &sub
 }
 
-func (r *pgSubscriptionRepository) FindSubscriptionByPayerUserID(ctx context.Context, userID uuid.UUID) (*model.Subscription, error) {
+func (r *pgSubscriptionRepository) FindSubscriptionByPayerUserID(ctx context.Context, userID uuid.UUID) *model.Subscription {
 	query := `
 		SELECT id, backed_by, tier, till, since, invitation_code
 		FROM subscriptions
@@ -160,9 +158,10 @@ func (r *pgSubscriptionRepository) FindSubscriptionByPayerUserID(ctx context.Con
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(&sub.ID, &sub.BackedBy, &sub.Tier, &sub.Till, &sub.Since, &inviteCodeSQL)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
-		return nil, tracerr.Errorf("failed to get subscription for user ID %s: %w", userID, err)
+
+		panic(fmt.Errorf("failed to get subscription for user ID %s: %w", userID, err))
 	}
 
 	if inviteCodeSQL.Valid {
@@ -171,10 +170,10 @@ func (r *pgSubscriptionRepository) FindSubscriptionByPayerUserID(ctx context.Con
 		sub.InvitationCode = nil
 	}
 
-	return &sub, nil
+	return &sub
 }
 
-func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, subscriptionID string) (_ []model.SubscriptionMember, finalErr error) {
+func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, subscriptionID string) []model.SubscriptionMember {
 	query := `
 		SELECT user_id, since
 		FROM subscription_members
@@ -182,16 +181,16 @@ func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, s
 
 	rows, err := r.db.QueryContext(ctx, query, subscriptionID)
 	if err != nil {
-		return nil, tracerr.Errorf("failed to get subscription members for ID %s: %w", subscriptionID, err)
+		panic(fmt.Errorf("failed to get subscription members for ID %s: %w", subscriptionID, err))
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	var members []model.SubscriptionMember
 	for rows.Next() {
 		var member model.SubscriptionMember
 		if err := rows.Scan(&member.UserID, &member.Since); err != nil {
-			return nil, tracerr.Errorf("failed to scan subscription member: %w", err)
+			panic(fmt.Errorf("failed to scan subscription member: %w", err))
 		}
 
 		member.SubscriptionID = subscriptionID
@@ -199,23 +198,23 @@ func (r *pgSubscriptionRepository) GetSubscriptionMembers(ctx context.Context, s
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Errorf("error occurred while iterating over subscription members: %w", err)
+		panic(fmt.Errorf("error occurred while iterating over subscription members: %w", err))
 	}
 
-	return members, nil
+	return members
 }
 
 func (r *pgSubscriptionRepository) CreateSubscriptionMemberAndCheckMemberCount(
 	ctx context.Context,
 	member model.SubscriptionMember,
 	checkCount func(uint) error,
-) (finalErr error) {
+) {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return tracerr.Errorf("failed to begin transaction: %w", err)
+		panic(fmt.Errorf("failed to begin transaction: %w", err))
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	var currentMembers uint
 	queryCountAndLock := `
@@ -227,11 +226,11 @@ func (r *pgSubscriptionRepository) CreateSubscriptionMemberAndCheckMemberCount(
 
 	row := tx.QueryRowContext(ctx, queryCountAndLock, member.SubscriptionID)
 	if err := row.Scan(&currentMembers); err != nil {
-		return tracerr.Errorf("failed to get member count and lock subscription: %w", err)
+		panic(fmt.Errorf("failed to get member count and lock subscription: %w", err))
 	}
 
 	if err := checkCount(currentMembers); err != nil {
-		return err
+		panic(err)
 	}
 
 	queryInsert := `
@@ -242,80 +241,73 @@ func (r *pgSubscriptionRepository) CreateSubscriptionMemberAndCheckMemberCount(
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return myerror.New(myerror.AlreadySubscribedError)
+			myerror.New(myerror.AlreadySubscribedError).Throw()
 		}
-		return tracerr.Errorf("failed to add subscription member: %w", err)
+
+		panic(fmt.Errorf("failed to add subscription member: %w", err))
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return tracerr.Errorf("failed to commit transaction: %w", err)
+		panic(fmt.Errorf("failed to commit transaction: %w", err))
 	}
-
-	return nil
 }
 
-func (r *pgSubscriptionRepository) RemoveSubscriptionMember(ctx context.Context, member model.SubscriptionMember) error {
+func (r *pgSubscriptionRepository) RemoveSubscriptionMember(ctx context.Context, member model.SubscriptionMember) {
 	query := `
 		DELETE FROM subscription_members
 		WHERE subscription_id = $1 AND user_id = $2`
 	result, err := r.db.ExecContext(ctx, query, member.SubscriptionID, member.UserID)
 	if err != nil {
-		return tracerr.Errorf("failed to delete subscription member: %v", err)
+		panic(fmt.Errorf("failed to delete subscription member: %w", err))
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return tracerr.Errorf("failed to get rows affected after delete: %v", err)
+		panic(fmt.Errorf("failed to get rows affected after delete: %w", err))
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no subscription member found to delete for user ID %s in subscription %s", member.UserID, member.SubscriptionID)
+		panic(fmt.Errorf("no subscription member found to delete for user ID %s in subscription %s", member.UserID, member.SubscriptionID))
 	}
-
-	return nil
 }
 
-func (r *pgSubscriptionRepository) RemoveSubscriptionMemberBySubscriptionAndUserID(ctx context.Context, subscriptionID string, userID uuid.UUID) error {
+func (r *pgSubscriptionRepository) RemoveSubscriptionMemberBySubscriptionAndUserID(ctx context.Context, subscriptionID string, userID uuid.UUID) {
 	query := `
 		DELETE FROM subscription_members
 		WHERE subscription_id = $1 AND user_id = $2`
 
 	result, err := r.db.ExecContext(ctx, query, subscriptionID, userID)
 	if err != nil {
-		return tracerr.Errorf("failed to delete subscription member for user ID %s in subscription %s: %v", userID, subscriptionID, err)
+		panic(fmt.Errorf("failed to delete subscription member for user ID %s in subscription %s: %w", userID, subscriptionID, err))
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return tracerr.Errorf("failed to get rows affected after delete: %v", err)
+		panic(fmt.Errorf("failed to get rows affected after delete: %w", err))
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no subscription member found to delete for user ID %s in subscription %s", userID, subscriptionID)
+		panic(fmt.Errorf("no subscription member found to delete for user ID %s in subscription %s", userID, subscriptionID))
 	}
-
-	return nil
 }
 
-func (r *pgSubscriptionRepository) RemoveSubscription(ctx context.Context, id string) error {
+func (r *pgSubscriptionRepository) RemoveSubscription(ctx context.Context, id string) {
 	query := `
 		DELETE FROM subscriptions
 		WHERE id = $1`
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return tracerr.Errorf("failed to delete subscription %s: %v", id, err)
+		panic(fmt.Errorf("failed to delete subscription %s: %w", id, err))
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return tracerr.Errorf("failed to get rows affected after delete: %v", err)
+		panic(fmt.Errorf("failed to get rows affected after delete: %w", err))
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no subscription found to delete %s", id)
+		panic(fmt.Errorf("no subscription found to delete %s", id))
 	}
-
-	return nil
 }

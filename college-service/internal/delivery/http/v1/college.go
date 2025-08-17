@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	httputils "github.com/compendium-tech/compendium/common/pkg/http"
-	"github.com/compendium-tech/compendium/common/pkg/validate"
 
 	"github.com/compendium-tech/compendium/college-service/internal/domain"
 	"github.com/compendium-tech/compendium/college-service/internal/service"
@@ -34,22 +34,8 @@ func (c CollegeController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (cc CollegeController) searchColleges(c *gin.Context) error {
-	var request domain.SearchCollegesRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	response, err := cc.collegeService.SearchColleges(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusCreated, response)
-	return nil
+func (cc CollegeController) searchColleges(c *gin.Context) {
+	c.JSON(http.StatusCreated,
+		cc.collegeService.SearchColleges(c.Request.Context(),
+			httputils.MustBindWith[domain.SearchCollegesRequest](c, binding.JSON, true)))
 }

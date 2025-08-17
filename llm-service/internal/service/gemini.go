@@ -31,23 +31,24 @@ func (g *geminiClient) GenerateResponse(
 ) (*domain.Message, error) {
 	g.useTools(tools)
 
-	contents := make([]*genai.Content, 0, len(chatHistory))
-	for _, msg := range chatHistory {
-		parts := make([]*genai.Part, 0, 1+len(msg.ToolCalls))
+	contents := make([]*genai.Content, len(chatHistory))
+	for i, msg := range chatHistory {
+		parts := make([]*genai.Part, 1+len(msg.ToolCalls))
 		parts = append(parts, &genai.Part{Text: msg.Text})
 
-		for _, toolCall := range msg.ToolCalls {
-			parts = append(parts, &genai.Part{
+		for j, toolCall := range msg.ToolCalls {
+			parts[j] = &genai.Part{
 				FunctionCall: &genai.FunctionCall{
 					Name: toolCall.Name,
 					Args: toolCall.Parameters,
 				},
-			})
+			}
 		}
-		contents = append(contents, &genai.Content{
+
+		contents[i] = &genai.Content{
 			Parts: parts,
 			Role:  string(msg.Role),
-		})
+		}
 	}
 
 	var schema *genai.Schema
@@ -136,9 +137,9 @@ func toGenAIType(t domain.Type) genai.Type {
 }
 
 func (g *geminiClient) useTools(tools []domain.ToolDefinition) {
-	genAITools := make([]*genai.Tool, 0, len(tools))
-	for _, toolDef := range tools {
-		genAITools = append(genAITools, &genai.Tool{
+	genAITools := make([]*genai.Tool, len(tools))
+	for i, toolDef := range tools {
+		genAITools[i] = &genai.Tool{
 			FunctionDeclarations: []*genai.FunctionDeclaration{
 				{
 					Name:        toolDef.Name,
@@ -146,7 +147,7 @@ func (g *geminiClient) useTools(tools []domain.ToolDefinition) {
 					Parameters:  domainSchemaToGenAISchema(toolDef.ParametersSchema),
 				},
 			},
-		})
+		}
 	}
 
 	g.tools = genAITools

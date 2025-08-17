@@ -20,7 +20,7 @@ type LoggerMiddleware struct {
 func (l LoggerMiddleware) Handle(c *gin.Context) {
 	start := time.Now()
 
-	userUuid, _ := auth.GetUserID(c)
+	userUuid := auth.GetUserIDOrNil(c)
 
 	var userID string
 

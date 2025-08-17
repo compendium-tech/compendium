@@ -6,5 +6,5 @@ import (
 )
 
 type RateLimiter interface {
-	IsRateLimited(ctx context.Context, key string, window time.Duration, maxRequests uint) (bool, error)
+	IsRateLimited(ctx context.Context, key string, window time.Duration, maxRequests uint) bool
 }

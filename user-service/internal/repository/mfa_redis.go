@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/ztrue/tracerr"
 )
 
 const (
@@ -23,38 +22,32 @@ func NewRedisMfaRepository(client *redis.Client) MfaRepository {
 	return &redisMfaRepository{client: client}
 }
 
-func (r *redisMfaRepository) SetMfaOtpByEmail(ctx context.Context, email string, otp string) error {
+func (r *redisMfaRepository) SetMfaOtpByEmail(ctx context.Context, email string, otp string) {
 	err := r.client.Set(ctx, r.createMfaOtpKey(email), otp, mfaOtpTtl).Err()
-
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
-
-	return nil
 }
 
-func (r *redisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string) (*string, error) {
+func (r *redisMfaRepository) GetMfaOtpByEmail(ctx context.Context, email string) *string {
 	code, err := r.client.Get(ctx, r.createMfaOtpKey(email)).Result()
 
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return &code, nil
+	return &code
 }
 
-func (r *redisMfaRepository) RemoveMfaOtpByEmail(ctx context.Context, email string) error {
+func (r *redisMfaRepository) RemoveMfaOtpByEmail(ctx context.Context, email string) {
 	err := r.client.Del(ctx, r.createMfaOtpKey(email)).Err()
-
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
-
-	return nil
 }
 
 func (r *redisMfaRepository) createMfaOtpKey(email string) string {

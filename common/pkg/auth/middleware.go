@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -35,14 +36,19 @@ func (a Middleware) Handle(c *gin.Context) {
 }
 
 func RequireAuth(c *gin.Context) {
-	_, err := GetUserID(c.Request.Context())
+	defer func() {
+		if r := recover(); r != nil {
+			log.L(c.Request.Context()).
+				WithField("stack", debug.Stack()).
+				Warnf("Failed to require auth, check the previous logs to reveal the reason")
 
-	if err != nil {
-		log.L(c.Request.Context()).Warnf("Failed to require auth, check the previous logs to reveal the reason")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"errorType": 8,
-		})
-	}
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"errorType": 8,
+			})
+		}
+	}()
+
+	_ = GetUserID(c.Request.Context())
 }
 
 func RequireCsrf(c *gin.Context) {

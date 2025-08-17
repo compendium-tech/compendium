@@ -15,11 +15,11 @@ func NewGeoIP2Client(accountID, licenseKey, host string) GeoIP {
 	return &geoIP2Client{api: api}
 }
 
-func (g *geoIP2Client) GetLocation(ip string) (string, error) {
+func (g *geoIP2Client) GetLocation(ip string) string {
 	city, err := g.api.City(ip)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
-	return fmt.Sprintf("%s, %s", city.City.Names.En, city.Country.Names.En), nil
+	return fmt.Sprintf("%s, %s", city.City.Names.En, city.Country.Names.En)
 }

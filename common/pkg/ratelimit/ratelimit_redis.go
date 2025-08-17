@@ -2,10 +2,10 @@ package ratelimit
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/ztrue/tracerr"
 )
 
 type redisRateLimiter struct {
@@ -20,22 +20,22 @@ func NewRedisRateLimiter(client *redis.Client) RateLimiter {
 
 func (r *redisRateLimiter) IsRateLimited(
 	ctx context.Context, key string,
-	window time.Duration, maxRequests uint) (bool, error) {
+	window time.Duration, maxRequests uint) bool {
 	count, err := r.client.Incr(ctx, key).Result()
 	if err != nil {
-		return false, tracerr.Errorf("failed to increment rate limit counter for key %s: %w", key, err)
+		panic(fmt.Errorf("failed to increment rate limit counter for key %s: %w", key, err))
 	}
 
 	if count == 1 {
 		err = r.client.Expire(ctx, key, window).Err()
 		if err != nil {
-			return false, tracerr.Errorf("failed to set expiry for rate limit key for key %s: %w", key, err)
+			panic(fmt.Errorf("failed to set expiry for rate limit key for key %s: %w", key, err))
 		}
 	}
 
 	if count > int64(maxRequests) {
-		return true, nil
+		return true
 	}
 
-	return false, nil
+	return false
 }

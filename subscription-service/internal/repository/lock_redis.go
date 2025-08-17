@@ -8,10 +8,9 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/compendium-tech/compendium/subscription-service/internal/error"
+	myerror "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/ztrue/tracerr"
 )
 
 const billingLockTtl = 60 * time.Second
@@ -21,16 +20,13 @@ type billingLock struct {
 	userID uuid.UUID
 }
 
-func (e *billingLock) Release(ctx context.Context) error {
+func (e *billingLock) Release(ctx context.Context) {
 	err := e.lock.Release(ctx)
-
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	log.L(ctx).Infof("Successfully released billing lock for %s", e.userID)
-
-	return nil
 }
 
 type redisBillingLockRepository struct {
@@ -43,7 +39,7 @@ func NewRedisBillingLockRepository(rdb *redis.Client) BillingLockRepository {
 	}
 }
 
-func (r *redisBillingLockRepository) ObtainLock(ctx context.Context, userID uuid.UUID) (BillingLock, error) {
+func (r *redisBillingLockRepository) ObtainLock(ctx context.Context, userID uuid.UUID) BillingLock {
 	log.L(ctx).Infof("Obtaining billing lock for %s", userID)
 
 	lock, err := r.client.Obtain(ctx, fmt.Sprintf("billing_locks:%s", userID), billingLockTtl, nil)
@@ -51,13 +47,13 @@ func (r *redisBillingLockRepository) ObtainLock(ctx context.Context, userID uuid
 		if errors.Is(err, redislock.ErrNotObtained) {
 			log.L(ctx).Error("Failed to obtain billing lock")
 
-			return nil, myerror.New(myerror.TooManyRequestsError)
+			myerror.New(myerror.TooManyRequestsError).Throw()
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
 	log.L(ctx).Infof("Successfully obtained billing lock for %s", userID)
 
-	return &billingLock{lock: lock, userID: userID}, nil
+	return &billingLock{lock: lock, userID: userID}
 }

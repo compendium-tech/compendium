@@ -26,7 +26,7 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 	name, emailAddress, password := "John", "johndoe@test.com", "Qwerty123!!!"
 	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, emailAddress, password)
 
-	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("SignUpEmail", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
 	}).Once()
 	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
@@ -39,8 +39,7 @@ func (s *APITestSuite) Test_SignUp_WithValidCredentials_GeneratesAndStoresMfaCod
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
-	r.NoError(err, "Failed to fetch MFA OTP")
+	code := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)
 }
@@ -51,7 +50,7 @@ func (s *APITestSuite) Test_SignUp_TooFrequently_ReturnsTooManySignupAttemptsErr
 	name, emailAddress, password := "John", "johndoe@test.com", "Qwerty123!!!"
 	body := fmt.Sprintf(`{"name":"%s","email":"%s","password":"%s"}`, name, emailAddress, password)
 
-	s.mockEmailMessageBuilder.On("BuildSignUpMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Once()
+	s.mockEmailMessageBuilder.On("SignUpEmail", emailAddress, mock.Anything).Return(email.Message{}, nil).Once()
 	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer([]byte(body)))
@@ -109,7 +108,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	userID, email, otp := uuid.New(), "johndoe@test.com", "123456"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	err := repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+	repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
 		ID:              userID,
 		Name:            "John",
 		Email:           email,
@@ -118,10 +117,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 		PasswordHash:    []byte{},
 		CreatedAt:       time.Now().UTC(),
 	}, nil)
-	r.NoError(err, "Failed to create new user")
-
-	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
-	r.NoError(err, "Failed to set MFA OTP")
+	repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp)
 
@@ -136,8 +132,10 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 	respBody := resp.Result()
 
 	var responseBody map[string]any
-	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
+	err := json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
+
+	fmt.Println(responseBody)
 
 	_, ok := responseBody["accessTokenExpiresAt"]
 	r.True(ok, "Response body should contain 'accessTokenExpiresAt'")
@@ -147,20 +145,15 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithValidOtp_CreatesNewSession() {
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
-	r.NoError(err, "Failed to fetch MFA OTP")
-	r.Nil(code)
-
-	isDeviceKnownNow, err := repository.NewPgTrustedDeviceRepository(s.PgDB).DeviceExists(s.ctx, userID, userAgent, ipAddress)
-	r.NoError(err, "Failed to check if device was created in db")
-	r.True(isDeviceKnownNow)
+	r.Nil(repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email))
+	r.True(repository.NewPgTrustedDeviceRepository(s.PgDB).DeviceExists(s.ctx, userID, userAgent, ipAddress))
 }
 
 func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 	r := s.Require()
 
 	email, otp, otp2 := "johndoe@test.com", "123456", "234567"
-	err := repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+	repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
 		ID:              uuid.New(),
 		Name:            "John",
 		Email:           email,
@@ -169,10 +162,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 		PasswordHash:    []byte{},
 		CreatedAt:       time.Now().UTC(),
 	}, nil)
-	r.NoError(err, "Failed to create new user")
-
-	err = repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
-	r.NoError(err, "Failed to set MFA OTP")
+	repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).SetMfaOtpByEmail(s.ctx, email, otp)
 
 	body := fmt.Sprintf(`{"email":"%s","otp":"%s"}`, email, otp2)
 
@@ -184,8 +174,7 @@ func (s *APITestSuite) Test_SubmitMfaOtp_WithInvalidOtp_ReturnsUnauthorized() {
 
 	r.Equal(http.StatusUnauthorized, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
-	r.NoError(err, "Failed to fetch MFA OTP")
+	code := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
 	r.NotEqual(code, nil)
 	r.Equal(*code, otp)
 }
@@ -219,10 +208,8 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	userID, email, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	passwordHash, err := s.GinAppDependencies.PasswordHasher.HashPassword(password)
-	r.NoError(err, "Failed to obtain password hash")
-
-	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+	passwordHash := s.GinAppDependencies.PasswordHasher.HashPassword(password)
+	repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
 		ID:              userID,
 		Name:            "John",
 		Email:           email,
@@ -231,15 +218,12 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 		PasswordHash:    passwordHash,
 		CreatedAt:       time.Now().UTC(),
 	}, nil)
-	r.NoError(err, "Failed to create new user")
-
-	err = repository.NewPgTrustedDeviceRepository(s.PgDB).UpsertDevice(s.ctx, model.TrustedDevice{
+	repository.NewPgTrustedDeviceRepository(s.PgDB).UpsertDevice(s.ctx, model.TrustedDevice{
 		ID:        uuid.New(),
 		UserID:    userID,
 		IPAddress: ipAddress,
 		UserAgent: userAgent,
 	})
-	r.NoError(err, "Failed to save new device in db")
 
 	s.mockEmailSender.AssertNotCalled(s.T(), "SendSignInMfaEmail")
 
@@ -256,7 +240,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 	respBody := resp.Result()
 
 	var responseBody map[string]any
-	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
+	err := json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 
 	isMfaRequired, ok := responseBody["isMfaRequired"]
@@ -272,9 +256,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnKnownDevice_CreatesNewS
 
 	r.Equal(http.StatusCreated, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email)
-	r.NoError(err, "Failed to fetch MFA OTP")
-	r.Nil(code)
+	r.Nil(repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, email))
 }
 
 func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSession() {
@@ -285,10 +267,9 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	userID, emailAddress, password := uuid.New(), "johndoe@test.com", "Qwerty12345!!"
 	ipAddress, userAgent := "1.0.0.0", "Test"
 
-	passwordHash, err := s.GinAppDependencies.PasswordHasher.HashPassword(password)
-	r.NoError(err, "Failed to obtain password hash")
+	passwordHash := s.GinAppDependencies.PasswordHasher.HashPassword(password)
 
-	err = repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
+	repository.NewPgUserRepository(s.PgDB).CreateUser(s.ctx, model.User{
 		ID:              userID,
 		Name:            "John",
 		Email:           emailAddress,
@@ -297,9 +278,8 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 		PasswordHash:    passwordHash,
 		CreatedAt:       time.Now().UTC(),
 	}, nil)
-	r.NoError(err, "Failed to create new user")
 
-	s.mockEmailMessageBuilder.On("BuildSignInMfaEmailMessage", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
+	s.mockEmailMessageBuilder.On("SignInEmail", emailAddress, mock.Anything).Return(email.Message{}, nil).Run(func(args mock.Arguments) {
 		capturedMfaCode = args.Get(1).(string)
 	}).Once()
 	s.mockEmailSender.On("SendMessage", email.Message{}).Return(nil).Once()
@@ -317,7 +297,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 	respBody := resp.Result()
 
 	var responseBody map[string]any
-	err = json.NewDecoder(respBody.Body).Decode(&responseBody)
+	err := json.NewDecoder(respBody.Body).Decode(&responseBody)
 	r.NoError(err, "Failed to decode response body")
 
 	isMfaRequired, ok := responseBody["isMfaRequired"]
@@ -332,8 +312,7 @@ func (s *APITestSuite) Test_SignIn_WithValidCredentialsOnNewDevice_CreatesNewSes
 
 	r.Equal(http.StatusAccepted, resp.Result().StatusCode)
 
-	code, err := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
-	r.NoError(err, "Failed to fetch MFA OTP")
+	code := repository.NewRedisMfaRepository(s.GinAppDependencies.RedisClient).GetMfaOtpByEmail(s.ctx, emailAddress)
 	r.NotNil(code)
 	r.Equal(*code, capturedMfaCode)
 }

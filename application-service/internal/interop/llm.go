@@ -20,7 +20,7 @@ type llmServiceGrpcClient struct {
 type LLMService interface {
 	GenerateResponse(
 		ctx context.Context, chatHistory []domain.LLMMessage,
-		tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) (*domain.LLMMessage, error)
+		tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) domain.LLMMessage
 }
 
 func NewGrpcLLMServiceClient(target string) (LLMService, error) {
@@ -41,7 +41,7 @@ func (c *llmServiceGrpcClient) GenerateResponse(
 	chatHistory []domain.LLMMessage,
 	tools []domain.LLMToolDefinition,
 	structuredOutputSchema *domain.LLMSchema,
-) (*domain.LLMMessage, error) {
+) domain.LLMMessage {
 	protoChatHistory := make([]*pb.Message, len(chatHistory))
 
 	for i, msg := range chatHistory {
@@ -53,7 +53,7 @@ func (c *llmServiceGrpcClient) GenerateResponse(
 			for k, v := range tc.Parameters {
 				params[k], err = pbhelp.AnyToAnyPB(v)
 				if err != nil {
-					return nil, err
+					panic(err)
 				}
 			}
 
@@ -91,7 +91,7 @@ func (c *llmServiceGrpcClient) GenerateResponse(
 		StructuredOutputSchema: protoSchema,
 	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	toolCalls := make([]domain.LLMToolCall, len(resp.Message.ToolCalls))
@@ -100,7 +100,7 @@ func (c *llmServiceGrpcClient) GenerateResponse(
 		for k, v := range tc.Parameters {
 			params[k], err = pbhelp.AnyPBToAny(v)
 			if err != nil {
-				return nil, err
+				panic(err)
 			}
 		}
 
@@ -111,11 +111,11 @@ func (c *llmServiceGrpcClient) GenerateResponse(
 		}
 	}
 
-	return &domain.LLMMessage{
+	return domain.LLMMessage{
 		Role:      rolePBToRole(resp.Message.Role),
 		Text:      resp.Message.Text,
 		ToolCalls: toolCalls,
-	}, nil
+	}
 }
 
 func roleToRolePB(role domain.LLMRole) pb.Role {

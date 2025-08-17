@@ -33,7 +33,20 @@ func (s UserServiceServer) Register(server *grpc.Server) {
 	reflection.Register(server)
 }
 
-func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (*pb.Account, error) {
+func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (a *pb.Account, e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				var myerr myerror.MyError
+				if errors.As(err, &myerr) && myerr.ErrorType() == myerror.UserNotFoundError {
+					return
+				}
+
+				e = status.Errorf(codes.Internal, "failed to get user: %v", err)
+			}
+		}
+	}()
+
 	if req.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "user ID cannot be empty")
 	}
@@ -43,16 +56,7 @@ func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountReq
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID format: %v", err)
 	}
 
-	user, err := s.userService.GetAccount(ctx, userID)
-	if err != nil {
-		var myerr myerror.MyError
-		if errors.As(err, &myerr) && myerr.ErrorType() == myerror.UserNotFoundError {
-			return nil, nil
-		}
-
-		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
-	}
-
+	user := s.userService.GetAccount(ctx, userID)
 	return &pb.Account{
 		Id:        user.ID.String(),
 		Name:      user.Name,

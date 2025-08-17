@@ -40,7 +40,7 @@ func NewRedisRefreshTokenRepository(client *redis.Client) RefreshTokenRepository
 	}
 }
 
-func (r *redisRefreshTokenRepository) CreateRefreshToken(ctx context.Context, token model.RefreshToken) error {
+func (r *redisRefreshTokenRepository) CreateRefreshToken(ctx context.Context, token model.RefreshToken) {
 	tokenKey := refreshTokenKeyPrefix + token.Token
 	sessionRefreshTokenKey := sessionRefreshTokenKeyPrefix + token.Session.ID.String()
 	tokenDetails := map[string]any{
@@ -71,26 +71,24 @@ func (r *redisRefreshTokenRepository) CreateRefreshToken(ctx context.Context, to
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		return tracerr.Errorf("failed to add refresh token: %w", err)
+		panic(err)
 	}
-
-	return nil
 }
 
-func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, tokenString string) (*model.RefreshToken, bool, error) {
+func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, tokenString string) (*model.RefreshToken, bool) {
 	tokenKey := refreshTokenKeyPrefix + tokenString
 	details, err := r.client.HGetAll(ctx, tokenKey).Result()
 	if err != nil {
-		return nil, false, tracerr.Errorf("failed to get refresh token details: %w", err)
+		panic(fmt.Errorf("failed to get refresh token details: %w", err))
 	}
 
 	if len(details) == 0 {
-		return nil, false, nil
+		return nil, false
 	}
 
 	refreshToken, parseErr := r.parseRefreshTokenDetails(details)
 	if parseErr != nil {
-		return nil, false, parseErr
+		panic(parseErr)
 	}
 
 	revokedKey := revokedTokensKeyPrefix + tokenString
@@ -101,29 +99,30 @@ func (r *redisRefreshTokenRepository) GetRefreshToken(ctx context.Context, token
 
 	isRevoked := revokedStatus > 0
 
-	return refreshToken, isRevoked, nil
+	return refreshToken, isRevoked
 }
 
-func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool, error) {
+func (r *redisRefreshTokenRepository) GetRefreshTokenBySessionID(ctx context.Context, sessionID uuid.UUID) (*model.RefreshToken, bool) {
 	tokenString, err := r.client.Get(ctx, sessionRefreshTokenKeyPrefix+sessionID.String()).Result()
 	if errors.Is(err, redis.Nil) {
-		return nil, false, nil
+		return nil, false
 	}
+
 	if err != nil {
-		return nil, false, tracerr.Errorf("failed to get token string by session ID: %w", err)
+		panic(fmt.Errorf("failed to get token string by session ID: %w", err))
 	}
 
 	return r.GetRefreshToken(ctx, tokenString)
 }
 
-func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, token string, userID uuid.UUID) error {
+func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, token string, userID uuid.UUID) {
 	tokenKey := refreshTokenKeyPrefix + token
 	userTokensKey := userTokensKeyPrefix + userID.String()
 	revokedKey := revokedTokensKeyPrefix + token
 
 	details, err := r.client.HGetAll(ctx, tokenKey).Result()
 	if err != nil {
-		return tracerr.Errorf("failed to get refresh token details before removal: %w", err)
+		panic(fmt.Errorf("failed to get refresh token details before removal: %w", err))
 	}
 	sessionID := details[sessionIDHashField]
 
@@ -139,21 +138,20 @@ func (r *redisRefreshTokenRepository) RemoveRefreshToken(ctx context.Context, to
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return tracerr.Errorf("failed to remove refresh token: %w", err)
+		panic(fmt.Errorf("failed to remove refresh token: %w", err))
 	}
-	return nil
 }
 
-func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error {
+func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) {
 	userTokensKey := userTokensKeyPrefix + userID.String()
 
 	tokens, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
 	if err != nil {
-		return tracerr.Errorf("failed to get all tokens for user %s: %w", userID.String(), err)
+		panic(fmt.Errorf("failed to get all tokens for user %s: %w", userID.String(), err))
 	}
 
 	if len(tokens) == 0 {
-		return nil
+		return
 	}
 
 	pipe := r.client.TxPipeline()
@@ -176,16 +174,15 @@ func (r *redisRefreshTokenRepository) RemoveAllRefreshTokensForUser(ctx context.
 
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return tracerr.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err)
+		panic(fmt.Errorf("failed to remove all refresh tokens for user %s: %w", userID.String(), err))
 	}
-	return nil
 }
 
-func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) ([]model.RefreshToken, error) {
+func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Context, userID uuid.UUID) []model.RefreshToken {
 	userTokensKey := userTokensKeyPrefix + userID.String()
 	tokenStrings, err := r.client.ZRange(ctx, userTokensKey, 0, -1).Result()
 	if err != nil {
-		return nil, tracerr.Errorf("failed to get refresh token strings for user %s: %w", userID.String(), err)
+		panic(fmt.Errorf("failed to get refresh token strings for user %s: %w", userID.String(), err))
 	}
 
 	var refreshTokens []model.RefreshToken
@@ -211,7 +208,7 @@ func (r *redisRefreshTokenRepository) GetAllRefreshTokensForUser(ctx context.Con
 		}
 	}
 
-	return refreshTokens, nil
+	return refreshTokens
 }
 
 func (r *redisRefreshTokenRepository) parseRefreshTokenDetails(details map[string]string) (*model.RefreshToken, error) {

@@ -7,5 +7,5 @@ type Message struct {
 }
 
 type Sender interface {
-	SendMessage(msg Message) error
+	SendMessage(msg Message)
 }

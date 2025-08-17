@@ -3,13 +3,12 @@ package hash
 import (
 	"errors"
 
-	"github.com/ztrue/tracerr"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type PasswordHasher interface {
-	HashPassword(password string) ([]byte, error)
-	IsPasswordHashValid(passwordHash []byte, password string) (bool, error)
+	HashPassword(password string) []byte
+	IsPasswordHashValid(passwordHash []byte, password string) bool
 }
 
 type bcryptPasswordHasher struct {
@@ -22,25 +21,25 @@ func NewBcryptPasswordHasher(cost int) PasswordHasher {
 	}
 }
 
-func (b *bcryptPasswordHasher) HashPassword(password string) ([]byte, error) {
+func (b *bcryptPasswordHasher) HashPassword(password string) []byte {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return passwordHash, nil
+	return passwordHash
 }
 
-func (b *bcryptPasswordHasher) IsPasswordHashValid(passwordHash []byte, password string) (bool, error) {
+func (b *bcryptPasswordHasher) IsPasswordHashValid(passwordHash []byte, password string) bool {
 	err := bcrypt.CompareHashAndPassword(passwordHash, []byte(password))
 
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return false, nil
+			return false
 		}
 
-		return false, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return true, nil
+	return true
 }

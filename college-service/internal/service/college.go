@@ -10,7 +10,7 @@ import (
 )
 
 type CollegeService interface {
-	SearchColleges(ctx context.Context, request domain.SearchCollegesRequest) ([]domain.CollegeResponse, error)
+	SearchColleges(ctx context.Context, request domain.SearchCollegesRequest) []domain.CollegeResponse
 }
 
 type collegeService struct {
@@ -23,7 +23,7 @@ func NewCollegeService(collegeRepository repository.CollegeRepository) CollegeSe
 	}
 }
 
-func (a *collegeService) SearchColleges(ctx context.Context, request domain.SearchCollegesRequest) ([]domain.CollegeResponse, error) {
+func (a *collegeService) SearchColleges(ctx context.Context, request domain.SearchCollegesRequest) []domain.CollegeResponse {
 	logger := log.L(ctx).WithField("request", request)
 	logger.Info("Searching for colleges")
 
@@ -44,27 +44,24 @@ func (a *collegeService) SearchColleges(ctx context.Context, request domain.Sear
 		stateOrCountry = *request.StateOrCountry
 	}
 
-	colleges, err := a.collegeRepository.SearchColleges(
+	colleges := a.collegeRepository.SearchColleges(
 		ctx,
 		semanticSearchText,
 		stateOrCountry,
 		pageIndex,
 		pageSize,
 	)
-	if err != nil {
-		return nil, err
-	}
 
-	var collegeResponses []domain.CollegeResponse
-	for _, college := range colleges {
-		collegeResponses = append(collegeResponses, domain.CollegeResponse{
+	collegesResponse := make([]domain.CollegeResponse, len(colleges))
+	for i, college := range colleges {
+		collegesResponse[i] = domain.CollegeResponse{
 			Name:           college.Name,
 			City:           college.City,
 			StateOrCountry: college.StateOrCountry,
 			Description:    college.Description,
-		})
+		}
 	}
 
-	logger.Infof("Found %d colleges for search", len(collegeResponses))
-	return collegeResponses, nil
+	logger.Infof("Found %d colleges for search", len(collegesResponse))
+	return collegesResponse
 }

@@ -16,8 +16,6 @@ import (
 // See Handle for more details.
 type ErrorHandler struct{}
 
-type HandlerFuncWithError func(c *gin.Context) error
-
 type CustomError interface {
 	ErrorType() int
 	ErrorDetails() any
@@ -76,22 +74,20 @@ type CustomError interface {
 //	  }
 //	}
 //
-//	func GetUserByID(c *gin.Context) error {
+//	func GetUserByID(c *gin.Context) {
 //	  userID := c.Param("id")
 //	    if userID == "invalid" {
-//	      return NewAPIError(
+//	      panic(NewAPIError(
 //	        InvalidInputError,
 //	        http.StatusBadRequest,
 //	        "Invalid user ID format.",
-//	        map[string]string{"input": userID, "reason": "non-numeric"}
-//	      )
+//	        map[string]string{"input": userID, "reason": "non-numeric"}))
 //	  } else if userID == "nonexistent" {
-//	      return NewAPIError(
+//	      panic(NewAPIError(
 //	         UserNotFoundError,
 //	         http.StatusNotFound,
 //	         "User with the provided ID does not exist.",
-//	         map[string]string{"requested_id": userID}
-//	    )
+//	         map[string]string{"requested_id": userID}))
 //	  }
 //
 //	  c.JSON(http.StatusOK, gin.H{"message": "User found", "id": userID})
@@ -104,22 +100,30 @@ type CustomError interface {
 //	  router.GET("/users/:id", e.Handle(GetUserByID))
 //	  router.Run(":8080")
 //	}
-func (h ErrorHandler) Handle(f HandlerFuncWithError) gin.HandlerFunc {
+func (h ErrorHandler) Handle(f gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := f(c)
-
-		if err != nil {
-			var customErr CustomError
-			var validationErrs validator.ValidationErrors
-
-			if errors.As(err, &customErr) {
-				h.handleCustomError(c, customErr)
-			} else if errors.As(err, &validationErrs) {
-				h.handleValidationErrors(c, validationErrs)
-			} else {
-				h.handleISE(c, err)
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					h.handleError(c, err)
+				}
 			}
-		}
+		}()
+
+		f(c)
+	}
+}
+
+func (h ErrorHandler) handleError(c *gin.Context, err error) {
+	var customErr CustomError
+	var validationErrs validator.ValidationErrors
+
+	if errors.As(err, &customErr) {
+		h.handleCustomError(c, customErr)
+	} else if errors.As(err, &validationErrs) {
+		h.handleValidationErrors(c, validationErrs)
+	} else {
+		h.handleISE(c, err)
 	}
 }
 

@@ -42,87 +42,47 @@ func (p *SubscriptionController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (p *SubscriptionController) getSubscription(c *gin.Context) error {
-	subscription, err := p.subscriptionService.GetSubscription(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, subscription)
-	return nil
+func (p *SubscriptionController) getSubscription(c *gin.Context) {
+	c.JSON(http.StatusOK, p.subscriptionService.GetSubscription(c.Request.Context()))
 }
 
-func (p *SubscriptionController) getSubscriptionInvitationCode(c *gin.Context) error {
-	code, err := p.subscriptionService.GetSubscriptionInvitationCode(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, code)
-	return nil
+func (p *SubscriptionController) getSubscriptionInvitationCode(c *gin.Context) {
+	c.JSON(http.StatusOK, p.subscriptionService.GetSubscriptionInvitationCode(c.Request.Context()))
 }
 
-func (p *SubscriptionController) cancelSubscription(c *gin.Context) error {
-	err := p.subscriptionService.CancelSubscription(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
+func (p *SubscriptionController) cancelSubscription(c *gin.Context) {
+	p.subscriptionService.CancelSubscription(c.Request.Context())
 	c.Status(http.StatusNoContent)
-	return nil
 }
 
-func (p *SubscriptionController) joinSubscription(c *gin.Context) error {
+func (p *SubscriptionController) joinSubscription(c *gin.Context) {
 	invitationCode := c.Query("invitationCode")
 	if invitationCode == "" {
-		return myerror.NewWithDetails(myerror.RequestValidationError, "member ID is required")
+		myerror.NewWithDetails(myerror.RequestValidationError, "member ID is required").Throw()
 	}
 
-	subscription, err := p.subscriptionService.JoinCollectiveSubscription(c.Request.Context(), invitationCode)
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, subscription)
-	return nil
+	c.JSON(http.StatusOK, p.subscriptionService.JoinCollectiveSubscription(c.Request.Context(), invitationCode))
 }
 
-func (p *SubscriptionController) removeSubscriptionMember(c *gin.Context) error {
+func (p *SubscriptionController) removeSubscriptionMember(c *gin.Context) {
 	memberIDString := c.Param("id")
 	if memberIDString == "" {
-		return myerror.NewWithReason(myerror.RequestValidationError, "member ID is required")
+		myerror.NewWithReason(myerror.RequestValidationError, "member ID is required").Throw()
 	}
 
 	memberID, err := uuid.Parse(memberIDString)
 	if err != nil {
-		return myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("invalid member ID format: %v", err))
+		myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("invalid member ID format: %v", err)).Throw()
 	}
 
-	err = p.subscriptionService.RemoveSubscriptionMember(c.Request.Context(), memberID)
-	if err != nil {
-		return err
-	}
-
+	p.subscriptionService.RemoveSubscriptionMember(c.Request.Context(), memberID)
 	c.Status(http.StatusNoContent)
-	return nil
 }
 
-func (p *SubscriptionController) updateSubscriptionInvitationCode(c *gin.Context) error {
-	code, err := p.subscriptionService.UpdateSubscriptionInvitationCode(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, code)
-	return nil
+func (p *SubscriptionController) updateSubscriptionInvitationCode(c *gin.Context) {
+	c.JSON(http.StatusOK, p.subscriptionService.UpdateSubscriptionInvitationCode(c.Request.Context()))
 }
 
-func (p *SubscriptionController) removeSubscriptionInvitationCode(c *gin.Context) error {
-	code, err := p.subscriptionService.RemoveSubscriptionInvitationCode(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, code)
-	return nil
+func (p *SubscriptionController) removeSubscriptionInvitationCode(c *gin.Context) {
+	c.JSON(http.StatusOK, p.subscriptionService.RemoveSubscriptionInvitationCode(c.Request.Context()))
 }

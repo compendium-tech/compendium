@@ -43,12 +43,6 @@ func (a ApplicationEvaluationController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (a ApplicationEvaluationController) evaluateApplication(c *gin.Context) error {
-	evaluation, err := a.applicationEvaluationService.EvaluateCurrentApplication(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, evaluation)
-	return nil
+func (a ApplicationEvaluationController) evaluateApplication(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationEvaluationService.EvaluateCurrentApplication(c.Request.Context()))
 }

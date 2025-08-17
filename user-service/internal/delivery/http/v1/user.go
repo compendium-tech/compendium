@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
-	"github.com/compendium-tech/compendium/common/pkg/http"
-	"github.com/compendium-tech/compendium/common/pkg/validate"
+	httputils "github.com/compendium-tech/compendium/common/pkg/http"
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	"github.com/compendium-tech/compendium/user-service/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type UserController struct {
@@ -34,34 +34,12 @@ func (u UserController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (u UserController) getAccount(c *gin.Context) error {
-	response, err := u.userService.GetAccountAsAuthenticatedUser(c.Request.Context())
-
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (u UserController) getAccount(c *gin.Context) {
+	c.JSON(http.StatusOK, u.userService.GetAccountAsAuthenticatedUser(c.Request.Context()))
 }
 
-func (u UserController) updateAccount(c *gin.Context) error {
-	var request domain.UpdateAccount
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	response, err := u.userService.UpdateAccountAsAuthenticatedUser(c.Request.Context(), request)
-
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (u UserController) updateAccount(c *gin.Context) {
+	c.JSON(http.StatusOK,
+		u.userService.UpdateAccountAsAuthenticatedUser(c.Request.Context(),
+			httputils.MustBindWith[domain.UpdateAccount](c, binding.JSON, true)))
 }

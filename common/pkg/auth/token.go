@@ -12,10 +12,11 @@ import (
 )
 
 type TokenManager interface {
-	NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) (string, error)
+	NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) string
+	NewCsrfToken() string
+	NewRefreshToken() string
+
 	ParseAccessToken(token string) (*JwtTokenClaims, error)
-	NewCsrfToken() (string, error)
-	NewRefreshToken() (string, error)
 }
 
 type JwtBasedTokenManager struct {
@@ -45,7 +46,7 @@ func (c JwtTokenClaims) Valid() error {
 	}.Valid()
 }
 
-func (m *JwtBasedTokenManager) NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) (string, error) {
+func (m *JwtBasedTokenManager) NewAccessToken(userID uuid.UUID, csrfToken string, expiresAt time.Time) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, JwtTokenClaims{
 		Issuer:    "user-service",
 		ExpiresAt: expiresAt.Unix(),
@@ -55,10 +56,10 @@ func (m *JwtBasedTokenManager) NewAccessToken(userID uuid.UUID, csrfToken string
 
 	jwt, err := token.SignedString([]byte(m.signingKey))
 	if err != nil {
-		return "", tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return jwt, nil
+	return jwt
 }
 
 func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenClaims, error) {
@@ -78,23 +79,23 @@ func (m *JwtBasedTokenManager) ParseAccessToken(accessToken string) (*JwtTokenCl
 	return &claims, nil
 }
 
-func (m *JwtBasedTokenManager) NewCsrfToken() (string, error) {
+func (m *JwtBasedTokenManager) NewCsrfToken() string {
 	return newRandomString(16)
 }
 
-func (m *JwtBasedTokenManager) NewRefreshToken() (string, error) {
+func (m *JwtBasedTokenManager) NewRefreshToken() string {
 	return newRandomString(32)
 }
 
-func newRandomString(size int) (string, error) {
+func newRandomString(size int) string {
 	b := make([]byte, size)
 
 	s := rand.NewSource(time.Now().UnixMicro())
 	r := rand.New(s)
 
 	if _, err := r.Read(b); err != nil {
-		return "", tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return fmt.Sprintf("%x", b), nil
+	return fmt.Sprintf("%x", b)
 }

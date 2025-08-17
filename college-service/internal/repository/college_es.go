@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/compendium-tech/compendium/college-service/internal/model"
 	common "github.com/compendium-tech/compendium/common/pkg"
 	"github.com/elastic/go-elasticsearch/v9"
-	"github.com/ztrue/tracerr"
 )
 
 type elasticSearchCollegeRepository struct {
@@ -24,7 +24,7 @@ func NewElasticsearchCollegeRepository(client *elasticsearch.Client) CollegeRepo
 
 func (a *elasticSearchCollegeRepository) SearchColleges(
 	ctx context.Context, semanticSearchText,
-	stateOrCountry string, pageIndex, pageSize int) ([]model.College, error) {
+	stateOrCountry string, pageIndex, pageSize int) []model.College {
 	// Set default pagination values if they are invalid.
 	if pageIndex < 0 {
 		pageIndex = 0
@@ -84,17 +84,17 @@ func (a *elasticSearchCollegeRepository) SearchColleges(
 		a.client.Search.WithBody(bytes.NewReader(searchBody)),
 	)
 	if err != nil {
-		return nil, tracerr.Errorf("failed to perform search: %v", err)
+		panic(fmt.Errorf("failed to perform search: %w", err))
 	}
 	defer searchRes.Body.Close()
 
 	if searchRes.IsError() {
-		return nil, tracerr.Errorf("error searching: %s", searchRes.String())
+		panic(fmt.Errorf("error searching: %s", searchRes.String()))
 	}
 
 	var searchResult map[string]any
 	if err := json.NewDecoder(searchRes.Body).Decode(&searchResult); err != nil {
-		return nil, tracerr.Errorf("failed to decode search response: %v", err)
+		panic(fmt.Errorf("failed to decode search response: %w", err))
 	}
 
 	var colleges []model.College
@@ -115,5 +115,5 @@ func (a *elasticSearchCollegeRepository) SearchColleges(
 		}
 	}
 
-	return colleges, nil
+	return colleges
 }

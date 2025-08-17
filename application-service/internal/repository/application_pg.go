@@ -4,13 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"github.com/ztrue/tracerr"
-
-	errorutils "github.com/compendium-tech/compendium/common/pkg/error"
-	"github.com/compendium-tech/compendium/common/pkg/pg"
 
 	"github.com/compendium-tech/compendium/application-service/internal/model"
 )
@@ -25,7 +22,7 @@ func NewPgApplicationRepository(db *sql.DB) ApplicationRepository {
 	}
 }
 
-func (r *pgApplicationRepository) GetApplication(ctx context.Context, id uuid.UUID) (*model.Application, error) {
+func (r *pgApplicationRepository) GetApplication(ctx context.Context, id uuid.UUID) *model.Application {
 	application := &model.Application{}
 	query := `SELECT id, user_id, name, created_at FROM applications WHERE id = $1`
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -38,25 +35,25 @@ func (r *pgApplicationRepository) GetApplication(ctx context.Context, id uuid.UU
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return application, nil
+	return application
 }
 
-func (r *pgApplicationRepository) FindApplicationsByUserID(ctx context.Context, userID uuid.UUID) (_ []model.Application, finalErr error) {
+func (r *pgApplicationRepository) FindApplicationsByUserID(ctx context.Context, userID uuid.UUID) []model.Application {
 	var applications []model.Application
 
 	query := `SELECT id, user_id, name, created_at FROM applications WHERE user_id = $1`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	for rows.Next() {
 		application := model.Application{}
@@ -67,20 +64,20 @@ func (r *pgApplicationRepository) FindApplicationsByUserID(ctx context.Context, 
 			&application.CreatedAt,
 		)
 		if err != nil {
-			return nil, tracerr.Wrap(err)
+			panic(err)
 		}
 
 		applications = append(applications, application)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return applications, nil
+	return applications
 }
 
-func (r *pgApplicationRepository) CreateApplication(ctx context.Context, app model.Application) error {
+func (r *pgApplicationRepository) CreateApplication(ctx context.Context, app model.Application) {
 	query := `INSERT INTO applications (id, user_id, name, created_at) VALUES ($1, $2, $3, $4)`
 	_, err := r.db.ExecContext(
 		ctx,
@@ -90,53 +87,46 @@ func (r *pgApplicationRepository) CreateApplication(ctx context.Context, app mod
 		app.Name,
 		app.CreatedAt,
 	)
-
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
-
-	return nil
 }
 
-func (r *pgApplicationRepository) UpdateApplicationName(ctx context.Context, applicationID uuid.UUID, name string) error {
+func (r *pgApplicationRepository) UpdateApplicationName(ctx context.Context, applicationID uuid.UUID, name string) {
 	query := `UPDATE applications SET name = $1 WHERE id = $2`
 	res, err := r.db.ExecContext(ctx, query, name, applicationID)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no application found with ID %s to update name", applicationID)
+		panic(fmt.Errorf("no application found with ID %s to update name", applicationID))
 	}
-
-	return nil
 }
 
-func (r *pgApplicationRepository) RemoveApplication(ctx context.Context, id uuid.UUID) error {
+func (r *pgApplicationRepository) RemoveApplication(ctx context.Context, id uuid.UUID) {
 	query := `DELETE FROM applications WHERE id = $1`
 	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	if rowsAffected == 0 {
-		return tracerr.Errorf("no application found with ID %s to remove", id)
+		panic(fmt.Errorf("no application found with ID %s to remove", id))
 	}
-
-	return nil
 }
 
-func (r *pgApplicationRepository) GetActivities(ctx context.Context, applicationID uuid.UUID) (_ []model.Activity, finalErr error) {
+func (r *pgApplicationRepository) GetActivities(ctx context.Context, applicationID uuid.UUID) []model.Activity {
 	var activities []model.Activity
 	query := `
 		SELECT index, name, role, description, hours_per_week, weeks_per_year, category, grades
@@ -146,10 +136,10 @@ func (r *pgApplicationRepository) GetActivities(ctx context.Context, application
 	`
 	rows, err := r.db.QueryContext(ctx, query, applicationID)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	for rows.Next() {
 		activity := model.Activity{}
@@ -165,7 +155,7 @@ func (r *pgApplicationRepository) GetActivities(ctx context.Context, application
 			pq.Array(&activity.Grades),
 		)
 		if err != nil {
-			return nil, tracerr.Wrap(err)
+			panic(err)
 		}
 
 		if description.Valid {
@@ -176,19 +166,19 @@ func (r *pgApplicationRepository) GetActivities(ctx context.Context, application
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return activities, nil
+	return activities
 }
 
-func (r *pgApplicationRepository) PutActivities(ctx context.Context, applicationID uuid.UUID, activities []model.Activity) (finalErr error) {
+func (r *pgApplicationRepository) PutActivities(ctx context.Context, applicationID uuid.UUID, activities []model.Activity) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	deleteQuery := `
 		DELETE FROM activities
@@ -196,7 +186,7 @@ func (r *pgApplicationRepository) PutActivities(ctx context.Context, application
 	`
 	_, err = tx.ExecContext(ctx, deleteQuery, applicationID)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	insertQuery := `
@@ -225,14 +215,17 @@ func (r *pgApplicationRepository) PutActivities(ctx context.Context, application
 			pq.Array(activity.Grades),
 		)
 		if err != nil {
-			return tracerr.Wrap(err)
+			panic(err)
 		}
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (r *pgApplicationRepository) GetHonors(ctx context.Context, applicationID uuid.UUID) (_ []model.Honor, finalErr error) {
+func (r *pgApplicationRepository) GetHonors(ctx context.Context, applicationID uuid.UUID) []model.Honor {
 	var honors []model.Honor
 	query := `
 		SELECT index, application_id, title, description, level, grade
@@ -242,10 +235,10 @@ func (r *pgApplicationRepository) GetHonors(ctx context.Context, applicationID u
 	`
 	rows, err := r.db.QueryContext(ctx, query, applicationID)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	for rows.Next() {
 		honor := model.Honor{}
@@ -259,7 +252,7 @@ func (r *pgApplicationRepository) GetHonors(ctx context.Context, applicationID u
 			&honor.Grade,
 		)
 		if err != nil {
-			return nil, tracerr.Wrap(err)
+			panic(err)
 		}
 
 		if description.Valid {
@@ -270,19 +263,19 @@ func (r *pgApplicationRepository) GetHonors(ctx context.Context, applicationID u
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return honors, nil
+	return honors
 }
 
-func (r *pgApplicationRepository) PutHonors(ctx context.Context, applicationID uuid.UUID, honors []model.Honor) (finalErr error) {
+func (r *pgApplicationRepository) PutHonors(ctx context.Context, applicationID uuid.UUID, honors []model.Honor) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	deleteQuery := `
 		DELETE FROM honors
@@ -290,7 +283,7 @@ func (r *pgApplicationRepository) PutHonors(ctx context.Context, applicationID u
 	`
 	_, err = tx.ExecContext(ctx, deleteQuery, applicationID)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	insertQuery := `
@@ -316,14 +309,17 @@ func (r *pgApplicationRepository) PutHonors(ctx context.Context, applicationID u
 			honor.Grade,
 		)
 		if err != nil {
-			return tracerr.Wrap(err)
+			panic(err)
 		}
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID uuid.UUID) (_ []model.Essay, finalErr error) {
+func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID uuid.UUID) []model.Essay {
 	var essays []model.Essay
 	query := `
 		SELECT index, application_id, type, content
@@ -333,10 +329,10 @@ func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID u
 	`
 	rows, err := r.db.QueryContext(ctx, query, applicationID)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	for rows.Next() {
 		essay := model.Essay{}
@@ -347,26 +343,26 @@ func (r *pgApplicationRepository) GetEssays(ctx context.Context, applicationID u
 			&essay.Content,
 		)
 		if err != nil {
-			return nil, tracerr.Wrap(err)
+			panic(err)
 		}
 
 		essays = append(essays, essay)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return essays, nil
+	return essays
 }
 
-func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID uuid.UUID, essays []model.Essay) (finalErr error) {
+func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID uuid.UUID, essays []model.Essay) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	deleteQuery := `
 		DELETE FROM essays
@@ -374,7 +370,7 @@ func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID u
 	`
 	_, err = tx.ExecContext(ctx, deleteQuery, applicationID)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	insertQuery := `
@@ -391,24 +387,27 @@ func (r *pgApplicationRepository) PutEssays(ctx context.Context, applicationID u
 			essay.Content,
 		)
 		if err != nil {
-			return tracerr.Wrap(err)
+			panic(err)
 		}
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (r *pgApplicationRepository) GetSupplementalEssays(ctx context.Context, applicationID uuid.UUID) (_ []model.SupplementalEssay, finalErr error) {
+func (r *pgApplicationRepository) GetSupplementalEssays(ctx context.Context, applicationID uuid.UUID) []model.SupplementalEssay {
 	var supplementalEssays []model.SupplementalEssay
 	query := `
 		SELECT index, prompt, content FROM supplemental_essays
 		WHERE application_id = $1 ORDER BY index`
 	rows, err := r.db.QueryContext(ctx, query, applicationID)
 	if err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer errorutils.DeferTry(&finalErr, rows.Close)
+	defer rows.Close()
 
 	for rows.Next() {
 		supplementalEssay := model.SupplementalEssay{}
@@ -418,26 +417,26 @@ func (r *pgApplicationRepository) GetSupplementalEssays(ctx context.Context, app
 			&supplementalEssay.Content,
 		)
 		if err != nil {
-			return nil, tracerr.Wrap(err)
+			panic(err)
 		}
 
 		supplementalEssays = append(supplementalEssays, supplementalEssay)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
-	return supplementalEssays, nil
+	return supplementalEssays
 }
 
-func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, applicationID uuid.UUID, supplementalEssays []model.SupplementalEssay) (finalErr error) {
+func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, applicationID uuid.UUID, supplementalEssays []model.SupplementalEssay) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
-	defer pg.DeferRollback(&finalErr, tx)
+	defer tx.Rollback()
 
 	deleteQuery := `
 		DELETE FROM supplemental_essays
@@ -445,7 +444,7 @@ func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, app
 	`
 	_, err = tx.ExecContext(ctx, deleteQuery, applicationID)
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	insertQuery := `
@@ -462,9 +461,12 @@ func (r *pgApplicationRepository) PutSupplementalEssays(ctx context.Context, app
 			supplementalEssay.Content,
 		)
 		if err != nil {
-			return tracerr.Wrap(err)
+			panic(err)
 		}
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		panic(err)
+	}
 }

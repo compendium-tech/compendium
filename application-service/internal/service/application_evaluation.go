@@ -14,7 +14,7 @@ import (
 )
 
 type ApplicationEvaluationService interface {
-	EvaluateCurrentApplication(ctx context.Context) (*domain.ApplicationEvaluationResponse, error)
+	EvaluateCurrentApplication(ctx context.Context) domain.ApplicationEvaluationResponse
 }
 
 type applicationEvaluationService struct {
@@ -31,39 +31,20 @@ func NewApplicationEvaluateService(
 	}
 }
 
-func (s *applicationEvaluationService) EvaluateCurrentApplication(ctx context.Context) (*domain.ApplicationEvaluationResponse, error) {
-	application, err := localcontext.GetApplication(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (s *applicationEvaluationService) EvaluateCurrentApplication(ctx context.Context) domain.ApplicationEvaluationResponse {
+	application := localcontext.GetApplication(ctx)
 
-	activities, err := s.applicationRepository.GetActivities(ctx, application.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	honors, err := s.applicationRepository.GetHonors(ctx, application.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	essays, err := s.applicationRepository.GetEssays(ctx, application.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	supplementalEssays, err := s.applicationRepository.GetSupplementalEssays(ctx, application.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.evaluateApplication(ctx, activities, honors, essays, supplementalEssays)
+	return s.evaluateApplication(ctx,
+		s.applicationRepository.GetActivities(ctx, application.ID),
+		s.applicationRepository.GetHonors(ctx, application.ID),
+		s.applicationRepository.GetEssays(ctx, application.ID),
+		s.applicationRepository.GetSupplementalEssays(ctx, application.ID))
 }
 
 func (s *applicationEvaluationService) evaluateApplication(
 	ctx context.Context, activities []model.Activity,
 	honors []model.Honor, essays []model.Essay,
-	supplementalEssays []model.SupplementalEssay) (*domain.ApplicationEvaluationResponse, error) {
+	supplementalEssays []model.SupplementalEssay) domain.ApplicationEvaluationResponse {
 	prompt := applicationEvaluationPromptBase
 	structuredOutputSchema := generateApplicationEvaluationSchema(len(essays), len(supplementalEssays))
 
@@ -80,8 +61,8 @@ func (s *applicationEvaluationService) evaluateApplication(
 		prompt += fmt.Sprintf("Category: %s\n", activity.Category)
 
 		gradeStrings := make([]string, len(activity.Grades))
-		for _, grade := range activity.Grades {
-			gradeStrings = append(gradeStrings, string(grade))
+		for i, grade := range activity.Grades {
+			gradeStrings[i] = string(grade)
 		}
 
 		prompt += fmt.Sprintf("Grade levels: %s\n", strings.Join(gradeStrings, ", "))
@@ -111,21 +92,18 @@ func (s *applicationEvaluationService) evaluateApplication(
 		prompt += essay.Content + "\n\n\n"
 	}
 
-	llmResponse, err := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
+	llmResponse := s.llmService.GenerateResponse(ctx, []domain.LLMMessage{
 		{
 			Role: domain.RoleSystem,
 			Text: prompt,
 		},
 	}, nil, &structuredOutputSchema)
-	if err != nil {
-		return nil, err
-	}
 
 	var response domain.ApplicationEvaluationResponse
-	err = json.Unmarshal([]byte(llmResponse.Text), &response)
+	err := json.Unmarshal([]byte(llmResponse.Text), &response)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return &response, nil
+	return response
 }

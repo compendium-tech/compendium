@@ -40,20 +40,9 @@ func (_m *MockAuthService) EXPECT() *MockAuthService_Expecter {
 }
 
 // FinishPasswordReset provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) error {
-	ret := _mock.Called(ctx, request)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FinishPasswordReset")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.FinishPasswordResetRequest) error); ok {
-		r0 = returnFunc(ctx, request)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockAuthService) FinishPasswordReset(ctx context.Context, request domain.FinishPasswordResetRequest) {
+	_mock.Called(ctx, request)
+	return
 }
 
 // MockAuthService_FinishPasswordReset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FinishPasswordReset'
@@ -86,18 +75,18 @@ func (_c *MockAuthService_FinishPasswordReset_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *MockAuthService_FinishPasswordReset_Call) Return(err error) *MockAuthService_FinishPasswordReset_Call {
-	_c.Call.Return(err)
+func (_c *MockAuthService_FinishPasswordReset_Call) Return() *MockAuthService_FinishPasswordReset_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockAuthService_FinishPasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.FinishPasswordResetRequest) error) *MockAuthService_FinishPasswordReset_Call {
-	_c.Call.Return(run)
+func (_c *MockAuthService_FinishPasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.FinishPasswordResetRequest)) *MockAuthService_FinishPasswordReset_Call {
+	_c.Run(run)
 	return _c
 }
 
 // GetSessionsForAuthenticatedUser provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) GetSessionsForAuthenticatedUser(ctx context.Context, refreshToken string) ([]domain.Session, error) {
+func (_mock *MockAuthService) GetSessionsForAuthenticatedUser(ctx context.Context, refreshToken string) []domain.Session {
 	ret := _mock.Called(ctx, refreshToken)
 
 	if len(ret) == 0 {
@@ -105,10 +94,6 @@ func (_mock *MockAuthService) GetSessionsForAuthenticatedUser(ctx context.Contex
 	}
 
 	var r0 []domain.Session
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]domain.Session, error)); ok {
-		return returnFunc(ctx, refreshToken)
-	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []domain.Session); ok {
 		r0 = returnFunc(ctx, refreshToken)
 	} else {
@@ -116,12 +101,7 @@ func (_mock *MockAuthService) GetSessionsForAuthenticatedUser(ctx context.Contex
 			r0 = ret.Get(0).([]domain.Session)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, refreshToken)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockAuthService_GetSessionsForAuthenticatedUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSessionsForAuthenticatedUser'
@@ -154,31 +134,20 @@ func (_c *MockAuthService_GetSessionsForAuthenticatedUser_Call) Run(run func(ctx
 	return _c
 }
 
-func (_c *MockAuthService_GetSessionsForAuthenticatedUser_Call) Return(sessions []domain.Session, err error) *MockAuthService_GetSessionsForAuthenticatedUser_Call {
-	_c.Call.Return(sessions, err)
+func (_c *MockAuthService_GetSessionsForAuthenticatedUser_Call) Return(sessions []domain.Session) *MockAuthService_GetSessionsForAuthenticatedUser_Call {
+	_c.Call.Return(sessions)
 	return _c
 }
 
-func (_c *MockAuthService_GetSessionsForAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) ([]domain.Session, error)) *MockAuthService_GetSessionsForAuthenticatedUser_Call {
+func (_c *MockAuthService_GetSessionsForAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) []domain.Session) *MockAuthService_GetSessionsForAuthenticatedUser_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // InitPasswordReset provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) error {
-	ret := _mock.Called(ctx, request)
-
-	if len(ret) == 0 {
-		panic("no return value specified for InitPasswordReset")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.InitPasswordResetRequest) error); ok {
-		r0 = returnFunc(ctx, request)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockAuthService) InitPasswordReset(ctx context.Context, request domain.InitPasswordResetRequest) {
+	_mock.Called(ctx, request)
+	return
 }
 
 // MockAuthService_InitPasswordReset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InitPasswordReset'
@@ -211,31 +180,20 @@ func (_c *MockAuthService_InitPasswordReset_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *MockAuthService_InitPasswordReset_Call) Return(err error) *MockAuthService_InitPasswordReset_Call {
-	_c.Call.Return(err)
+func (_c *MockAuthService_InitPasswordReset_Call) Return() *MockAuthService_InitPasswordReset_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockAuthService_InitPasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.InitPasswordResetRequest) error) *MockAuthService_InitPasswordReset_Call {
-	_c.Call.Return(run)
+func (_c *MockAuthService_InitPasswordReset_Call) RunAndReturn(run func(ctx context.Context, request domain.InitPasswordResetRequest)) *MockAuthService_InitPasswordReset_Call {
+	_c.Run(run)
 	return _c
 }
 
 // Logout provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) Logout(ctx context.Context, refreshToken string) error {
-	ret := _mock.Called(ctx, refreshToken)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Logout")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = returnFunc(ctx, refreshToken)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockAuthService) Logout(ctx context.Context, refreshToken string) {
+	_mock.Called(ctx, refreshToken)
+	return
 }
 
 // MockAuthService_Logout_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Logout'
@@ -268,42 +226,31 @@ func (_c *MockAuthService_Logout_Call) Run(run func(ctx context.Context, refresh
 	return _c
 }
 
-func (_c *MockAuthService_Logout_Call) Return(err error) *MockAuthService_Logout_Call {
-	_c.Call.Return(err)
+func (_c *MockAuthService_Logout_Call) Return() *MockAuthService_Logout_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockAuthService_Logout_Call) RunAndReturn(run func(ctx context.Context, refreshToken string) error) *MockAuthService_Logout_Call {
-	_c.Call.Return(run)
+func (_c *MockAuthService_Logout_Call) RunAndReturn(run func(ctx context.Context, refreshToken string)) *MockAuthService_Logout_Call {
+	_c.Run(run)
 	return _c
 }
 
 // Refresh provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) Refresh(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error) {
+func (_mock *MockAuthService) Refresh(ctx context.Context, request domain.RefreshTokenRequest) domain.SessionResponse {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Refresh")
 	}
 
-	var r0 *domain.SessionResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.RefreshTokenRequest) (*domain.SessionResponse, error)); ok {
-		return returnFunc(ctx, request)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.RefreshTokenRequest) *domain.SessionResponse); ok {
+	var r0 domain.SessionResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.RefreshTokenRequest) domain.SessionResponse); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.SessionResponse)
-		}
+		r0 = ret.Get(0).(domain.SessionResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.RefreshTokenRequest) error); ok {
-		r1 = returnFunc(ctx, request)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockAuthService_Refresh_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Refresh'
@@ -336,31 +283,20 @@ func (_c *MockAuthService_Refresh_Call) Run(run func(ctx context.Context, reques
 	return _c
 }
 
-func (_c *MockAuthService_Refresh_Call) Return(sessionResponse *domain.SessionResponse, err error) *MockAuthService_Refresh_Call {
-	_c.Call.Return(sessionResponse, err)
+func (_c *MockAuthService_Refresh_Call) Return(sessionResponse domain.SessionResponse) *MockAuthService_Refresh_Call {
+	_c.Call.Return(sessionResponse)
 	return _c
 }
 
-func (_c *MockAuthService_Refresh_Call) RunAndReturn(run func(ctx context.Context, request domain.RefreshTokenRequest) (*domain.SessionResponse, error)) *MockAuthService_Refresh_Call {
+func (_c *MockAuthService_Refresh_Call) RunAndReturn(run func(ctx context.Context, request domain.RefreshTokenRequest) domain.SessionResponse) *MockAuthService_Refresh_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // RemoveSessionByID provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, refreshToken string) error {
-	ret := _mock.Called(ctx, sessionID, refreshToken)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RemoveSessionByID")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) error); ok {
-		r0 = returnFunc(ctx, sessionID, refreshToken)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockAuthService) RemoveSessionByID(ctx context.Context, sessionID uuid.UUID, refreshToken string) {
+	_mock.Called(ctx, sessionID, refreshToken)
+	return
 }
 
 // MockAuthService_RemoveSessionByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveSessionByID'
@@ -399,42 +335,31 @@ func (_c *MockAuthService_RemoveSessionByID_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *MockAuthService_RemoveSessionByID_Call) Return(err error) *MockAuthService_RemoveSessionByID_Call {
-	_c.Call.Return(err)
+func (_c *MockAuthService_RemoveSessionByID_Call) Return() *MockAuthService_RemoveSessionByID_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockAuthService_RemoveSessionByID_Call) RunAndReturn(run func(ctx context.Context, sessionID uuid.UUID, refreshToken string) error) *MockAuthService_RemoveSessionByID_Call {
-	_c.Call.Return(run)
+func (_c *MockAuthService_RemoveSessionByID_Call) RunAndReturn(run func(ctx context.Context, sessionID uuid.UUID, refreshToken string)) *MockAuthService_RemoveSessionByID_Call {
+	_c.Run(run)
 	return _c
 }
 
 // SignIn provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) SignIn(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error) {
+func (_mock *MockAuthService) SignIn(ctx context.Context, request domain.SignInRequest) domain.SignInResponse {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SignIn")
 	}
 
-	var r0 *domain.SignInResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SignInRequest) (*domain.SignInResponse, error)); ok {
-		return returnFunc(ctx, request)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SignInRequest) *domain.SignInResponse); ok {
+	var r0 domain.SignInResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SignInRequest) domain.SignInResponse); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.SignInResponse)
-		}
+		r0 = ret.Get(0).(domain.SignInResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.SignInRequest) error); ok {
-		r1 = returnFunc(ctx, request)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockAuthService_SignIn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignIn'
@@ -467,31 +392,20 @@ func (_c *MockAuthService_SignIn_Call) Run(run func(ctx context.Context, request
 	return _c
 }
 
-func (_c *MockAuthService_SignIn_Call) Return(signInResponse *domain.SignInResponse, err error) *MockAuthService_SignIn_Call {
-	_c.Call.Return(signInResponse, err)
+func (_c *MockAuthService_SignIn_Call) Return(signInResponse domain.SignInResponse) *MockAuthService_SignIn_Call {
+	_c.Call.Return(signInResponse)
 	return _c
 }
 
-func (_c *MockAuthService_SignIn_Call) RunAndReturn(run func(ctx context.Context, request domain.SignInRequest) (*domain.SignInResponse, error)) *MockAuthService_SignIn_Call {
+func (_c *MockAuthService_SignIn_Call) RunAndReturn(run func(ctx context.Context, request domain.SignInRequest) domain.SignInResponse) *MockAuthService_SignIn_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // SignUp provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) SignUp(ctx context.Context, request domain.SignUpRequest) error {
-	ret := _mock.Called(ctx, request)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SignUp")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SignUpRequest) error); ok {
-		r0 = returnFunc(ctx, request)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockAuthService) SignUp(ctx context.Context, request domain.SignUpRequest) {
+	_mock.Called(ctx, request)
+	return
 }
 
 // MockAuthService_SignUp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignUp'
@@ -524,42 +438,31 @@ func (_c *MockAuthService_SignUp_Call) Run(run func(ctx context.Context, request
 	return _c
 }
 
-func (_c *MockAuthService_SignUp_Call) Return(err error) *MockAuthService_SignUp_Call {
-	_c.Call.Return(err)
+func (_c *MockAuthService_SignUp_Call) Return() *MockAuthService_SignUp_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockAuthService_SignUp_Call) RunAndReturn(run func(ctx context.Context, request domain.SignUpRequest) error) *MockAuthService_SignUp_Call {
-	_c.Call.Return(run)
+func (_c *MockAuthService_SignUp_Call) RunAndReturn(run func(ctx context.Context, request domain.SignUpRequest)) *MockAuthService_SignUp_Call {
+	_c.Run(run)
 	return _c
 }
 
 // SubmitMfaOtp provides a mock function for the type MockAuthService
-func (_mock *MockAuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error) {
+func (_mock *MockAuthService) SubmitMfaOtp(ctx context.Context, request domain.SubmitMfaOtpRequest) domain.SessionResponse {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SubmitMfaOtp")
 	}
 
-	var r0 *domain.SessionResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)); ok {
-		return returnFunc(ctx, request)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SubmitMfaOtpRequest) *domain.SessionResponse); ok {
+	var r0 domain.SessionResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.SubmitMfaOtpRequest) domain.SessionResponse); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.SessionResponse)
-		}
+		r0 = ret.Get(0).(domain.SessionResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.SubmitMfaOtpRequest) error); ok {
-		r1 = returnFunc(ctx, request)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockAuthService_SubmitMfaOtp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SubmitMfaOtp'
@@ -592,12 +495,12 @@ func (_c *MockAuthService_SubmitMfaOtp_Call) Run(run func(ctx context.Context, r
 	return _c
 }
 
-func (_c *MockAuthService_SubmitMfaOtp_Call) Return(sessionResponse *domain.SessionResponse, err error) *MockAuthService_SubmitMfaOtp_Call {
-	_c.Call.Return(sessionResponse, err)
+func (_c *MockAuthService_SubmitMfaOtp_Call) Return(sessionResponse domain.SessionResponse) *MockAuthService_SubmitMfaOtp_Call {
+	_c.Call.Return(sessionResponse)
 	return _c
 }
 
-func (_c *MockAuthService_SubmitMfaOtp_Call) RunAndReturn(run func(ctx context.Context, request domain.SubmitMfaOtpRequest) (*domain.SessionResponse, error)) *MockAuthService_SubmitMfaOtp_Call {
+func (_c *MockAuthService_SubmitMfaOtp_Call) RunAndReturn(run func(ctx context.Context, request domain.SubmitMfaOtpRequest) domain.SessionResponse) *MockAuthService_SubmitMfaOtp_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -630,31 +533,20 @@ func (_m *MockUserService) EXPECT() *MockUserService_Expecter {
 }
 
 // FindAccountByEmail provides a mock function for the type MockUserService
-func (_mock *MockUserService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
+func (_mock *MockUserService) FindAccountByEmail(ctx context.Context, email string) domain.AccountResponse {
 	ret := _mock.Called(ctx, email)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindAccountByEmail")
 	}
 
-	var r0 *domain.AccountResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*domain.AccountResponse, error)); ok {
-		return returnFunc(ctx, email)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *domain.AccountResponse); ok {
+	var r0 domain.AccountResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) domain.AccountResponse); ok {
 		r0 = returnFunc(ctx, email)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.AccountResponse)
-		}
+		r0 = ret.Get(0).(domain.AccountResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, email)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockUserService_FindAccountByEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindAccountByEmail'
@@ -687,42 +579,31 @@ func (_c *MockUserService_FindAccountByEmail_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockUserService_FindAccountByEmail_Call) Return(accountResponse *domain.AccountResponse, err error) *MockUserService_FindAccountByEmail_Call {
-	_c.Call.Return(accountResponse, err)
+func (_c *MockUserService_FindAccountByEmail_Call) Return(accountResponse domain.AccountResponse) *MockUserService_FindAccountByEmail_Call {
+	_c.Call.Return(accountResponse)
 	return _c
 }
 
-func (_c *MockUserService_FindAccountByEmail_Call) RunAndReturn(run func(ctx context.Context, email string) (*domain.AccountResponse, error)) *MockUserService_FindAccountByEmail_Call {
+func (_c *MockUserService_FindAccountByEmail_Call) RunAndReturn(run func(ctx context.Context, email string) domain.AccountResponse) *MockUserService_FindAccountByEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAccount provides a mock function for the type MockUserService
-func (_mock *MockUserService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error) {
+func (_mock *MockUserService) GetAccount(ctx context.Context, id uuid.UUID) domain.AccountResponse {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAccount")
 	}
 
-	var r0 *domain.AccountResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*domain.AccountResponse, error)); ok {
-		return returnFunc(ctx, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *domain.AccountResponse); ok {
+	var r0 domain.AccountResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) domain.AccountResponse); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.AccountResponse)
-		}
+		r0 = ret.Get(0).(domain.AccountResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockUserService_GetAccount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAccount'
@@ -755,42 +636,31 @@ func (_c *MockUserService_GetAccount_Call) Run(run func(ctx context.Context, id 
 	return _c
 }
 
-func (_c *MockUserService_GetAccount_Call) Return(accountResponse *domain.AccountResponse, err error) *MockUserService_GetAccount_Call {
-	_c.Call.Return(accountResponse, err)
+func (_c *MockUserService_GetAccount_Call) Return(accountResponse domain.AccountResponse) *MockUserService_GetAccount_Call {
+	_c.Call.Return(accountResponse)
 	return _c
 }
 
-func (_c *MockUserService_GetAccount_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error)) *MockUserService_GetAccount_Call {
+func (_c *MockUserService_GetAccount_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) domain.AccountResponse) *MockUserService_GetAccount_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAccountAsAuthenticatedUser provides a mock function for the type MockUserService
-func (_mock *MockUserService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error) {
+func (_mock *MockUserService) GetAccountAsAuthenticatedUser(ctx context.Context) domain.AccountResponse {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAccountAsAuthenticatedUser")
 	}
 
-	var r0 *domain.AccountResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*domain.AccountResponse, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *domain.AccountResponse); ok {
+	var r0 domain.AccountResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context) domain.AccountResponse); ok {
 		r0 = returnFunc(ctx)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.AccountResponse)
-		}
+		r0 = ret.Get(0).(domain.AccountResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockUserService_GetAccountAsAuthenticatedUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAccountAsAuthenticatedUser'
@@ -817,42 +687,31 @@ func (_c *MockUserService_GetAccountAsAuthenticatedUser_Call) Run(run func(ctx c
 	return _c
 }
 
-func (_c *MockUserService_GetAccountAsAuthenticatedUser_Call) Return(accountResponse *domain.AccountResponse, err error) *MockUserService_GetAccountAsAuthenticatedUser_Call {
-	_c.Call.Return(accountResponse, err)
+func (_c *MockUserService_GetAccountAsAuthenticatedUser_Call) Return(accountResponse domain.AccountResponse) *MockUserService_GetAccountAsAuthenticatedUser_Call {
+	_c.Call.Return(accountResponse)
 	return _c
 }
 
-func (_c *MockUserService_GetAccountAsAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context) (*domain.AccountResponse, error)) *MockUserService_GetAccountAsAuthenticatedUser_Call {
+func (_c *MockUserService_GetAccountAsAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context) domain.AccountResponse) *MockUserService_GetAccountAsAuthenticatedUser_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateAccountAsAuthenticatedUser provides a mock function for the type MockUserService
-func (_mock *MockUserService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
+func (_mock *MockUserService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) domain.AccountResponse {
 	ret := _mock.Called(ctx, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateAccountAsAuthenticatedUser")
 	}
 
-	var r0 *domain.AccountResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.UpdateAccount) (*domain.AccountResponse, error)); ok {
-		return returnFunc(ctx, request)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.UpdateAccount) *domain.AccountResponse); ok {
+	var r0 domain.AccountResponse
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.UpdateAccount) domain.AccountResponse); ok {
 		r0 = returnFunc(ctx, request)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.AccountResponse)
-		}
+		r0 = ret.Get(0).(domain.AccountResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.UpdateAccount) error); ok {
-		r1 = returnFunc(ctx, request)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockUserService_UpdateAccountAsAuthenticatedUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateAccountAsAuthenticatedUser'
@@ -885,12 +744,12 @@ func (_c *MockUserService_UpdateAccountAsAuthenticatedUser_Call) Run(run func(ct
 	return _c
 }
 
-func (_c *MockUserService_UpdateAccountAsAuthenticatedUser_Call) Return(accountResponse *domain.AccountResponse, err error) *MockUserService_UpdateAccountAsAuthenticatedUser_Call {
-	_c.Call.Return(accountResponse, err)
+func (_c *MockUserService_UpdateAccountAsAuthenticatedUser_Call) Return(accountResponse domain.AccountResponse) *MockUserService_UpdateAccountAsAuthenticatedUser_Call {
+	_c.Call.Return(accountResponse)
 	return _c
 }
 
-func (_c *MockUserService_UpdateAccountAsAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)) *MockUserService_UpdateAccountAsAuthenticatedUser_Call {
+func (_c *MockUserService_UpdateAccountAsAuthenticatedUser_Call) RunAndReturn(run func(ctx context.Context, request domain.UpdateAccount) domain.AccountResponse) *MockUserService_UpdateAccountAsAuthenticatedUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

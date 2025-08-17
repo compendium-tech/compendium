@@ -3,9 +3,9 @@ package email
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/segmentio/kafka-go"
-	"github.com/ztrue/tracerr"
 )
 
 type kafkaEmailMessageProducer struct {
@@ -21,11 +21,11 @@ func NewKafkaEmailMessageProducer(broker, topic string) Sender {
 	}
 }
 
-func (kp *kafkaEmailMessageProducer) SendMessage(msg Message) error {
+func (kp *kafkaEmailMessageProducer) SendMessage(msg Message) {
 	messageBytes, err := json.Marshal(msg)
 
 	if err != nil {
-		return tracerr.Errorf("failed to marshal email message to JSON: %w", err)
+		panic(fmt.Errorf("failed to marshal email message to JSON: %w", err))
 	}
 
 	kafkaMsg := kafka.Message{
@@ -35,8 +35,6 @@ func (kp *kafkaEmailMessageProducer) SendMessage(msg Message) error {
 
 	err = kp.writer.WriteMessages(context.Background(), kafkaMsg)
 	if err != nil {
-		return tracerr.Errorf("failed to write message to Kafka: %w", err)
+		panic(fmt.Errorf("failed to write message to Kafka: %w", err))
 	}
-
-	return nil
 }

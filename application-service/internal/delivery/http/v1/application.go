@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	httputils "github.com/compendium-tech/compendium/common/pkg/http"
-	"github.com/compendium-tech/compendium/common/pkg/validate"
 
 	"github.com/compendium-tech/compendium/application-service/internal/domain"
 	"github.com/compendium-tech/compendium/application-service/internal/middleware"
@@ -57,180 +57,69 @@ func (a ApplicationController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (a ApplicationController) getApplications(c *gin.Context) error {
-	response, err := a.applicationService.GetApplications(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (a ApplicationController) getApplications(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationService.GetApplications(c.Request.Context()))
 }
 
-func (a ApplicationController) createApplication(c *gin.Context) error {
-	var request domain.CreateApplicationRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	response, err := a.applicationService.CreateApplication(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusCreated, response)
-	return nil
+func (a ApplicationController) createApplication(c *gin.Context) {
+	c.JSON(http.StatusCreated, a.applicationService.CreateApplication(
+		c.Request.Context(),
+		httputils.MustBindWith[domain.CreateApplicationRequest](c, binding.JSON, true)))
 }
 
-func (a ApplicationController) updateApplicationName(c *gin.Context) error {
-	var request struct {
-		Name string `json:"name"`
-	}
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	err := a.applicationService.UpdateCurrentApplicationName(c.Request.Context(), request.Name)
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) updateApplicationName(c *gin.Context) {
+	a.applicationService.UpdateCurrentApplicationName(
+		c.Request.Context(),
+		httputils.MustBindWith[struct {
+			Name string `json:"name"`
+		}](c, binding.JSON, false).Name)
 	c.Status(http.StatusOK)
-	return nil
 }
 
-func (a ApplicationController) removeApplication(c *gin.Context) error {
-	err := a.applicationService.RemoveCurrentApplication(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) removeApplication(c *gin.Context) {
+	a.applicationService.RemoveCurrentApplication(c.Request.Context())
 	c.Status(http.StatusNoContent)
-	return nil
 }
 
-func (a ApplicationController) getActivities(c *gin.Context) error {
-	response, err := a.applicationService.GetActivities(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (a ApplicationController) getActivities(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationService.GetActivities(c.Request.Context()))
 }
 
-func (a ApplicationController) putActivities(c *gin.Context) error {
-	var request []domain.UpdateActivityRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.applicationService.PutActivities(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) putActivities(c *gin.Context) {
+	a.applicationService.PutActivities(
+		c.Request.Context(),
+		httputils.MustBindWith[[]domain.UpdateActivityRequest](c, binding.JSON, true))
 	c.Status(http.StatusOK)
-	return nil
 }
 
-func (a ApplicationController) getHonors(c *gin.Context) error {
-	response, err := a.applicationService.GetHonors(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (a ApplicationController) getHonors(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationService.GetHonors(c.Request.Context()))
 }
 
-func (a ApplicationController) putHonors(c *gin.Context) error {
-	var request []domain.UpdateHonorRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.applicationService.PutHonors(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) putHonors(c *gin.Context) {
+	a.applicationService.PutHonors(
+		c.Request.Context(),
+		httputils.MustBindWith[[]domain.UpdateHonorRequest](c, binding.JSON, true))
 	c.Status(http.StatusOK)
-	return nil
 }
 
-func (a ApplicationController) getEssays(c *gin.Context) error {
-	response, err := a.applicationService.GetEssays(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (a ApplicationController) getEssays(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationService.GetEssays(c.Request.Context()))
 }
 
-func (a ApplicationController) putEssays(c *gin.Context) error {
-	var request []domain.UpdateEssayRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.applicationService.PutEssays(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) putEssays(c *gin.Context) {
+	a.applicationService.PutEssays(c.Request.Context(),
+		httputils.MustBindWith[[]domain.UpdateEssayRequest](c, binding.JSON, true))
 	c.Status(http.StatusOK)
-	return nil
 }
 
-func (a ApplicationController) getSupplementalEssays(c *gin.Context) error {
-	response, err := a.applicationService.GetSupplementalEssays(c.Request.Context())
-	if err != nil {
-		return err
-	}
-
-	c.JSON(http.StatusOK, response)
-	return nil
+func (a ApplicationController) getSupplementalEssays(c *gin.Context) {
+	c.JSON(http.StatusOK, a.applicationService.GetSupplementalEssays(c.Request.Context()))
 }
 
-func (a ApplicationController) putSupplementalEssays(c *gin.Context) error {
-	var request []domain.UpdateSupplementalEssayRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.applicationService.PutSupplementalEssays(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
+func (a ApplicationController) putSupplementalEssays(c *gin.Context) {
+	a.applicationService.PutSupplementalEssays(
+		c.Request.Context(),
+		httputils.MustBindWith[[]domain.UpdateSupplementalEssayRequest](c, binding.JSON, true))
 	c.Status(http.StatusOK)
-	return nil
 }

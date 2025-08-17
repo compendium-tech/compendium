@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 
 	"github.com/compendium-tech/compendium/common/pkg/auth"
 	httputils "github.com/compendium-tech/compendium/common/pkg/http"
-	"github.com/compendium-tech/compendium/common/pkg/validate"
 
 	"github.com/compendium-tech/compendium/user-service/internal/domain"
 	myerror "github.com/compendium-tech/compendium/user-service/internal/error"
@@ -50,240 +50,129 @@ func (a AuthController) MakeRoutes(e *gin.Engine) {
 	}
 }
 
-func (a AuthController) signUp(c *gin.Context) error {
-	var request domain.SignUpRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.authService.SignUp(c.Request.Context(), request)
-
-	if err != nil {
-		return err
-	}
-
+func (a AuthController) signUp(c *gin.Context) {
+	a.authService.SignUp(c.Request.Context(),
+		httputils.MustBindWith[domain.SignUpRequest](c, binding.JSON, true))
 	c.Status(http.StatusCreated)
-	return nil
 }
 
-func (a AuthController) createSession(c *gin.Context) error {
+func (a AuthController) createSession(c *gin.Context) {
 	switch c.Query("flow") {
 	case "mfa":
-		return a.submitMfaOtp(c)
+		body := httputils.MustBindWith[domain.SubmitMfaOtpRequestBody](c, binding.JSON, true)
+
+		setSessionCreatedResponse(c,
+			a.authService.SubmitMfaOtp(c.Request.Context(),
+				domain.SubmitMfaOtpRequest{
+					Email:     body.Email,
+					Otp:       body.Otp,
+					IPAddress: httputils.GetClientIP(c),
+					UserAgent: httputils.GetUserAgent(c),
+				}))
 	case "password":
-		return a.signIn(c)
+		body := httputils.MustBindWith[domain.SignInRequestBody](c, binding.JSON, true)
+
+		response := a.authService.SignIn(c.Request.Context(), domain.SignInRequest{
+			Email:     body.Email,
+			Password:  body.Password,
+			IPAddress: httputils.GetClientIP(c),
+			UserAgent: httputils.GetUserAgent(c),
+		})
+
+		if response.Session != nil {
+			setAuthCookies(c, *response.Session)
+		}
+
+		if !response.IsMfaRequired {
+			c.JSON(http.StatusCreated, response.IntoBody())
+		} else {
+			c.JSON(http.StatusAccepted, response.IntoBody())
+		}
 	case "refresh":
-		return a.refresh(c)
+		refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
+		if err != nil {
+			myerror.New(myerror.InvalidSessionError).Throw()
+		}
+
+		setSessionCreatedResponse(c,
+			a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
+				RefreshToken: refreshTokenCookie.Value,
+				IPAddress:    httputils.GetClientIP(c),
+				UserAgent:    httputils.GetUserAgent(c),
+			}))
 	default:
-		return myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.")
+		myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `mfa`, `password` or `refresh`.").Throw()
 	}
 }
 
-func (a AuthController) submitMfaOtp(c *gin.Context) error {
-	var body domain.SubmitMfaOtpRequestBody
-
-	if err := c.BindJSON(&body); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(body); err != nil {
-		return err
-	}
-
-	request := domain.SubmitMfaOtpRequest{
-		Email:     body.Email,
-		Otp:       body.Otp,
-		IPAddress: httputils.GetClientIP(c),
-		UserAgent: httputils.GetUserAgent(c),
-	}
-
-	response, err := a.authService.SubmitMfaOtp(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	setAuthCookies(c, response)
-
-	c.JSON(http.StatusCreated, response.IntoBody())
-	return nil
-}
-
-func (a AuthController) signIn(c *gin.Context) error {
-	var body domain.SignInRequestBody
-
-	if err := c.BindJSON(&body); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(body); err != nil {
-		return err
-	}
-
-	request := domain.SignInRequest{
-		Email:     body.Email,
-		Password:  body.Password,
-		IPAddress: httputils.GetClientIP(c),
-		UserAgent: httputils.GetUserAgent(c),
-	}
-
-	response, err := a.authService.SignIn(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	if response.Session != nil {
-		setAuthCookies(c, response.Session)
-	}
-
-	if !response.IsMfaRequired {
-		c.JSON(http.StatusCreated, response.IntoBody())
-	} else {
-		c.JSON(http.StatusAccepted, response.IntoBody())
-	}
-
-	return nil
-}
-
-func (a AuthController) refresh(c *gin.Context) error {
-	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
-	if err != nil {
-		return myerror.New(myerror.InvalidSessionError)
-	}
-
-	response, err := a.authService.Refresh(c.Request.Context(), domain.RefreshTokenRequest{
-		RefreshToken: refreshTokenCookie.Value,
-		IPAddress:    httputils.GetClientIP(c),
-		UserAgent:    httputils.GetUserAgent(c),
-	})
-	if err != nil {
-		return err
-	}
-
-	setAuthCookies(c, response)
-
-	c.JSON(http.StatusCreated, response.IntoBody())
-	return nil
-}
-
-func (a AuthController) resetPassword(c *gin.Context) error {
+func (a AuthController) resetPassword(c *gin.Context) {
 	switch c.Query("flow") {
 	case "init":
-		return a.initPasswordReset(c)
+		a.authService.InitPasswordReset(c.Request.Context(),
+			httputils.MustBindWith[domain.InitPasswordResetRequest](c, binding.JSON, true))
+		c.Status(http.StatusAccepted)
 	case "finish":
-		return a.finishPasswordReset(c)
+		a.authService.FinishPasswordReset(c.Request.Context(),
+			httputils.MustBindWith[domain.FinishPasswordResetRequest](c, binding.JSON, true))
+		c.Status(http.StatusOK)
 	default:
-		return myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.")
+		myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.").Throw()
 	}
 }
 
-func (a AuthController) initPasswordReset(c *gin.Context) error {
-	var request domain.InitPasswordResetRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.authService.InitPasswordReset(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	c.Status(http.StatusAccepted)
-	return nil
-}
-
-func (a AuthController) finishPasswordReset(c *gin.Context) error {
-	var request domain.FinishPasswordResetRequest
-
-	if err := c.BindJSON(&request); err != nil {
-		return err
-	}
-
-	if err := validate.Validate.Struct(request); err != nil {
-		return err
-	}
-
-	err := a.authService.FinishPasswordReset(c.Request.Context(), request)
-	if err != nil {
-		return err
-	}
-
-	c.Status(http.StatusOK)
-	return nil
-}
-
-func (a AuthController) logout(c *gin.Context) error {
+func (a AuthController) logout(c *gin.Context) {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return myerror.New(myerror.InvalidSessionError)
+		myerror.New(myerror.InvalidSessionError).Throw()
 	}
 
-	err = a.authService.Logout(c.Request.Context(), refreshTokenCookie.Value)
-	if err != nil {
-		return err
-	}
-
+	a.authService.Logout(c.Request.Context(), refreshTokenCookie.Value)
 	removeAuthCookies(c)
 
 	c.Status(http.StatusOK)
-	return nil
 }
 
-func (a AuthController) getSessions(c *gin.Context) error {
+func (a AuthController) getSessions(c *gin.Context) {
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return myerror.New(myerror.InvalidSessionError)
+		myerror.New(myerror.InvalidSessionError).Throw()
 	}
 
-	response, err := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context(), refreshTokenCookie.Value)
-	if err != nil {
-		return err
-	}
-
+	response := a.authService.GetSessionsForAuthenticatedUser(c.Request.Context(), refreshTokenCookie.Value)
 	c.JSON(http.StatusOK, response)
-	return nil
 }
 
-func (a AuthController) removeSession(c *gin.Context) error {
+func (a AuthController) removeSession(c *gin.Context) {
 	sessionIdString := c.Param("id")
 	if sessionIdString == "" {
-		return myerror.New(myerror.RequestValidationError)
+		myerror.New(myerror.RequestValidationError).Throw()
 	}
 
 	sessionId, err := uuid.Parse(sessionIdString)
 	if err != nil {
-		return myerror.New(myerror.RequestValidationError)
+		myerror.New(myerror.RequestValidationError).Throw()
 	}
 
 	refreshTokenCookie, err := c.Request.Cookie(refreshTokenCookieName)
 	if err != nil {
-		return myerror.New(myerror.InvalidSessionError)
+		myerror.New(myerror.InvalidSessionError).Throw()
 	}
 
-	err = a.authService.RemoveSessionByID(c.Request.Context(), sessionId, refreshTokenCookie.Value)
-	if err != nil {
-		return err
-	}
-
+	a.authService.RemoveSessionByID(c.Request.Context(), sessionId, refreshTokenCookie.Value)
 	c.Status(http.StatusNoContent)
-	return nil
 }
 
-func setAuthCookies(c *gin.Context, session *domain.SessionResponse) {
+func setAuthCookies(c *gin.Context, session domain.SessionResponse) {
 	cookieExpiresAt := 30 * 365 * 24 * 3600
 
 	c.SetCookie(csrfTokenCookieName, session.CsrfToken, cookieExpiresAt, "/", "", false, false)
 	c.SetCookie(accessTokenCookieName, session.AccessToken, cookieExpiresAt, "/", "", false, true)
 	c.SetCookie(refreshTokenCookieName, session.RefreshToken, cookieExpiresAt, "/", "", false, true)
+}
+
+func setSessionCreatedResponse(c *gin.Context, session domain.SessionResponse) {
+	setAuthCookies(c, session)
+	c.JSON(http.StatusCreated, session.IntoBody())
 }
 
 func removeAuthCookies(c *gin.Context) {

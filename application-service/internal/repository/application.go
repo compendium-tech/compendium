@@ -8,22 +8,22 @@ import (
 )
 
 type ApplicationRepository interface {
-	GetApplication(ctx context.Context, id uuid.UUID) (*model.Application, error)
-	FindApplicationsByUserID(ctx context.Context, userID uuid.UUID) ([]model.Application, error)
+	GetApplication(ctx context.Context, id uuid.UUID) *model.Application
+	FindApplicationsByUserID(ctx context.Context, userID uuid.UUID) []model.Application
 
-	CreateApplication(ctx context.Context, app model.Application) error
-	UpdateApplicationName(ctx context.Context, applicationID uuid.UUID, name string) error
-	RemoveApplication(ctx context.Context, id uuid.UUID) error
+	CreateApplication(ctx context.Context, app model.Application)
+	UpdateApplicationName(ctx context.Context, applicationID uuid.UUID, name string)
+	RemoveApplication(ctx context.Context, id uuid.UUID)
 
-	GetActivities(ctx context.Context, applicationID uuid.UUID) ([]model.Activity, error)
-	PutActivities(ctx context.Context, applicationID uuid.UUID, activities []model.Activity) error
+	GetActivities(ctx context.Context, applicationID uuid.UUID) []model.Activity
+	PutActivities(ctx context.Context, applicationID uuid.UUID, activities []model.Activity)
 
-	GetHonors(ctx context.Context, applicationID uuid.UUID) ([]model.Honor, error)
-	PutHonors(ctx context.Context, applicationID uuid.UUID, honors []model.Honor) error
+	GetHonors(ctx context.Context, applicationID uuid.UUID) []model.Honor
+	PutHonors(ctx context.Context, applicationID uuid.UUID, honors []model.Honor)
 
-	GetEssays(ctx context.Context, applicationID uuid.UUID) ([]model.Essay, error)
-	PutEssays(ctx context.Context, applicationID uuid.UUID, essays []model.Essay) error
+	GetEssays(ctx context.Context, applicationID uuid.UUID) []model.Essay
+	PutEssays(ctx context.Context, applicationID uuid.UUID, essays []model.Essay)
 
-	GetSupplementalEssays(ctx context.Context, applicationID uuid.UUID) ([]model.SupplementalEssay, error)
-	PutSupplementalEssays(ctx context.Context, applicationID uuid.UUID, essays []model.SupplementalEssay) error
+	GetSupplementalEssays(ctx context.Context, applicationID uuid.UUID) []model.SupplementalEssay
+	PutSupplementalEssays(ctx context.Context, applicationID uuid.UUID, essays []model.SupplementalEssay)
 }

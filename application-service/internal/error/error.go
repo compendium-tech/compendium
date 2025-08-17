@@ -15,6 +15,10 @@ type MyError struct {
 	details any
 }
 
+func (e MyError) Throw() {
+	panic(e)
+}
+
 func New(ty int) MyError {
 	return NewWithDetails(ty, nil)
 }

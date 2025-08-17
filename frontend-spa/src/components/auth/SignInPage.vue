@@ -3,18 +3,26 @@
     <template v-if="state === State.Credentials">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div>
-          <label for="email" class="font-medium text-gray-900">Email address</label>
+          <label for="email" class="block text-sm/6 font-medium text-gray-900">Email address</label>
           <div class="mt-2">
             <BaseInput id="email" type="email" v-model.trim="email" required autocomplete="email"
-              placeholder="johndoe@gmail.com" @input="validateField('email')" :error="validationErrors.email" />
+              placeholder="johndoe@gmail.com" input="validateField('email')" />
+            <BaseTransitioningText>
+              <p v-if="validationErrors.email" class="mt-2 text-sm text-red-600">{{ validationErrors.email }}
+              </p>
+            </BaseTransitioningText>
           </div>
         </div>
 
         <div>
-          <label for="password" class="font-medium text-gray-900">Password</label>
+          <label for="password" class="block text-sm/6 font-medium text-gray-900">Password</label>
           <div class="mt-2">
-            <BaseInput id="password" type="password" v-model="password" required autocomplete="current-password"
-              placeholder="A strong password" @input="validateField('password')" :error="validationErrors.password" />
+            <BaseInput id="password" type="password" v-model="password" required autocomplete="new-password"
+              placeholder="A strong password" @input="validateField('password')" />
+            <BaseTransitioningText>
+              <p v-if="validationErrors.password" class="mt-2 text-sm text-red-600 whitespace-pre-line">{{
+                validationErrors.password }}</p>
+            </BaseTransitioningText>
           </div>
         </div>
 
@@ -39,7 +47,9 @@
           <div class="mt-2">
             <BaseInput id="otp" type="text" v-model.trim="otp" placeholder="Enter 6-digit verification code" required
               maxlength="6" @input="validateField('otp')" />
-            <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
+            <BaseTransitioningText>
+              <p v-if="validationErrors.otp" class="mt-2 text-sm text-red-600">{{ validationErrors.otp }}</p>
+            </BaseTransitioningText>
           </div>
         </div>
         <div>

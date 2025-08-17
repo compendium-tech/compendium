@@ -8,9 +8,9 @@ import (
 )
 
 type MessageBuilder interface {
-	BuildSignUpMfaEmailMessage(to string, otp string) (Message, error)
-	BuildSignInMfaEmailMessage(to string, otp string) (Message, error)
-	BuildPasswordResetMfaEmailMessage(to string, otp string) (Message, error)
+	SignUpEmail(to string, otp string) Message
+	SignInEmail(to string, otp string) Message
+	PasswordResetEmail(to string, otp string) Message
 }
 
 type emailMessageBuilder struct {
@@ -32,69 +32,57 @@ func NewMessageBuilder() (MessageBuilder, error) {
 	}, nil
 }
 
-func (b *emailMessageBuilder) executeTemplate(name string, data any) (string, error) {
+func (b *emailMessageBuilder) executeTemplate(name string, data any) string {
 	body := new(strings.Builder)
 
 	if err := b.templates.ExecuteTemplate(body, name, data); err != nil {
-		return "", tracerr.Errorf("failed to execute email template, cause: %s", err.Error())
+		panic(err)
 	}
 
-	return body.String(), nil
+	return body.String()
 }
 
-func (b *emailMessageBuilder) BuildSignUpMfaEmailMessage(to, otp string) (Message, error) {
+func (b *emailMessageBuilder) SignUpEmail(to, otp string) Message {
 	type signUpEmailData struct {
 		VerificationCode string
 	}
 
 	data := signUpEmailData{VerificationCode: otp}
-	body, err := b.executeTemplate("sign_up.html", data)
-
-	if err != nil {
-		return Message{}, err
-	}
+	body := b.executeTemplate("sign_up.html", data)
 
 	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,
-	}, nil
+	}
 }
 
-func (b *emailMessageBuilder) BuildSignInMfaEmailMessage(to, otp string) (Message, error) {
+func (b *emailMessageBuilder) SignInEmail(to, otp string) Message {
 	type signInEmailData struct {
 		VerificationCode string
 	}
 
 	data := signInEmailData{VerificationCode: otp}
-	body, err := b.executeTemplate("sign_in.html", data)
-
-	if err != nil {
-		return Message{}, err
-	}
+	body := b.executeTemplate("sign_in.html", data)
 
 	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,
-	}, err
+	}
 }
 
-func (b *emailMessageBuilder) BuildPasswordResetMfaEmailMessage(to string, otp string) (Message, error) {
+func (b *emailMessageBuilder) PasswordResetEmail(to string, otp string) Message {
 	type passwordResetEmailData struct {
 		VerificationCode string
 	}
 
 	data := passwordResetEmailData{VerificationCode: otp}
-	body, err := b.executeTemplate("password_reset.html", data)
-
-	if err != nil {
-		return Message{}, err
-	}
+	body := b.executeTemplate("password_reset.html", data)
 
 	return Message{
 		To:      to,
 		Subject: "Verification code",
 		Body:    body,
-	}, err
+	}
 }

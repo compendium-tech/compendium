@@ -8,7 +8,6 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/redis/go-redis/v9"
-	"github.com/ztrue/tracerr"
 
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	myerror "github.com/compendium-tech/compendium/user-service/internal/error"
@@ -21,18 +20,15 @@ type authLock struct {
 	email string
 }
 
-func (e *authLock) Release(ctx context.Context) error {
+func (e *authLock) Release(ctx context.Context) {
 	err := e.lock.Release(ctx)
-
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
 
 	log.L(ctx).
 		WithField("email", e.email).
 		Infof("Successfully released auth lock for %s", e.email)
-
-	return nil
 }
 
 type redisAuthLockRepository struct {
@@ -45,7 +41,7 @@ func NewRedisAuthLockRepository(rdb *redis.Client) AuthLockRepository {
 	}
 }
 
-func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) (AuthLock, error) {
+func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) AuthLock {
 	logger := log.L(ctx).WithField("email", email)
 	logger.Infof("Obtaining auth lock for %s", email)
 
@@ -54,13 +50,13 @@ func (r *redisAuthLockRepository) ObtainLock(ctx context.Context, email string) 
 		if errors.Is(err, redislock.ErrNotObtained) {
 			logger.Error("Failed to obtain email lock")
 
-			return nil, myerror.New(myerror.TooManyRequestsError)
+			myerror.New(myerror.TooManyRequestsError).Throw()
 		}
 
-		return nil, tracerr.Wrap(err)
+		panic(err)
 	}
 
 	logger.Infof("Successfully obtained auth lock for %s", email)
 
-	return &authLock{lock: lock, email: email}, nil
+	return &authLock{lock: lock, email: email}
 }

@@ -35,45 +35,36 @@ func (_m *MockMessageBuilder) EXPECT() *MockMessageBuilder_Expecter {
 	return &MockMessageBuilder_Expecter{mock: &_m.Mock}
 }
 
-// BuildPasswordResetMfaEmailMessage provides a mock function for the type MockMessageBuilder
-func (_mock *MockMessageBuilder) BuildPasswordResetMfaEmailMessage(to string, otp string) (Message, error) {
+// PasswordResetEmail provides a mock function for the type MockMessageBuilder
+func (_mock *MockMessageBuilder) PasswordResetEmail(to string, otp string) Message {
 	ret := _mock.Called(to, otp)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BuildPasswordResetMfaEmailMessage")
+		panic("no return value specified for PasswordResetEmail")
 	}
 
 	var r0 Message
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) (Message, error)); ok {
-		return returnFunc(to, otp)
-	}
 	if returnFunc, ok := ret.Get(0).(func(string, string) Message); ok {
 		r0 = returnFunc(to, otp)
 	} else {
 		r0 = ret.Get(0).(Message)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = returnFunc(to, otp)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
-// MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildPasswordResetMfaEmailMessage'
-type MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call struct {
+// MockMessageBuilder_PasswordResetEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PasswordResetEmail'
+type MockMessageBuilder_PasswordResetEmail_Call struct {
 	*mock.Call
 }
 
-// BuildPasswordResetMfaEmailMessage is a helper method to define mock.On call
+// PasswordResetEmail is a helper method to define mock.On call
 //   - to string
 //   - otp string
-func (_e *MockMessageBuilder_Expecter) BuildPasswordResetMfaEmailMessage(to interface{}, otp interface{}) *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call {
-	return &MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call{Call: _e.mock.On("BuildPasswordResetMfaEmailMessage", to, otp)}
+func (_e *MockMessageBuilder_Expecter) PasswordResetEmail(to interface{}, otp interface{}) *MockMessageBuilder_PasswordResetEmail_Call {
+	return &MockMessageBuilder_PasswordResetEmail_Call{Call: _e.mock.On("PasswordResetEmail", to, otp)}
 }
 
-func (_c *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call) Run(run func(to string, otp string)) *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_PasswordResetEmail_Call) Run(run func(to string, otp string)) *MockMessageBuilder_PasswordResetEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -91,55 +82,46 @@ func (_c *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call) Run(run fun
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call) Return(message Message, err error) *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call {
-	_c.Call.Return(message, err)
+func (_c *MockMessageBuilder_PasswordResetEmail_Call) Return(message Message) *MockMessageBuilder_PasswordResetEmail_Call {
+	_c.Call.Return(message)
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call) RunAndReturn(run func(to string, otp string) (Message, error)) *MockMessageBuilder_BuildPasswordResetMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_PasswordResetEmail_Call) RunAndReturn(run func(to string, otp string) Message) *MockMessageBuilder_PasswordResetEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// BuildSignInMfaEmailMessage provides a mock function for the type MockMessageBuilder
-func (_mock *MockMessageBuilder) BuildSignInMfaEmailMessage(to string, otp string) (Message, error) {
+// SignInEmail provides a mock function for the type MockMessageBuilder
+func (_mock *MockMessageBuilder) SignInEmail(to string, otp string) Message {
 	ret := _mock.Called(to, otp)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BuildSignInMfaEmailMessage")
+		panic("no return value specified for SignInEmail")
 	}
 
 	var r0 Message
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) (Message, error)); ok {
-		return returnFunc(to, otp)
-	}
 	if returnFunc, ok := ret.Get(0).(func(string, string) Message); ok {
 		r0 = returnFunc(to, otp)
 	} else {
 		r0 = ret.Get(0).(Message)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = returnFunc(to, otp)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
-// MockMessageBuilder_BuildSignInMfaEmailMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildSignInMfaEmailMessage'
-type MockMessageBuilder_BuildSignInMfaEmailMessage_Call struct {
+// MockMessageBuilder_SignInEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignInEmail'
+type MockMessageBuilder_SignInEmail_Call struct {
 	*mock.Call
 }
 
-// BuildSignInMfaEmailMessage is a helper method to define mock.On call
+// SignInEmail is a helper method to define mock.On call
 //   - to string
 //   - otp string
-func (_e *MockMessageBuilder_Expecter) BuildSignInMfaEmailMessage(to interface{}, otp interface{}) *MockMessageBuilder_BuildSignInMfaEmailMessage_Call {
-	return &MockMessageBuilder_BuildSignInMfaEmailMessage_Call{Call: _e.mock.On("BuildSignInMfaEmailMessage", to, otp)}
+func (_e *MockMessageBuilder_Expecter) SignInEmail(to interface{}, otp interface{}) *MockMessageBuilder_SignInEmail_Call {
+	return &MockMessageBuilder_SignInEmail_Call{Call: _e.mock.On("SignInEmail", to, otp)}
 }
 
-func (_c *MockMessageBuilder_BuildSignInMfaEmailMessage_Call) Run(run func(to string, otp string)) *MockMessageBuilder_BuildSignInMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_SignInEmail_Call) Run(run func(to string, otp string)) *MockMessageBuilder_SignInEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -157,55 +139,46 @@ func (_c *MockMessageBuilder_BuildSignInMfaEmailMessage_Call) Run(run func(to st
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildSignInMfaEmailMessage_Call) Return(message Message, err error) *MockMessageBuilder_BuildSignInMfaEmailMessage_Call {
-	_c.Call.Return(message, err)
+func (_c *MockMessageBuilder_SignInEmail_Call) Return(message Message) *MockMessageBuilder_SignInEmail_Call {
+	_c.Call.Return(message)
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildSignInMfaEmailMessage_Call) RunAndReturn(run func(to string, otp string) (Message, error)) *MockMessageBuilder_BuildSignInMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_SignInEmail_Call) RunAndReturn(run func(to string, otp string) Message) *MockMessageBuilder_SignInEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// BuildSignUpMfaEmailMessage provides a mock function for the type MockMessageBuilder
-func (_mock *MockMessageBuilder) BuildSignUpMfaEmailMessage(to string, otp string) (Message, error) {
+// SignUpEmail provides a mock function for the type MockMessageBuilder
+func (_mock *MockMessageBuilder) SignUpEmail(to string, otp string) Message {
 	ret := _mock.Called(to, otp)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BuildSignUpMfaEmailMessage")
+		panic("no return value specified for SignUpEmail")
 	}
 
 	var r0 Message
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) (Message, error)); ok {
-		return returnFunc(to, otp)
-	}
 	if returnFunc, ok := ret.Get(0).(func(string, string) Message); ok {
 		r0 = returnFunc(to, otp)
 	} else {
 		r0 = ret.Get(0).(Message)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = returnFunc(to, otp)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
-// MockMessageBuilder_BuildSignUpMfaEmailMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildSignUpMfaEmailMessage'
-type MockMessageBuilder_BuildSignUpMfaEmailMessage_Call struct {
+// MockMessageBuilder_SignUpEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SignUpEmail'
+type MockMessageBuilder_SignUpEmail_Call struct {
 	*mock.Call
 }
 
-// BuildSignUpMfaEmailMessage is a helper method to define mock.On call
+// SignUpEmail is a helper method to define mock.On call
 //   - to string
 //   - otp string
-func (_e *MockMessageBuilder_Expecter) BuildSignUpMfaEmailMessage(to interface{}, otp interface{}) *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call {
-	return &MockMessageBuilder_BuildSignUpMfaEmailMessage_Call{Call: _e.mock.On("BuildSignUpMfaEmailMessage", to, otp)}
+func (_e *MockMessageBuilder_Expecter) SignUpEmail(to interface{}, otp interface{}) *MockMessageBuilder_SignUpEmail_Call {
+	return &MockMessageBuilder_SignUpEmail_Call{Call: _e.mock.On("SignUpEmail", to, otp)}
 }
 
-func (_c *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call) Run(run func(to string, otp string)) *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_SignUpEmail_Call) Run(run func(to string, otp string)) *MockMessageBuilder_SignUpEmail_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -223,12 +196,12 @@ func (_c *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call) Run(run func(to st
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call) Return(message Message, err error) *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call {
-	_c.Call.Return(message, err)
+func (_c *MockMessageBuilder_SignUpEmail_Call) Return(message Message) *MockMessageBuilder_SignUpEmail_Call {
+	_c.Call.Return(message)
 	return _c
 }
 
-func (_c *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call) RunAndReturn(run func(to string, otp string) (Message, error)) *MockMessageBuilder_BuildSignUpMfaEmailMessage_Call {
+func (_c *MockMessageBuilder_SignUpEmail_Call) RunAndReturn(run func(to string, otp string) Message) *MockMessageBuilder_SignUpEmail_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -261,20 +234,9 @@ func (_m *MockSender) EXPECT() *MockSender_Expecter {
 }
 
 // SendMessage provides a mock function for the type MockSender
-func (_mock *MockSender) SendMessage(msg Message) error {
-	ret := _mock.Called(msg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SendMessage")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(Message) error); ok {
-		r0 = returnFunc(msg)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
+func (_mock *MockSender) SendMessage(msg Message) {
+	_mock.Called(msg)
+	return
 }
 
 // MockSender_SendMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendMessage'
@@ -301,12 +263,12 @@ func (_c *MockSender_SendMessage_Call) Run(run func(msg Message)) *MockSender_Se
 	return _c
 }
 
-func (_c *MockSender_SendMessage_Call) Return(err error) *MockSender_SendMessage_Call {
-	_c.Call.Return(err)
+func (_c *MockSender_SendMessage_Call) Return() *MockSender_SendMessage_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *MockSender_SendMessage_Call) RunAndReturn(run func(msg Message) error) *MockSender_SendMessage_Call {
-	_c.Call.Return(run)
+func (_c *MockSender_SendMessage_Call) RunAndReturn(run func(msg Message)) *MockSender_SendMessage_Call {
+	_c.Run(run)
 	return _c
 }

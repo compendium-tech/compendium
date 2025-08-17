@@ -5,7 +5,6 @@ import (
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
 	"github.com/compendium-tech/compendium/common/pkg/log"
-	"github.com/ztrue/tracerr"
 )
 
 type paddleBilling struct {
@@ -18,21 +17,21 @@ func NewPaddleBillingAPI(sdk paddle.SDK) BillingAPI {
 	}
 }
 
-func (pb *paddleBilling) GetCustomer(ctx context.Context, customerID string) (Customer, error) {
+func (pb *paddleBilling) GetCustomer(ctx context.Context, customerID string) Customer {
 	customer, err := pb.sdk.GetCustomer(ctx, &paddle.GetCustomerRequest{
 		CustomerID: customerID,
 	})
 	if err != nil {
-		return Customer{}, err
+		panic(err)
 	}
 
 	return Customer{
 		ID:    customer.ID,
 		Email: customer.Email,
-	}, nil
+	}
 }
 
-func (pb *paddleBilling) IsSubscriptionCanceled(ctx context.Context, subscriptionID string) (bool, error) {
+func (pb *paddleBilling) IsSubscriptionCanceled(ctx context.Context, subscriptionID string) bool {
 	subscription, err := pb.sdk.GetSubscription(ctx, &paddle.GetSubscriptionRequest{
 		SubscriptionID: subscriptionID,
 	})
@@ -40,29 +39,27 @@ func (pb *paddleBilling) IsSubscriptionCanceled(ctx context.Context, subscriptio
 		log.L(ctx).
 			WithField("subscriptionId", subscriptionID).
 			Warnf("Could not get subscription information: %s", err.Error())
-		return false, err
+		return false
 	}
 
 	if subscription == nil {
-		return true, nil
+		return true
 	}
 
 	if subscription.Status == paddle.SubscriptionStatusCanceled {
-		return true, nil
+		return true
 	}
 
-	return false, nil
+	return false
 }
 
-func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) error {
+func (pb *paddleBilling) CancelSubscription(ctx context.Context, subscriptionID string) {
 	immediately := paddle.EffectiveFromImmediately
 	_, err := pb.sdk.CancelSubscription(ctx, &paddle.CancelSubscriptionRequest{
 		SubscriptionID: subscriptionID,
 		EffectiveFrom:  &immediately,
 	})
 	if err != nil {
-		return tracerr.Wrap(err)
+		panic(err)
 	}
-
-	return nil
 }

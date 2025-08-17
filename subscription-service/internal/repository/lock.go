@@ -8,9 +8,9 @@ import (
 
 // BillingLockRepository prevents race conditions in billing webhook processing.
 type BillingLockRepository interface {
-	ObtainLock(ctx context.Context, userID uuid.UUID) (BillingLock, error)
+	ObtainLock(ctx context.Context, userID uuid.UUID) BillingLock
 }
 
 type BillingLock interface {
-	Release(ctx context.Context) error
+	Release(ctx context.Context)
 }

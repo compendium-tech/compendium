@@ -36,7 +36,7 @@ func (_m *MockGeoIP) EXPECT() *MockGeoIP_Expecter {
 }
 
 // GetLocation provides a mock function for the type MockGeoIP
-func (_mock *MockGeoIP) GetLocation(ip string) (string, error) {
+func (_mock *MockGeoIP) GetLocation(ip string) string {
 	ret := _mock.Called(ip)
 
 	if len(ret) == 0 {
@@ -44,21 +44,12 @@ func (_mock *MockGeoIP) GetLocation(ip string) (string, error) {
 	}
 
 	var r0 string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return returnFunc(ip)
-	}
 	if returnFunc, ok := ret.Get(0).(func(string) string); ok {
 		r0 = returnFunc(ip)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
-		r1 = returnFunc(ip)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockGeoIP_GetLocation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLocation'
@@ -85,12 +76,12 @@ func (_c *MockGeoIP_GetLocation_Call) Run(run func(ip string)) *MockGeoIP_GetLoc
 	return _c
 }
 
-func (_c *MockGeoIP_GetLocation_Call) Return(s string, err error) *MockGeoIP_GetLocation_Call {
-	_c.Call.Return(s, err)
+func (_c *MockGeoIP_GetLocation_Call) Return(s string) *MockGeoIP_GetLocation_Call {
+	_c.Call.Return(s)
 	return _c
 }
 
-func (_c *MockGeoIP_GetLocation_Call) RunAndReturn(run func(ip string) (string, error)) *MockGeoIP_GetLocation_Call {
+func (_c *MockGeoIP_GetLocation_Call) RunAndReturn(run func(ip string) string) *MockGeoIP_GetLocation_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -22,11 +22,11 @@ import (
 // Methods without this suffix (like FindAccountByEmail) are
 // intended for interoperability with other microservices.
 type UserService interface {
-	GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error)
-	FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error)
+	GetAccount(ctx context.Context, id uuid.UUID) domain.AccountResponse
+	FindAccountByEmail(ctx context.Context, email string) domain.AccountResponse
 
-	GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error)
-	UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error)
+	GetAccountAsAuthenticatedUser(ctx context.Context) domain.AccountResponse
+	UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) domain.AccountResponse
 }
 
 type userService struct {
@@ -39,102 +39,83 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 	}
 }
 
-func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) (*domain.AccountResponse, error) {
+func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) domain.AccountResponse {
 	logger := log.L(ctx).WithField("userId", id.String())
 	logger.Info("Getting user account details by ID")
 
-	user, err := u.userRepository.GetUser(ctx, id)
-	if err != nil {
-		return nil, err
-	}
+	user := u.userRepository.GetUser(ctx, id)
 
 	if user == nil {
 		logger.Warn("User account not found for the provided ID")
-		return nil, myerror.New(myerror.UserNotFoundError)
+		myerror.New(myerror.UserNotFoundError).Throw()
 	}
 
 	logger.Info("User account details fetched successfully")
 
-	return &domain.AccountResponse{
+	return domain.AccountResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
-	}, nil
+	}
 }
 
-func (u *userService) FindAccountByEmail(ctx context.Context, email string) (*domain.AccountResponse, error) {
+func (u *userService) FindAccountByEmail(ctx context.Context, email string) domain.AccountResponse {
 	logger := log.L(ctx).WithField("email", email)
 	logger.Info("Finding user account by email")
 
-	user, err := u.userRepository.FindUserByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
+	user := u.userRepository.FindUserByEmail(ctx, email)
 
 	if user == nil {
 		logger.Warn("User account not found for the provided email")
-		return nil, myerror.New(myerror.UserNotFoundError)
+		myerror.New(myerror.UserNotFoundError).Throw()
 	}
 
 	logger.Info("User account found successfully")
 
-	return &domain.AccountResponse{
+	return domain.AccountResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
-	}, nil
+	}
 }
 
-func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) (*domain.AccountResponse, error) {
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (u *userService) GetAccountAsAuthenticatedUser(ctx context.Context) domain.AccountResponse {
+	userID := auth.GetUserID(ctx)
 
 	log.L(ctx).Info("Fetching authenticated user account details")
 
-	user, err := u.userRepository.GetUser(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
+	user := u.userRepository.GetUser(ctx, userID)
 	if user == nil {
 		log.L(ctx).Warn("Information about authenticated user not found, perhaps session is invalid?")
-		return nil, myerror.New(myerror.InvalidSessionError)
+		myerror.New(myerror.InvalidSessionError).Throw()
 	}
 
 	log.L(ctx).Info("Account details fetched successfully")
 
-	return &domain.AccountResponse{
+	return domain.AccountResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
-	}, nil
+	}
 }
 
-func (u *userService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) (*domain.AccountResponse, error) {
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (u *userService) UpdateAccountAsAuthenticatedUser(ctx context.Context, request domain.UpdateAccount) domain.AccountResponse {
+	userID := auth.GetUserID(ctx)
 
 	logger := log.L(ctx).WithField("newName", request.Name)
 	logger.Info("Updating authenticated user account details")
 
-	user, err := u.userRepository.UpdateUserName(ctx, userID, request.Name)
-	if err != nil {
-		return nil, err
-	}
+	user := u.userRepository.UpdateUserName(ctx, userID, request.Name)
 
 	logger.Info("Account details updated successfully")
 
-	return &domain.AccountResponse{
+	return domain.AccountResponse{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
-	}, nil
+	}
 }
