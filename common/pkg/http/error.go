@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	common "github.com/compendium-tech/compendium/common/pkg"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 	"github.com/compendium-tech/compendium/common/pkg/validate"
 )
@@ -137,7 +138,7 @@ func (h ErrorHandler) handleValidationErrors(c *gin.Context, errs validator.Vali
 		validationMessages = append(validationMessages, validate.BuildErrorMessage(err))
 	}
 
-	h.abort(c, http.StatusBadRequest, 1, map[string][]string{
+	h.abort(c, http.StatusBadRequest, 1, common.H{
 		"reasons": validationMessages,
 	})
 }
@@ -149,7 +150,7 @@ func (h ErrorHandler) handleISE(c *gin.Context, err error) {
 }
 
 func (h ErrorHandler) abort(c *gin.Context, httpStatus int, ty int, details any) {
-	c.AbortWithStatusJSON(httpStatus, map[string]any{
+	c.AbortWithStatusJSON(httpStatus, common.H{
 		"errorDetails": details,
 		"errorType":    ty,
 	})

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package subscription_service.v1;
+
+option go_package = "internal/proto/v1";
+
+enum SubscriptionTier {
+  NONE = 0;
+  STUDENT = 1;
+  TEAM = 2;
+  COMMUNITY = 3;
+}
+
+message GetSubscriptionTierRequest { string userId = 1; }
+message GetSubscriptionTierResponse { SubscriptionTier tier = 1; }
+
+service SubscriptionService {
+  rpc GetSubscriptionTier(GetSubscriptionTierRequest) returns (GetSubscriptionTierResponse);
+}

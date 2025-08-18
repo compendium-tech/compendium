@@ -33,7 +33,7 @@ func (s UserServiceServer) Register(server *grpc.Server) {
 	reflection.Register(server)
 }
 
-func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (a *pb.Account, e error) {
+func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountRequest) (_ *pb.Account, e error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
@@ -47,7 +47,7 @@ func (s UserServiceServer) GetAccount(ctx context.Context, req *pb.GetAccountReq
 		}
 	}()
 
-	if req.Id == "" {
+	if req == nil || req.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "user ID cannot be empty")
 	}
 

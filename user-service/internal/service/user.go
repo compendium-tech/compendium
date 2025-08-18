@@ -44,7 +44,6 @@ func (u *userService) GetAccount(ctx context.Context, id uuid.UUID) domain.Accou
 	logger.Info("Getting user account details by ID")
 
 	user := u.userRepository.GetUser(ctx, id)
-
 	if user == nil {
 		logger.Warn("User account not found for the provided ID")
 		myerror.New(myerror.UserNotFoundError).Throw()
@@ -65,7 +64,6 @@ func (u *userService) FindAccountByEmail(ctx context.Context, email string) doma
 	logger.Info("Finding user account by email")
 
 	user := u.userRepository.FindUserByEmail(ctx, email)
-
 	if user == nil {
 		logger.Warn("User account not found for the provided email")
 		myerror.New(myerror.UserNotFoundError).Throw()

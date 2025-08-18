@@ -21,16 +21,16 @@ import (
 )
 
 type BillingWebhookController struct {
-	subscriptionService service.SubscriptionService
-	webhookVerifier     webhook.WebhookVerifier
+	billingEventHandlerService service.BillingEventHandlerService
+	webhookVerifier            webhook.WebhookVerifier
 }
 
 func NewBillingWebhookController(
-	subscriptionService service.SubscriptionService,
+	billingEventHandlerService service.BillingEventHandlerService,
 	webhookVerifier webhook.WebhookVerifier) *BillingWebhookController {
 	return &BillingWebhookController{
-		subscriptionService: subscriptionService,
-		webhookVerifier:     webhookVerifier,
+		billingEventHandlerService: billingEventHandlerService,
+		webhookVerifier:            webhookVerifier,
 	}
 }
 
@@ -122,7 +122,7 @@ func (p *BillingWebhookController) handleSubscriptionCreated(c *gin.Context, bod
 		}
 	}
 
-	p.subscriptionService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
+	p.billingEventHandlerService.HandleUpdatedSubscription(c.Request.Context(), domain.HandleUpdatedSubscriptionRequest{
 		SubscriptionID: event.Data.ID,
 		UserID:         userID,
 		Items:          items,
@@ -137,7 +137,7 @@ func (p *BillingWebhookController) handleSubscriptionUpdate(c *gin.Context, body
 
 	switch event.Data.Status {
 	case paddlenotification.SubscriptionStatusPastDue:
-		p.subscriptionService.RemoveSubscription(c.Request.Context(), event.Data.ID)
+		p.billingEventHandlerService.CancelSubscription(c.Request.Context(), event.Data.ID)
 	}
 }
 

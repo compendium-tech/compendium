@@ -39,31 +39,20 @@ func (_m *MockLLMService) EXPECT() *MockLLMService_Expecter {
 }
 
 // GenerateResponse provides a mock function for the type MockLLMService
-func (_mock *MockLLMService) GenerateResponse(ctx context.Context, chatHistory []domain.LLMMessage, tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) (*domain.LLMMessage, error) {
+func (_mock *MockLLMService) GenerateResponse(ctx context.Context, chatHistory []domain.LLMMessage, tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) domain.LLMMessage {
 	ret := _mock.Called(ctx, chatHistory, tools, structuredOutputSchema)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GenerateResponse")
 	}
 
-	var r0 *domain.LLMMessage
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []domain.LLMMessage, []domain.LLMToolDefinition, *domain.LLMSchema) (*domain.LLMMessage, error)); ok {
-		return returnFunc(ctx, chatHistory, tools, structuredOutputSchema)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []domain.LLMMessage, []domain.LLMToolDefinition, *domain.LLMSchema) *domain.LLMMessage); ok {
+	var r0 domain.LLMMessage
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []domain.LLMMessage, []domain.LLMToolDefinition, *domain.LLMSchema) domain.LLMMessage); ok {
 		r0 = returnFunc(ctx, chatHistory, tools, structuredOutputSchema)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.LLMMessage)
-		}
+		r0 = ret.Get(0).(domain.LLMMessage)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []domain.LLMMessage, []domain.LLMToolDefinition, *domain.LLMSchema) error); ok {
-		r1 = returnFunc(ctx, chatHistory, tools, structuredOutputSchema)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // MockLLMService_GenerateResponse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GenerateResponse'
@@ -108,12 +97,12 @@ func (_c *MockLLMService_GenerateResponse_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *MockLLMService_GenerateResponse_Call) Return(lLMMessage *domain.LLMMessage, err error) *MockLLMService_GenerateResponse_Call {
-	_c.Call.Return(lLMMessage, err)
+func (_c *MockLLMService_GenerateResponse_Call) Return(lLMMessage domain.LLMMessage) *MockLLMService_GenerateResponse_Call {
+	_c.Call.Return(lLMMessage)
 	return _c
 }
 
-func (_c *MockLLMService_GenerateResponse_Call) RunAndReturn(run func(ctx context.Context, chatHistory []domain.LLMMessage, tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) (*domain.LLMMessage, error)) *MockLLMService_GenerateResponse_Call {
+func (_c *MockLLMService_GenerateResponse_Call) RunAndReturn(run func(ctx context.Context, chatHistory []domain.LLMMessage, tools []domain.LLMToolDefinition, structuredOutputSchema *domain.LLMSchema) domain.LLMMessage) *MockLLMService_GenerateResponse_Call {
 	_c.Call.Return(run)
 	return _c
 }

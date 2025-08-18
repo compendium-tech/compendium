@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	common "github.com/compendium-tech/compendium/common/pkg"
 	"github.com/compendium-tech/compendium/common/pkg/log"
 )
 
@@ -42,7 +43,7 @@ func RequireAuth(c *gin.Context) {
 				WithField("stack", debug.Stack()).
 				Warnf("Failed to require auth, check the previous logs to reveal the reason")
 
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			c.AbortWithStatusJSON(http.StatusUnauthorized, common.H{
 				"errorType": 8,
 			})
 		}
@@ -56,7 +57,7 @@ func RequireCsrf(c *gin.Context) {
 
 	if !ok || !isCsrfPresent {
 		log.L(c.Request.Context()).Warnf("Failed to require csrf token, check the previous logs to reveal the reason")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, common.H{
 			"errorType": 8,
 		})
 	}

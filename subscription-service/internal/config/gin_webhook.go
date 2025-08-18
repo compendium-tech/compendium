@@ -11,47 +11,35 @@ const (
 	EnvironmentProd string = "prod"
 )
 
-type ProductIDs struct {
-	StudentSubscriptionProductID   string
-	TeamSubscriptionProductID      string
-	CommunitySubscriptionProductID string
+type GinWebhookAppConfig struct {
+	Environment         string
+	PgHost              string
+	PgPort              uint16
+	PgUsername          string
+	PgPassword          string
+	PgDatabaseName      string
+	RedisHost           string
+	RedisPort           uint16
+	ProductIDs          ProductIDs
+	PaddleWebhookSecret string
+	PaddleAPIKey        string
 }
 
-type AppConfig struct {
-	Environment                 string
-	PgHost                      string
-	PgPort                      uint16
-	PgUsername                  string
-	PgPassword                  string
-	PgDatabaseName              string
-	RedisHost                   string
-	RedisPort                   uint16
-	JwtSingingKey               string
-	CsrfTokenHashSalt           string
-	PaddleWebhookSecret         string
-	ProductIDs                  ProductIDs
-	PaddleAPIKey                string
-	GrpcUserServiceClientTarget string
-}
-
-func LoadAppConfig() *AppConfig {
-	appConfig := &AppConfig{
+func LoadGinWebhookAppConfig() GinWebhookAppConfig {
+	appConfig := GinWebhookAppConfig{
 		Environment:         EnvironmentProd,
 		PgHost:              os.Getenv("POSTGRES_HOST"),
 		PgUsername:          os.Getenv("POSTGRES_USERNAME"),
 		PgPassword:          os.Getenv("POSTGRES_PASSWORD"),
 		PgDatabaseName:      os.Getenv("POSTGRES_DATABASE_NAME"),
 		RedisHost:           os.Getenv("REDIS_HOST"),
-		JwtSingingKey:       os.Getenv("JWT_SIGNING_KEY"),
-		CsrfTokenHashSalt:   os.Getenv("CSRF_TOKEN_HASH_SALT"),
 		PaddleWebhookSecret: os.Getenv("PADDLE_WEBHOOK_SECRET"),
+		PaddleAPIKey:        os.Getenv("PADDLE_API_KEY"),
 		ProductIDs: ProductIDs{
 			StudentSubscriptionProductID:   os.Getenv("STUDENT_SUBSCRIPTION_PRODUCT_ID"),
 			TeamSubscriptionProductID:      os.Getenv("TEAM_SUBSCRIPTION_PRODUCT_ID"),
 			CommunitySubscriptionProductID: os.Getenv("COMMUNITY_SUBSCRIPTION_PRODUCT_ID"),
 		},
-		PaddleAPIKey:                os.Getenv("PADDLE_API_KEY"),
-		GrpcUserServiceClientTarget: os.Getenv("GRPC_USER_SERVICE_CLIENT_TARGET"),
 	}
 
 	env := os.Getenv("ENVIRONMENT")

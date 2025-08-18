@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +11,6 @@ import (
 	"github.com/compendium-tech/compendium/common/pkg/random"
 
 	"github.com/compendium-tech/compendium/subscription-service/internal/billing"
-	"github.com/compendium-tech/compendium/subscription-service/internal/config"
 	"github.com/compendium-tech/compendium/subscription-service/internal/domain"
 	myerror "github.com/compendium-tech/compendium/subscription-service/internal/error"
 	"github.com/compendium-tech/compendium/subscription-service/internal/interop"
@@ -21,24 +19,18 @@ import (
 )
 
 type SubscriptionService interface {
+	GetSubscriptionTierByMemberUserID(ctx context.Context, userID uuid.UUID) *model.Tier
 	GetSubscription(ctx context.Context) domain.SubscriptionResponse
 	GetSubscriptionInvitationCode(ctx context.Context) domain.InvitationCodeResponse
-
 	UpdateSubscriptionInvitationCode(ctx context.Context) domain.InvitationCodeResponse
 	RemoveSubscriptionInvitationCode(ctx context.Context) domain.InvitationCodeResponse
-
 	CancelSubscription(ctx context.Context)
-
 	JoinCollectiveSubscription(ctx context.Context, invitationCode string) domain.SubscriptionResponse
 	RemoveSubscriptionMember(ctx context.Context, memberUserID uuid.UUID)
-
-	HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest)
-	RemoveSubscription(ctx context.Context, subscriptionID string)
 }
 
 type subscriptionService struct {
 	billingAPI             billing.BillingAPI
-	productIDs             config.ProductIDs
 	userService            interop.UserService
 	billingLockRepository  repository.BillingLockRepository
 	subscriptionRepository repository.SubscriptionRepository
@@ -46,17 +38,29 @@ type subscriptionService struct {
 
 func NewSubscriptionService(
 	billingAPI billing.BillingAPI,
-	productIDs config.ProductIDs,
 	userService interop.UserService,
 	billingLockRepository repository.BillingLockRepository,
 	subscriptionRepository repository.SubscriptionRepository) SubscriptionService {
 	return &subscriptionService{
 		billingAPI:             billingAPI,
-		productIDs:             productIDs,
 		userService:            userService,
 		billingLockRepository:  billingLockRepository,
 		subscriptionRepository: subscriptionRepository,
 	}
+}
+
+func (s *subscriptionService) GetSubscriptionTierByMemberUserID(ctx context.Context, userID uuid.UUID) *model.Tier {
+	logger := log.L(ctx).WithField("userId", userID)
+	logger.Info("Getting subscription tier")
+
+	subscription := s.subscriptionRepository.FindSubscriptionByMemberUserID(ctx, userID)
+	logger.Info("Subscription details fetched successfully")
+
+	if subscription == nil {
+		return nil
+	}
+
+	return &subscription.Tier
 }
 
 func (s *subscriptionService) GetSubscription(ctx context.Context) domain.SubscriptionResponse {
@@ -230,81 +234,6 @@ func (s *subscriptionService) RemoveSubscriptionMember(ctx context.Context, memb
 
 	s.subscriptionRepository.RemoveSubscriptionMemberBySubscriptionAndUserID(ctx, subscription.ID, memberUserID)
 	logger.Info("Subscription member removed successfully")
-}
-
-func (s *subscriptionService) HandleUpdatedSubscription(ctx context.Context, request domain.HandleUpdatedSubscriptionRequest) {
-	logger := log.L(ctx).WithField("subscriptionId", request.SubscriptionID).WithField("userId", request.UserID)
-	logger.Info("Upserting subscription")
-
-	if len(request.Items) == 0 {
-		logger.Warn("No items in upsert subscription request")
-		myerror.NewWithReason(myerror.RequestValidationError, "No items in request").Throw()
-	}
-
-	lock := s.billingLockRepository.ObtainLock(ctx, request.UserID)
-	defer lock.Release(ctx)
-
-	for i, item := range request.Items {
-		itemLogger := logger.WithField("itemIndex", i).WithField("productID", item.ProductID)
-		itemLogger.Info("Processing subscription item")
-
-		var subscriptionLevel model.Tier
-
-		switch item.ProductID {
-		case s.productIDs.StudentSubscriptionProductID:
-			subscriptionLevel = model.TierStudent
-		case s.productIDs.TeamSubscriptionProductID:
-			subscriptionLevel = model.TierTeam
-		case s.productIDs.CommunitySubscriptionProductID:
-			subscriptionLevel = model.TierCommunity
-		default:
-			itemLogger.Errorf("Unknown product ID %s, skipping this item", item.ProductID)
-
-			if len(request.Items) == 1 {
-				if !s.billingAPI.IsSubscriptionCanceled(ctx, request.SubscriptionID) {
-					s.billingAPI.CancelSubscription(ctx, request.SubscriptionID)
-				}
-
-				myerror.NewWithReason(myerror.RequestValidationError, fmt.Sprintf("Unknown product ID: %s", item.ProductID)).Throw()
-			}
-			continue
-		}
-
-		// To maintain a single active subscription per payer within this service,
-		// we first cancel any existing subscription before upserting a new one.
-		//
-		// If the cancellation fails, the external billing service will retry the request,
-		// ensuring the database isn't updated with a new subscription until the previous one is successfully canceled.
-		existingSubscription := s.subscriptionRepository.FindSubscriptionByPayerUserID(ctx, request.UserID)
-
-		if existingSubscription != nil {
-			itemLogger.Infof("Existing subscription %s found, cancelling it before upserting new item", existingSubscription.ID)
-
-			if !s.billingAPI.IsSubscriptionCanceled(ctx, existingSubscription.ID) {
-				s.billingAPI.CancelSubscription(ctx, existingSubscription.ID)
-			}
-		}
-
-		s.subscriptionRepository.UpsertSubscription(ctx, model.Subscription{
-			ID:       request.SubscriptionID,
-			BackedBy: request.UserID,
-			Tier:     subscriptionLevel,
-			Till:     request.Till,
-			Since:    request.Since,
-		})
-
-		itemLogger.Info("Subscription item processed successfully")
-	}
-
-	logger.Info("All subscription items processed, upsert completed successfully")
-}
-
-func (s *subscriptionService) RemoveSubscription(ctx context.Context, subscriptionID string) {
-	logger := log.L(ctx).WithField("subscriptionId", subscriptionID)
-	logger.Info("Removing subscription")
-
-	s.subscriptionRepository.RemoveSubscription(ctx, subscriptionID)
-	logger.Info("Subscription removed successfully")
 }
 
 func (s *subscriptionService) subscriptionToResponse(ctx context.Context, userID uuid.UUID, subscription *model.Subscription) domain.SubscriptionResponse {

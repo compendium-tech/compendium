@@ -149,6 +149,8 @@ When you run everything on your local machine, here's which port each service ha
 | **User Service** | HTTP     | `1000`  | Handles user-related operations over HTTP.    |
 | **User Service** | gRPC     | `2000`  | Provides user-related operations over gRPC.   |
 | **Subscription Service**| HTTP     | `1001`  | Manages user subscriptions.                   |
+| **Subscription Service**| HTTP     | `1004`  | Listener/webhook for Paddle events.                   |
+| **Subscription Service**| HTTP     | `2002`  | Provides subscription data over gRPC.                   |
 | **LLM Service** | gRPC     | `2001`  | Provides LLM-related operations over gRPC.   |
 | **Application Service**| HTTP     | `1002`  | Provides an authenticated LLM-based assistance with applications and manages saved applications (subscription is required). |
 | **College Service**| HTTP     | `1003`  | Provides an authenticated search API over college database (subscription is required). |
@@ -301,6 +303,7 @@ You can install protobuf [here](https://github.com/protocolbuffers/protobuf/rele
 
 ```bash
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
 To regenerate interfaces from our .proto files, run these commands from the _root of the repository_:
