@@ -41,5 +41,5 @@ func (u UserController) getAccount(c *gin.Context) {
 func (u UserController) updateAccount(c *gin.Context) {
 	c.JSON(http.StatusOK,
 		u.userService.UpdateAccountAsAuthenticatedUser(c.Request.Context(),
-			httputils.MustBindWith[domain.UpdateAccount](c, binding.JSON, true)))
+			httputils.MustBindWith[domain.UpdateAccount](c, binding.JSON).Validated()))
 }

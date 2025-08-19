@@ -36,6 +36,7 @@ func (c CollegeController) MakeRoutes(e *gin.Engine) {
 
 func (cc CollegeController) searchColleges(c *gin.Context) {
 	c.JSON(http.StatusCreated,
-		cc.collegeService.SearchColleges(c.Request.Context(),
-			httputils.MustBindWith[domain.SearchCollegesRequest](c, binding.JSON, true)))
+		cc.collegeService.SearchColleges(
+			c.Request.Context(),
+			httputils.MustBindWith[domain.SearchCollegesRequest](c, binding.JSON).Validated()))
 }

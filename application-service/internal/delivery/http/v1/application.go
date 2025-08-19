@@ -64,15 +64,15 @@ func (a ApplicationController) getApplications(c *gin.Context) {
 func (a ApplicationController) createApplication(c *gin.Context) {
 	c.JSON(http.StatusCreated, a.applicationService.CreateApplication(
 		c.Request.Context(),
-		httputils.MustBindWith[domain.CreateApplicationRequest](c, binding.JSON, true)))
+		httputils.MustBindWith[domain.CreateApplicationRequest](c, binding.JSON).Validated()))
 }
 
 func (a ApplicationController) updateApplicationName(c *gin.Context) {
 	a.applicationService.UpdateCurrentApplicationName(
 		c.Request.Context(),
 		httputils.MustBindWith[struct {
-			Name string `json:"name"`
-		}](c, binding.JSON, false).Name)
+			Name string `json:"name" validate:"required,min=1,max=100"`
+		}](c, binding.JSON).Validated().Name)
 	c.Status(http.StatusOK)
 }
 
@@ -88,7 +88,7 @@ func (a ApplicationController) getActivities(c *gin.Context) {
 func (a ApplicationController) putActivities(c *gin.Context) {
 	a.applicationService.PutActivities(
 		c.Request.Context(),
-		httputils.MustBindWith[[]domain.UpdateActivityRequest](c, binding.JSON, true))
+		httputils.MustBindWith[[]domain.UpdateActivityRequest](c, binding.JSON).Validated())
 	c.Status(http.StatusOK)
 }
 
@@ -99,7 +99,7 @@ func (a ApplicationController) getHonors(c *gin.Context) {
 func (a ApplicationController) putHonors(c *gin.Context) {
 	a.applicationService.PutHonors(
 		c.Request.Context(),
-		httputils.MustBindWith[[]domain.UpdateHonorRequest](c, binding.JSON, true))
+		httputils.MustBindWith[[]domain.UpdateHonorRequest](c, binding.JSON).Validated())
 	c.Status(http.StatusOK)
 }
 
@@ -109,7 +109,7 @@ func (a ApplicationController) getEssays(c *gin.Context) {
 
 func (a ApplicationController) putEssays(c *gin.Context) {
 	a.applicationService.PutEssays(c.Request.Context(),
-		httputils.MustBindWith[[]domain.UpdateEssayRequest](c, binding.JSON, true))
+		httputils.MustBindWith[[]domain.UpdateEssayRequest](c, binding.JSON).Validated())
 	c.Status(http.StatusOK)
 }
 
@@ -120,6 +120,6 @@ func (a ApplicationController) getSupplementalEssays(c *gin.Context) {
 func (a ApplicationController) putSupplementalEssays(c *gin.Context) {
 	a.applicationService.PutSupplementalEssays(
 		c.Request.Context(),
-		httputils.MustBindWith[[]domain.UpdateSupplementalEssayRequest](c, binding.JSON, true))
+		httputils.MustBindWith[[]domain.UpdateSupplementalEssayRequest](c, binding.JSON).Validated())
 	c.Status(http.StatusOK)
 }

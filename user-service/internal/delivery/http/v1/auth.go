@@ -52,14 +52,14 @@ func (a AuthController) MakeRoutes(e *gin.Engine) {
 
 func (a AuthController) signUp(c *gin.Context) {
 	a.authService.SignUp(c.Request.Context(),
-		httputils.MustBindWith[domain.SignUpRequest](c, binding.JSON, true))
+		httputils.MustBindWith[domain.SignUpRequest](c, binding.JSON).Validated())
 	c.Status(http.StatusCreated)
 }
 
 func (a AuthController) createSession(c *gin.Context) {
 	switch c.Query("flow") {
 	case "mfa":
-		body := httputils.MustBindWith[domain.SubmitMfaOtpRequestBody](c, binding.JSON, true)
+		body := httputils.MustBindWith[domain.SubmitMfaOtpRequestBody](c, binding.JSON).Validated()
 
 		setSessionCreatedResponse(c,
 			a.authService.SubmitMfaOtp(c.Request.Context(),
@@ -70,7 +70,7 @@ func (a AuthController) createSession(c *gin.Context) {
 					UserAgent: httputils.GetUserAgent(c),
 				}))
 	case "password":
-		body := httputils.MustBindWith[domain.SignInRequestBody](c, binding.JSON, true)
+		body := httputils.MustBindWith[domain.SignInRequestBody](c, binding.JSON).Validated()
 
 		response := a.authService.SignIn(c.Request.Context(), domain.SignInRequest{
 			Email:     body.Email,
@@ -109,11 +109,11 @@ func (a AuthController) resetPassword(c *gin.Context) {
 	switch c.Query("flow") {
 	case "init":
 		a.authService.InitPasswordReset(c.Request.Context(),
-			httputils.MustBindWith[domain.InitPasswordResetRequest](c, binding.JSON, true))
+			httputils.MustBindWith[domain.InitPasswordResetRequest](c, binding.JSON).Validated())
 		c.Status(http.StatusAccepted)
 	case "finish":
 		a.authService.FinishPasswordReset(c.Request.Context(),
-			httputils.MustBindWith[domain.FinishPasswordResetRequest](c, binding.JSON, true))
+			httputils.MustBindWith[domain.FinishPasswordResetRequest](c, binding.JSON).Validated())
 		c.Status(http.StatusOK)
 	default:
 		myerror.NewWithReason(myerror.RequestValidationError, "Flow parameter must be equal to `init` or `finish`.").Throw()
