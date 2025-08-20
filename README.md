@@ -13,7 +13,6 @@
     -   [Running Locally](#running-locally)
     -   [Go Code Guidelines](#go-code-guidelines)
         -   [Logging](#logging)
-        -   [Error Handling](#error-handling)
 -   **[Monolithic SPA Frontend](#monolithic-spa-frontend)**
     -   [Running Locally](#running-locally-1)
 
@@ -369,40 +368,6 @@ func (s *service) GetUniversity() (*domain.University, error) {
     ...
 }
 ```
-
-### Error handling
-
-Our code mostly uses [`tracerr`](https://github.com/ztrue/tracerr) for finding source of unexpected internal server errors (e.g. when database fails or external API doesn't respond). Errors must be wrapped into `tracerr.Error` (error with stacktrace) **only in the service dependency layer**.
-
-This means `tracerr.Wrap()`, `tracerr.New()` and `tracerr.Errorf()` should only ever be applied at the point where an error originates from an external dependency (e.g., database, external API call, file system operation) and is first returned up the call stack. It should not be used repeatedly throughout the service or presentation layers.
-
-```go
-import (
-    "github.com/ztrue/tracerr"
-)
-
-func (r *SomeRepo) GetItem(id string) error {
-    err := db.Query("...")
-    if err != nil {
-        return tracerr.Errorf("failed to query item %s from DB: %v", id, err)
-    }
-
-    return nil
-}
-
-func (s *SomeService) ProcessItem(id string) error {
-    err := s.repo.GetItem(id)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-```
-
-API layer (think HTTP handlers or gRPC servers) handles turning data into something our code can understand, and then calls our service layer. If there's a generic, unexpected internal server error from the service layer, it should be caught and logged at this presentation level, or by a special error-handling middleware. This way, we avoid writing the same error-handling code everywhere.
-
-On the flip side, errors related to our business logic (like, "hey, we couldn't find that user!") should be sent back as custom error types from the service layer. These custom errors should be logged with our handy contextual logger within the service layer itself. Then, they get passed up to the presentation/API layer, which can turn them into a nice, polite message for the user.
 
 # Monolithic SPA frontend
 
